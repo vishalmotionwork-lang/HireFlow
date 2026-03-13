@@ -3,6 +3,8 @@
 import { useReducer, useEffect } from "react";
 import { Step1Upload } from "@/components/import/Step1Upload";
 import { Step2Mapping } from "@/components/import/Step2Mapping";
+import { Step3Validate } from "@/components/import/Step3Validate";
+import { Step4Summary } from "@/components/import/Step4Summary";
 import type {
   ParseResult,
   RawRow,
@@ -25,6 +27,7 @@ interface WizardState {
   headers: string[];
   mapping: ColumnMapping;
   targetRoleId: string;
+  source: "excel" | "csv" | "paste";
   validatedRows: ValidatedRow[];
   duplicateInfo: Record<number, DuplicateInfo>;
   result: ImportResult | null;
@@ -36,6 +39,7 @@ const INITIAL_STATE: WizardState = {
   headers: [],
   mapping: {},
   targetRoleId: "",
+  source: "csv",
   validatedRows: [],
   duplicateInfo: {},
   result: null,
@@ -46,7 +50,10 @@ const INITIAL_STATE: WizardState = {
 // ---------------------------------------------------------------------------
 
 type WizardAction =
-  | { type: "FILE_PARSED"; payload: ParseResult }
+  | {
+      type: "FILE_PARSED";
+      payload: ParseResult & { source: "excel" | "csv" | "paste" };
+    }
   | {
       type: "MAPPING_CONFIRMED";
       payload: { mapping: ColumnMapping; targetRoleId: string };
@@ -70,6 +77,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
         step: "map",
         headers: action.payload.headers,
         rawRows: action.payload.rows,
+        source: action.payload.source,
         mapping: {},
       };
     case "MAPPING_CONFIRMED":
@@ -89,6 +97,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
     case "IMPORT_COMPLETE":
       return {
         ...state,
+        step: "summary",
         result: action.payload,
       };
     case "BACK": {
@@ -196,7 +205,11 @@ function StepIndicator({ currentStep }: { currentStep: WizardStep }) {
               </div>
               <span
                 className={`text-xs font-medium ${
-                  isCurrent ? "text-blue-600" : isDone ? "text-gray-600" : "text-gray-400"
+                  isCurrent
+                    ? "text-blue-600"
+                    : isDone
+                      ? "text-gray-600"
+                      : "text-gray-400"
                 }`}
               >
                 {step.label}
@@ -240,11 +253,21 @@ export function ImportWizard({ roles }: ImportWizardProps) {
     }
   }, [state]);
 
-  const handleParsed = (result: ParseResult) => {
-    dispatch({ type: "FILE_PARSED", payload: result });
+  const handleParsed = (
+    result: ParseResult,
+    source: "excel" | "csv" | "paste",
+  ) => {
+    dispatch({ type: "FILE_PARSED", payload: { ...result, source } });
   };
 
-  const handleMappingConfirmed = (mapping: ColumnMapping, targetRoleId: string) => {
+  const handleImportComplete = (result: ImportResult) => {
+    dispatch({ type: "IMPORT_COMPLETE", payload: result });
+  };
+
+  const handleMappingConfirmed = (
+    mapping: ColumnMapping,
+    targetRoleId: string,
+  ) => {
     dispatch({ type: "MAPPING_CONFIRMED", payload: { mapping, targetRoleId } });
   };
 
@@ -274,27 +297,25 @@ export function ImportWizard({ roles }: ImportWizardProps) {
       )}
 
       {state.step === "validate" && (
-        <div className="py-12 text-center text-gray-400">
-          <p className="text-sm">Step 3 — Validate coming in Plan 04</p>
-          <button
-            onClick={handleBack}
-            className="mt-4 text-sm text-blue-500 hover:underline"
-          >
-            Go back
-          </button>
-        </div>
+        <Step3Validate
+          rows={state.rawRows}
+          headers={state.headers}
+          mapping={state.mapping}
+          targetRoleId={state.targetRoleId}
+          roles={roles}
+          source={state.source}
+          onImportComplete={handleImportComplete}
+          onBack={handleBack}
+        />
       )}
 
-      {state.step === "summary" && (
-        <div className="py-12 text-center text-gray-400">
-          <p className="text-sm">Step 4 — Summary coming in Plan 04</p>
-          <button
-            onClick={handleReset}
-            className="mt-4 text-sm text-blue-500 hover:underline"
-          >
-            Start over
-          </button>
-        </div>
+      {state.step === "summary" && state.result !== null && (
+        <Step4Summary
+          result={state.result}
+          onStartNew={handleReset}
+          targetRoleId={state.targetRoleId}
+          roles={roles}
+        />
       )}
     </div>
   );

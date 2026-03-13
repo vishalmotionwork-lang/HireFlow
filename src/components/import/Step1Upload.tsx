@@ -9,7 +9,7 @@ import { parseCsvFile, parseCsvString } from "@/lib/import/parseCsv";
 import type { ParseResult } from "@/lib/import/types";
 
 interface Step1UploadProps {
-  onParsed: (result: ParseResult) => void;
+  onParsed: (result: ParseResult, source: "excel" | "csv" | "paste") => void;
 }
 
 type ActiveTab = "file" | "paste";
@@ -17,7 +17,10 @@ type ActiveTab = "file" | "paste";
 export function Step1Upload({ onParsed }: Step1UploadProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>("file");
   const [isLoading, setIsLoading] = useState(false);
-  const [parsedFile, setParsedFile] = useState<{ name: string; rowCount: number } | null>(null);
+  const [parsedFile, setParsedFile] = useState<{
+    name: string;
+    rowCount: number;
+  } | null>(null);
   const [pasteText, setPasteText] = useState("");
 
   // ---------------------------------------------------------------------------
@@ -41,7 +44,9 @@ export function Step1Upload({ onParsed }: Step1UploadProps) {
         } else if (ext === "csv") {
           result = await parseCsvFile(file);
         } else {
-          toast.error("Unsupported file type. Please upload .xlsx, .xls, or .csv");
+          toast.error(
+            "Unsupported file type. Please upload .xlsx, .xls, or .csv",
+          );
           setIsLoading(false);
           return;
         }
@@ -52,22 +57,27 @@ export function Step1Upload({ onParsed }: Step1UploadProps) {
           return;
         }
 
+        const source: "excel" | "csv" =
+          ext === "xlsx" || ext === "xls" ? "excel" : "csv";
         setParsedFile({ name: file.name, rowCount: result.rows.length });
-        onParsed(result);
+        onParsed(result, source);
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to parse file";
+        const message =
+          err instanceof Error ? err.message : "Failed to parse file";
         toast.error(message);
       } finally {
         setIsLoading(false);
       }
     },
-    [onParsed]
+    [onParsed],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: handleFileDrop,
     accept: {
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
+        ".xlsx",
+      ],
       "application/vnd.ms-excel": [".xls"],
       "text/csv": [".csv"],
       "text/plain": [".csv"],
@@ -90,13 +100,16 @@ export function Step1Upload({ onParsed }: Step1UploadProps) {
       const result = parseCsvString(pasteText);
 
       if (result.headers.length === 0 || result.rows.length === 0) {
-        toast.error("Could not parse the pasted data. Make sure it has a header row.");
+        toast.error(
+          "Could not parse the pasted data. Make sure it has a header row.",
+        );
         return;
       }
 
-      onParsed(result);
+      onParsed(result, "paste");
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to parse pasted data";
+      const message =
+        err instanceof Error ? err.message : "Failed to parse pasted data";
       toast.error(message);
     }
   };
@@ -157,10 +170,16 @@ export function Step1Upload({ onParsed }: Step1UploadProps) {
                   <FileText size={20} className="text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{parsedFile.name}</p>
-                  <p className="text-xs text-gray-500">{parsedFile.rowCount} rows detected</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {parsedFile.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {parsedFile.rowCount} rows detected
+                  </p>
                 </div>
-                <p className="text-xs text-gray-400">Drop another file to replace</p>
+                <p className="text-xs text-gray-400">
+                  Drop another file to replace
+                </p>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">
@@ -169,9 +188,13 @@ export function Step1Upload({ onParsed }: Step1UploadProps) {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-700">
-                    {isDragActive ? "Drop your file here" : "Drag & drop or click to browse"}
+                    {isDragActive
+                      ? "Drop your file here"
+                      : "Drag & drop or click to browse"}
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">Accepts .xlsx, .xls, .csv</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Accepts .xlsx, .xls, .csv
+                  </p>
                 </div>
               </div>
             )}
@@ -183,7 +206,8 @@ export function Step1Upload({ onParsed }: Step1UploadProps) {
       {activeTab === "paste" && (
         <div className="space-y-3">
           <p className="text-xs text-gray-500">
-            Copy cells from any spreadsheet and paste below. The first row should be the header row.
+            Copy cells from any spreadsheet and paste below. The first row
+            should be the header row.
           </p>
           <textarea
             value={pasteText}

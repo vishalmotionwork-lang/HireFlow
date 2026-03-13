@@ -13,7 +13,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **FOUND-02**: Clerk authentication with team login — all routes protected except sign-in/sign-up
 - [x] **FOUND-03**: Database schema with all core tables: roles, candidates, comments, status_history, import_batches, extraction_jobs, activity
 - [ ] **FOUND-04**: Row-level security enabled on Supabase from day 1
-- [ ] **FOUND-05**: App shell with sidebar navigation, topbar with global search, and mobile-responsive layout
+- [x] **FOUND-05**: App shell with sidebar navigation, topbar with global search, and mobile-responsive layout
 
 ### Roles
 

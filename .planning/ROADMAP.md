@@ -26,8 +26,8 @@ Six phases that build from foundation to a fully usable hiring CRM. Phase 1 esta
   4. A user can create a new custom role with a name and description from Settings, and it appears in the sidebar navigation
   5. The app shell renders correctly — sidebar navigation, topbar with search input, and main content area — with no broken routes
 **Plans:** 3 plans
-- [ ] 01-01-PLAN.md — Project scaffold + database schema + seed (Wave 1)
-- [ ] 01-02-PLAN.md — App shell: sidebar, topbar, layout, all page skeletons (Wave 2)
+- [x] 01-01-PLAN.md — Project scaffold + database schema + seed (Wave 1) — DONE 2026-03-13
+- [x] 01-02-PLAN.md — App shell: sidebar, topbar, layout, all page skeletons (Wave 2) — DONE 2026-03-13
 - [ ] 01-03-PLAN.md — Settings page: role CRUD with icon picker + human verification (Wave 2)
 
 ### Phase 2: Candidate Core
@@ -93,7 +93,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Planned | - |
+| 1. Foundation | 2/3 | In progress | - |
 | 2. Candidate Core | 0/TBD | Not started | - |
 | 3. Import Pipeline | 0/TBD | Not started | - |
 | 4. AI Extraction | 0/TBD | Not started | - |

@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-03-13)
 ## Current Position
 
 Phase: 1 of 6 (Foundation)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-03-13 — Plan 01-01 complete (scaffold + schema + seeded roles)
+Last activity: 2026-03-13 — Plan 01-02 complete (app shell, sidebar, topbar, page skeletons)
 
-Progress: [█░░░░░░░░░] 5%
+Progress: [██░░░░░░░░] 10%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 35 min
-- Total execution time: 0.6 hours
+- Total plans completed: 2
+- Average duration: 20 min
+- Total execution time: 0.7 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation | 1/3 | 35 min | 35 min |
+| 01-foundation | 2/3 | 39 min | 20 min |
 
 **Recent Trend:**
-- 1 plan completed in Phase 1
-- Trend: On track
+- 2 plans completed in Phase 1
+- Trend: On track (Plan 02 was very fast due to pages being pre-scaffolded)
 
 *Updated after each plan completion*
 
@@ -52,6 +52,9 @@ Recent decisions affecting current work:
 - [01-01]: Table declaration order matters for FK exports: roles first, then importBatches, then candidates — Drizzle uses lazy callbacks but export variable must exist
 - [01-01]: PostgreSQL installed via Homebrew (brew install postgresql@16) — Docker not available on this machine
 - [01-01]: candidateStatusEnum has 12 statuses covering full hiring pipeline from left_to_review to hired/rejected
+- [01-02]: Use @base-ui/react render prop pattern (render=) not asChild= — this shadcn port uses base-ui not Radix UI
+- [01-02]: AppShell is a server component wrapping SidebarProvider — sidebar client state lives in sidebar.tsx
+- [01-02]: Settings stub created early so sidebar links don't 404 — full role management in Plan 03
 
 ### Pending Todos
 
@@ -66,5 +69,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 01-01-PLAN.md — scaffold, schema, and seeded roles done. Ready for 01-02-PLAN.md (Clerk auth)
-Resume file: .planning/phases/01-foundation/01-02-PLAN.md
+Stopped at: Completed 01-02-PLAN.md — app shell, sidebar, topbar, and all page skeletons done. Ready for 01-03-PLAN.md (Settings / role management)
+Resume file: .planning/phases/01-foundation/01-03-PLAN.md

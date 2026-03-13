@@ -1,8 +1,9 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Search } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,10 +12,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useDebounce } from "@/hooks/use-debounce";
 import { MOCK_USER } from "@/lib/constants";
 
 export function Topbar() {
   const initials = MOCK_USER.name.charAt(0).toUpperCase();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [searchInput, setSearchInput] = useState("");
+  const debouncedSearch = useDebounce(searchInput, 300);
+
+  // Navigate to /master with q param on debounced search change
+  useEffect(() => {
+    if (debouncedSearch.trim()) {
+      router.push(`/master?q=${encodeURIComponent(debouncedSearch.trim())}`);
+    } else if (pathname === "/master") {
+      // On /master with empty search, clear the q param
+      router.push("/master");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
 
   return (
     <header className="flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4">
@@ -26,16 +44,19 @@ export function Topbar() {
         HireFlow
       </span>
 
-      {/* Search — spacer pushes it center-ish */}
+      {/* Global search — navigates to /master?q=... on debounced input */}
       <div className="relative mx-auto w-full max-w-sm">
         <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
           size={15}
         />
-        <Input
-          placeholder="Search candidates..."
-          disabled
-          className="pl-9 bg-gray-50 border-gray-200 text-sm cursor-not-allowed"
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search all candidates..."
+          className="w-full rounded-md border border-gray-200 bg-gray-50 py-1.5 pl-9 pr-3 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 transition"
+          aria-label="Global candidate search"
         />
       </div>
 

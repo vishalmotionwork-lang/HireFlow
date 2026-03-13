@@ -89,7 +89,10 @@ Plans:
   2. After logging a rejection reason, the user can compose a custom rejection message, then choose Save Only (internal log) or Save and Copy Message (copies to clipboard for external send)
   3. Any team member can leave a comment on any candidate profile — the comment is timestamped, shows the commenter's name and avatar, and supports @mentioning other team members
   4. The dashboard shows global stats (total candidates, left to review, shortlisted, hired, rejected), role cards with candidate counts and status breakdowns, a hired vs rejected summary table, and a recent activity feed that refreshes every 30 seconds
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 05-01-PLAN.md — Shared util + query extensions + import source filter + @mention support (Wave 1)
+- [ ] 05-02-PLAN.md — Dashboard completion: clickable stats, role cards, hired/rejected table, auto-refresh activity feed + human verify (Wave 2)
 
 ### Phase 6: Responsive Polish
 **Goal**: Every screen in the app works correctly on mobile — sidebar collapses, candidate profile opens full-screen, role cards stack, and filters are accessible without a wide viewport
@@ -112,5 +115,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 2. Candidate Core | 5/5 | Complete   | 2026-03-13 |
 | 3. Import Pipeline | 4/4 | Complete   | 2026-03-13 |
 | 4. AI Extraction | 3/3 | Complete   | 2026-03-13 |
-| 5. Collaboration and Dashboard | 0/TBD | Not started | - |
+| 5. Collaboration and Dashboard | 0/2 | In progress | - |
 | 6. Responsive Polish | 0/TBD | Not started | - |

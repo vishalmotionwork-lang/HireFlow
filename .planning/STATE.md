@@ -48,6 +48,7 @@ Progress: [██████████] 92%
 | Phase 04 P03 | 6 | 2 tasks | 6 files |
 | Phase 04 Complete (human verify) | - | checkpoint approved | - |
 | Phase 05-collaboration-dashboard P01 | 5 | 2 tasks | 9 files |
+| Phase 05-collaboration-dashboard P02 | 8 | 1 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -140,6 +141,7 @@ Recent decisions affecting current work:
 - [Phase 04 complete]: Full extraction pipeline verified end-to-end by user — URL paste -> async progress -> review modal with confidence badges -> confirm/skip -> candidate created
 - [Phase 05-01]: TEAM_MEMBERS as mock constant in constants.ts — consistent with MOCK_USER, replaced when Clerk auth added
 - [Phase 05-01]: getHiredRejectedByRole fetches hire events separately and joins in JS to avoid complex Drizzle SQL for avg days computation
+- [Phase 05-02]: DashboardClient as use client wrapper — server component page.tsx stays pure async, no use client; 30s auto-refresh uses router.refresh() — triggers server component re-render without full page reload; Tier mini-bar uses proportional CSS widths — avoids chart library dependency
 
 ### Pending Todos
 

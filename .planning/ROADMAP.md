@@ -10,7 +10,7 @@ Six phases that build from foundation to a fully usable hiring CRM. Phase 1 esta
 - [x] **Phase 2: Candidate Core** - Role views, candidate CRUD, pipeline status, tiers, search, filter (completed 2026-03-13)
 - [x] **Phase 3: Import Pipeline** - Spreadsheet import, column mapping, duplicate detection, manual entry (completed 2026-03-13)
 - [x] **Phase 4: AI Extraction** - Portfolio URL scraping, structured extraction, review queue (completed 2026-03-13)
-- [ ] **Phase 5: Collaboration and Dashboard** - Rejection flow, team comments, dashboard stats
+- [x] **Phase 5: Collaboration and Dashboard** - Rejection flow, team comments, dashboard stats (completed 2026-03-13)
 - [ ] **Phase 6: Responsive Polish** - Mobile layout, collapsible nav, full-screen profile, filter panel
 
 ## Phase Details
@@ -89,7 +89,7 @@ Plans:
   2. After logging a rejection reason, the user can compose a custom rejection message, then choose Save Only (internal log) or Save and Copy Message (copies to clipboard for external send)
   3. Any team member can leave a comment on any candidate profile — the comment is timestamped, shows the commenter's name and avatar, and supports @mentioning other team members
   4. The dashboard shows global stats (total candidates, left to review, shortlisted, hired, rejected), role cards with candidate counts and status breakdowns, a hired vs rejected summary table, and a recent activity feed that refreshes every 30 seconds
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 05-01-PLAN.md — Shared util + query extensions + import source filter + @mention support (Wave 1)
 - [ ] 05-02-PLAN.md — Dashboard completion: clickable stats, role cards, hired/rejected table, auto-refresh activity feed + human verify (Wave 2)
@@ -115,5 +115,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 2. Candidate Core | 5/5 | Complete   | 2026-03-13 |
 | 3. Import Pipeline | 4/4 | Complete   | 2026-03-13 |
 | 4. AI Extraction | 3/3 | Complete   | 2026-03-13 |
-| 5. Collaboration and Dashboard | 1/2 | In Progress|  |
+| 5. Collaboration and Dashboard | 2/2 | Complete   | 2026-03-13 |
 | 6. Responsive Polish | 0/TBD | Not started | - |

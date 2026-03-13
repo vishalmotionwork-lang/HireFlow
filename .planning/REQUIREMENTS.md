@@ -37,8 +37,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **PIPE-01**: 12-stage pipeline statuses: Left to Review, Under Review, Good Work/Shortlisted, Not Good Work, Maybe/On the Fence, Assignment Pending, Assignment Sent, Assignment Follow-up, Assignment Passed, Assignment Failed, Hired, Rejected
 - [x] **PIPE-02**: User can change candidate status via dropdown on profile — change is logged immediately with who, from, to, when
 - [x] **PIPE-03**: Status history stored as insert-only event log (never overwrite) — full audit trail visible on candidate profile
-- [ ] **PIPE-04**: Activity feed on dashboard shows last 10 status changes across all roles with real-time refresh (30s)
-- [ ] **PIPE-05**: Clicking any activity item opens that candidate's profile
+- [x] **PIPE-04**: Activity feed on dashboard shows last 10 status changes across all roles with real-time refresh (30s)
+- [x] **PIPE-05**: Clicking any activity item opens that candidate's profile
 - [x] **PIPE-06**: Bulk status change — select multiple candidates via checkboxes, change status in one action
 
 ### Tiers
@@ -110,12 +110,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Dashboard
 
-- [ ] **DASH-01**: Dashboard is default landing page after login
-- [ ] **DASH-02**: Global stats bar: Total Candidates, Left to Review, Under Review, Shortlisted, Hired, Rejected — clicking any stat filters Master View
-- [ ] **DASH-03**: Role cards grid (2 cols desktop, 1 mobile): icon, name, candidate count, tier breakdown, top 3 status mini-bar, quick actions (Add, Import, View All)
-- [ ] **DASH-04**: "Create New Role" card at end of grid
+- [x] **DASH-01**: Dashboard is default landing page after login
+- [x] **DASH-02**: Global stats bar: Total Candidates, Left to Review, Under Review, Shortlisted, Hired, Rejected — clicking any stat filters Master View
+- [x] **DASH-03**: Role cards grid (2 cols desktop, 1 mobile): icon, name, candidate count, tier breakdown, top 3 status mini-bar, quick actions (Add, Import, View All)
+- [x] **DASH-04**: "Create New Role" card at end of grid
 - [x] **DASH-05**: Hired vs Rejected summary table: per role counts, hire rate %, Junior/Senior hire breakdown, avg days to hire
-- [ ] **DASH-06**: Recent activity feed — last 10 actions, auto-refresh 30s, clickable to candidate profile
+- [x] **DASH-06**: Recent activity feed — last 10 actions, auto-refresh 30s, clickable to candidate profile
 
 ### Responsive
 
@@ -188,8 +188,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PIPE-01 | Phase 2 | Complete |
 | PIPE-02 | Phase 2 | Complete |
 | PIPE-03 | Phase 2 | Complete |
-| PIPE-04 | Phase 2 | Pending |
-| PIPE-05 | Phase 5 | Pending |
+| PIPE-04 | Phase 2 | Complete |
+| PIPE-05 | Phase 5 | Complete |
 | PIPE-06 | Phase 2 | Complete |
 | TIER-01 | Phase 2 | Complete |
 | TIER-02 | Phase 2 | Complete |
@@ -237,12 +237,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COLB-02 | Phase 5 | Complete |
 | COLB-03 | Phase 5 | Complete |
 | COLB-04 | Phase 5 | Complete |
-| DASH-01 | Phase 5 | Pending |
-| DASH-02 | Phase 5 | Pending |
-| DASH-03 | Phase 5 | Pending |
-| DASH-04 | Phase 5 | Pending |
+| DASH-01 | Phase 5 | Complete |
+| DASH-02 | Phase 5 | Complete |
+| DASH-03 | Phase 5 | Complete |
+| DASH-04 | Phase 5 | Complete |
 | DASH-05 | Phase 5 | Complete |
-| DASH-06 | Phase 5 | Pending |
+| DASH-06 | Phase 5 | Complete |
 | RESP-01 | Phase 6 | Pending |
 | RESP-02 | Phase 6 | Pending |
 | RESP-03 | Phase 6 | Pending |

@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Team can import candidates in bulk, review portfolios by role, and move candidates through the hiring pipeline — without switching between spreadsheets, emails, and messaging apps.
-**Current focus:** Phase 3 — Import Pipeline IN PROGRESS (3 of 4 plans complete).
+**Current focus:** Phase 3 — Import Pipeline COMPLETE (4 of 4 plans complete). Ready for Phase 4 — AI Extraction.
 
 ## Current Position
 
-Phase: 3 of 6 (Import Pipeline) — IN PROGRESS
-Plan: 3 of 4 in current phase — 03-03 done
-Status: Phase 3 in progress — 03-01 (deps+types), 03-02 (import action+duplicate icon), and 03-03 (import wizard UI) complete
-Last activity: 2026-03-13 — 03-03 complete: ImportWizard, Step1Upload, Step2Mapping, /import route, sidebar nav
+Phase: 3 of 6 (Import Pipeline) — COMPLETE
+Plan: 4 of 4 in current phase — 03-04 done
+Status: Phase 3 complete — 03-01 (deps+types), 03-02 (import action+duplicate icon), 03-03 (import wizard UI), 03-04 (validate+summary steps) all done. Human verify approved 2026-03-13.
+Last activity: 2026-03-13 — 03-04 complete: Step3Validate, Step4Summary, full wizard wired end-to-end, human verify approved
 
-Progress: [█████████░] 65%
+Progress: [█████████░] 75%
 
 ## Performance Metrics
 
@@ -124,6 +124,7 @@ Recent decisions affecting current work:
 - [Phase 03-01]: SheetJS 0.20.3 installed from cdn.sheetjs.com CDN tarball — npm registry has stale 0.18.5
 - [Phase 03-import-pipeline]: Step3Validate runs normalize+validate+detectDuplicates on mount via useEffect with cancellation flag
 - [Phase 03-import-pipeline]: source field (excel|csv|paste) added to WizardState, propagated via Step1Upload onParsed callback signature
+- [Phase 03-04]: EnrichedRow type (ValidatedRow + DuplicateMatch + RowDecision) defined locally in Step3Validate — UI concern, not a shared domain type
 
 ### Pending Todos
 
@@ -138,5 +139,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 03-03-PLAN.md — import wizard UI done. Ready for 03-04 (validate + summary steps).
-Resume file: Run /gsd:execute-phase 03-import-pipeline to continue with 03-04
+Stopped at: Completed 03-04-PLAN.md — Phase 3 fully complete. Human verify approved. Ready for Phase 4 (AI Extraction).
+Resume file: Run /gsd:plan-phase 4 or /gsd:execute-phase 04-ai-extraction to continue

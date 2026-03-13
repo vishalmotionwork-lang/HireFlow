@@ -63,7 +63,7 @@ Plans:
 - [x] 03-01-PLAN.md — Install deps + parsing/normalization/validation utilities (Wave 1) — DONE 2026-03-13
 - [x] 03-02-PLAN.md — Server action: duplicate detection + bulk insert + duplicate icon (Wave 1) — DONE 2026-03-13
 - [x] 03-03-PLAN.md — Import page + sidebar nav + wizard Steps 1-2 (Upload + Mapping) (Wave 2) — DONE 2026-03-13
-- [ ] 03-04-PLAN.md — Wizard Steps 3-4 (Validate/Dedup + Summary) + human verify (Wave 3)
+- [x] 03-04-PLAN.md — Wizard Steps 3-4 (Validate/Dedup + Summary) + human verify (Wave 3) — DONE 2026-03-13
 
 ### Phase 4: AI Extraction
 **Goal**: Team can extract name, contact info, and social handles from portfolio URLs automatically, review confidence-scored results before saving, and queue bulk URL extractions in the background

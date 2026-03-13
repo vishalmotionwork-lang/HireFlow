@@ -70,7 +70,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **IMPT-04**: Handle inconsistent formats: columns in any order, missing columns left blank, extra columns shown as Unknown, mixed data in one column separated, empty rows skipped
 - [x] **IMPT-05**: Encoding-safe parsing — detect BOM, handle Windows-1252, preserve Indian names and +91 numbers
 - [x] **IMPT-06**: Role assignment on import — map from sheet column or user selects target role
-- [ ] **IMPT-07**: Rows with missing name or portfolio link flagged in red before proceeding
+- [x] **IMPT-07**: Rows with missing name or portfolio link flagged in red before proceeding
 - [ ] **IMPT-08**: Bulk URL paste — paste multiple portfolio links one per line, all queued for AI extraction
 - [ ] **IMPT-09**: Single URL entry — paste one portfolio link, AI extracts and creates one candidate card
 - [x] **IMPT-10**: Manual entry form — fill in fields one by one for individual candidates
@@ -212,7 +212,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IMPT-04 | Phase 3 | Complete |
 | IMPT-05 | Phase 3 | Complete |
 | IMPT-06 | Phase 3 | Complete |
-| IMPT-07 | Phase 3 | Pending |
+| IMPT-07 | Phase 3 | Complete |
 | IMPT-08 | Phase 4 | Pending |
 | IMPT-09 | Phase 4 | Pending |
 | IMPT-10 | Phase 3 | Complete |

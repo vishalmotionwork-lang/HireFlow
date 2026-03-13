@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Team can import candidates in bulk, review portfolios by role, and move candidates through the hiring pipeline — without switching between spreadsheets, emails, and messaging apps.
-**Current focus:** Phase 4 — AI Extraction (2 of 3 plans complete).
+**Current focus:** Phase 4 — AI Extraction (3 of 3 plans complete — awaiting human verify).
 
 ## Current Position
 
-Phase: 4 of 6 (AI Extraction) — IN PROGRESS
-Plan: 2 of 3 in current phase — 04-02 done
-Status: 04-02 complete — StepUrlPaste, ExtractionProgress, ImportWizard URL tab wired.
-Last activity: 2026-03-13 — 04-02 complete: StepUrlPaste.tsx, ExtractionProgress.tsx, ImportWizard.tsx updated
+Phase: 4 of 6 (AI Extraction) — IN PROGRESS (checkpoint)
+Plan: 3 of 3 in current phase — 04-03 built, awaiting human verify
+Status: 04-03 built — ExtractionReviewList, ExtractionReviewModal, ContactParseField, ImportWizard review step wired. Checkpoint: human must verify full AI extraction flow end-to-end.
+Last activity: 2026-03-13 — 04-03 complete: ExtractionReviewList.tsx, ExtractionReviewModal.tsx, ContactParseField.tsx, ImportWizard.tsx review step wired
 
-Progress: [█████████░] 83%
+Progress: [█████████░] 87%
 
 ## Performance Metrics
 
@@ -45,6 +45,7 @@ Progress: [█████████░] 83%
 | Phase 03-import-pipeline P04 | 4 | 2 tasks | 4 files |
 | Phase 04-ai-extraction P01 | 5 | 2 tasks | 4 files |
 | Phase 04-ai-extraction P02 | 7 | 2 tasks | 3 files |
+| Phase 04 P03 | 6 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -132,6 +133,8 @@ Recent decisions affecting current work:
 - [Phase 04-02]: Tab switcher hidden while deep in either flow (isDeepInFileWizard guard or active batchId) to prevent mid-flow abandonment
 - [Phase 04-02]: ExtractionStatusDraft type exported from ExtractionProgress.tsx — ImportWizard imports it to type completion state; no shared types file needed
 - [Phase 04-02]: Review Results state stored in ImportWizard useState — Plan 03 consumes extractionDrafts array to open review modal
+- [Phase 04]: Cast ExtractionStatusDraft as ExtractionDraft — same polling API shape, avoids redundant DB roundtrip
+- [Phase 04]: fieldConfidence added to polling API so review modal renders per-field confidence badges without a separate fetch
 
 ### Pending Todos
 

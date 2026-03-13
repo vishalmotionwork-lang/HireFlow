@@ -9,7 +9,7 @@ Six phases that build from foundation to a fully usable hiring CRM. Phase 1 esta
 - [x] **Phase 1: Foundation** - Next.js + Supabase + schema + auth + app shell
 - [x] **Phase 2: Candidate Core** - Role views, candidate CRUD, pipeline status, tiers, search, filter (completed 2026-03-13)
 - [x] **Phase 3: Import Pipeline** - Spreadsheet import, column mapping, duplicate detection, manual entry (completed 2026-03-13)
-- [ ] **Phase 4: AI Extraction** - Portfolio URL scraping, structured extraction, review queue
+- [x] **Phase 4: AI Extraction** - Portfolio URL scraping, structured extraction, review queue (completed 2026-03-13)
 - [ ] **Phase 5: Collaboration and Dashboard** - Rejection flow, team comments, dashboard stats
 - [ ] **Phase 6: Responsive Polish** - Mobile layout, collapsible nav, full-screen profile, filter panel
 
@@ -74,7 +74,7 @@ Plans:
   2. Before any extracted data is saved, the user sees a review screen showing extracted fields with a confidence level (High/Medium/Low) per field, missing fields in red — and must explicitly confirm, edit, or skip before saving
   3. When extraction succeeds, the candidate profile is populated with confirmed extracted data — when extraction fails (Instagram login wall, broken URL, Google Drive private link), the UI shows "could not extract" without crashing or hanging
   4. Pasting raw text containing contact info (phone number, email, Instagram handle, YouTube URL) into a candidate field automatically detects and parses each contact type into the correct field
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [ ] 04-01-PLAN.md — Firecrawl scrape wrapper + async extraction pipeline + polling endpoint (Wave 1)
 - [ ] 04-02-PLAN.md — URL paste input + extraction progress UI (Wave 2)
@@ -111,6 +111,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 1. Foundation | 3/3 | Complete | 2026-03-13 |
 | 2. Candidate Core | 5/5 | Complete   | 2026-03-13 |
 | 3. Import Pipeline | 4/4 | Complete   | 2026-03-13 |
-| 4. AI Extraction | 2/3 | In Progress|  |
+| 4. AI Extraction | 3/3 | Complete   | 2026-03-13 |
 | 5. Collaboration and Dashboard | 0/TBD | Not started | - |
 | 6. Responsive Polish | 0/TBD | Not started | - |

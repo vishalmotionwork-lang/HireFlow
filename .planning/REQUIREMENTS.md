@@ -79,8 +79,8 @@ Requirements for initial release. Each maps to roadmap phases.
 ### AI Extraction
 
 - [x] **AIEX-01**: Auto-extract name, contact info, and social handles from portfolio URLs (Behance, personal sites, YouTube channels, LinkedIn)
-- [ ] **AIEX-02**: Review screen before save — team sees extracted data, confidence level per field (High/Medium/Low), missing fields in red
-- [ ] **AIEX-03**: Team confirms, edits, or skips each extraction before data is saved to candidate
+- [x] **AIEX-02**: Review screen before save — team sees extracted data, confidence level per field (High/Medium/Low), missing fields in red
+- [x] **AIEX-03**: Team confirms, edits, or skips each extraction before data is saved to candidate
 - [x] **AIEX-04**: Graceful degradation for blocked/login-gated sites (Instagram, Google Drive) — shows "could not extract" instead of failing
 - [x] **AIEX-05**: Extraction runs async in background — progress bar shows "Extracting info from N portfolios..."
 - [x] **AIEX-06**: Raw text/paste parsing: detect phone/WhatsApp (10-13 digits with/without country code), email, Instagram handles, YouTube URLs, website URLs
@@ -218,8 +218,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IMPT-10 | Phase 3 | Complete |
 | IMPT-11 | Phase 3 | Complete |
 | AIEX-01 | Phase 4 | Complete |
-| AIEX-02 | Phase 4 | Pending |
-| AIEX-03 | Phase 4 | Pending |
+| AIEX-02 | Phase 4 | Complete |
+| AIEX-03 | Phase 4 | Complete |
 | AIEX-04 | Phase 4 | Complete |
 | AIEX-05 | Phase 4 | Complete |
 | AIEX-06 | Phase 4 | Complete |

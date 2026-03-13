@@ -9,6 +9,8 @@ import { StepUrlPaste } from "@/components/import/StepUrlPaste";
 import { ExtractionProgress } from "@/components/import/ExtractionProgress";
 import { ExtractionReviewList } from "@/components/import/ExtractionReviewList";
 import { ExtractionReviewModal } from "@/components/import/ExtractionReviewModal";
+import { StepMultiRoleImport } from "@/components/import/StepMultiRoleImport";
+import type { SheetData } from "@/lib/import/parseExcelMultiSheet";
 import type { ExtractionStatusDraft } from "@/components/import/ExtractionProgress";
 import type {
   ParseResult,
@@ -256,6 +258,11 @@ export function ImportWizard({ roles }: ImportWizardProps) {
   const [activeTab, setActiveTab] = useState<ImportTab>("file");
 
   // ---------------------------------------------------------------------------
+  // Multi-sheet import flow state
+  // ---------------------------------------------------------------------------
+  const [multiSheets, setMultiSheets] = useState<SheetData[] | null>(null);
+
+  // ---------------------------------------------------------------------------
   // URL extraction flow state
   // ---------------------------------------------------------------------------
   const [extractionBatchId, setExtractionBatchId] = useState<string | null>(
@@ -317,7 +324,12 @@ export function ImportWizard({ roles }: ImportWizardProps) {
 
   const handleReset = () => {
     clearSessionState();
+    setMultiSheets(null);
     dispatch({ type: "RESET" });
+  };
+
+  const handleMultiSheetParsed = (sheets: SheetData[]) => {
+    setMultiSheets(sheets);
   };
 
   // ---------------------------------------------------------------------------
@@ -406,7 +418,7 @@ export function ImportWizard({ roles }: ImportWizardProps) {
   // ---------------------------------------------------------------------------
 
   // Determine whether we're deep in the file/paste wizard (past upload step)
-  const isDeepInFileWizard = state.step !== "upload";
+  const isDeepInFileWizard = state.step !== "upload" || multiSheets !== null;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -442,40 +454,57 @@ export function ImportWizard({ roles }: ImportWizardProps) {
 
       {activeTab === "file" && (
         <>
-          <StepIndicator currentStep={state.step} />
-
-          {state.step === "upload" && <Step1Upload onParsed={handleParsed} />}
-
-          {state.step === "map" && (
-            <Step2Mapping
-              headers={state.headers}
-              rows={state.rawRows}
+          {/* Multi-sheet import flow */}
+          {multiSheets !== null ? (
+            <StepMultiRoleImport
+              sheets={multiSheets}
               roles={roles}
-              onConfirm={handleMappingConfirmed}
-              onBack={handleBack}
+              onComplete={handleReset}
+              onBack={() => setMultiSheets(null)}
             />
-          )}
+          ) : (
+            <>
+              <StepIndicator currentStep={state.step} />
 
-          {state.step === "validate" && (
-            <Step3Validate
-              rows={state.rawRows}
-              headers={state.headers}
-              mapping={state.mapping}
-              targetRoleId={state.targetRoleId}
-              roles={roles}
-              source={state.source}
-              onImportComplete={handleImportComplete}
-              onBack={handleBack}
-            />
-          )}
+              {state.step === "upload" && (
+                <Step1Upload
+                  onParsed={handleParsed}
+                  onMultiSheetParsed={handleMultiSheetParsed}
+                />
+              )}
 
-          {state.step === "summary" && state.result !== null && (
-            <Step4Summary
-              result={state.result}
-              onStartNew={handleReset}
-              targetRoleId={state.targetRoleId}
-              roles={roles}
-            />
+              {state.step === "map" && (
+                <Step2Mapping
+                  headers={state.headers}
+                  rows={state.rawRows}
+                  roles={roles}
+                  onConfirm={handleMappingConfirmed}
+                  onBack={handleBack}
+                />
+              )}
+
+              {state.step === "validate" && (
+                <Step3Validate
+                  rows={state.rawRows}
+                  headers={state.headers}
+                  mapping={state.mapping}
+                  targetRoleId={state.targetRoleId}
+                  roles={roles}
+                  source={state.source}
+                  onImportComplete={handleImportComplete}
+                  onBack={handleBack}
+                />
+              )}
+
+              {state.step === "summary" && state.result !== null && (
+                <Step4Summary
+                  result={state.result}
+                  onStartNew={handleReset}
+                  targetRoleId={state.targetRoleId}
+                  roles={roles}
+                />
+              )}
+            </>
           )}
         </>
       )}
@@ -562,9 +591,9 @@ export function ImportWizard({ roles }: ImportWizardProps) {
           }
 
           return (
-            <div className="flex gap-4 min-h-[520px]">
+            <div className="flex flex-col md:flex-row gap-4 min-h-[520px]">
               {/* List panel */}
-              <div className="w-64 flex-shrink-0 rounded-xl border border-gray-200 overflow-hidden">
+              <div className="w-full md:w-64 flex-shrink-0 rounded-xl border border-gray-200 overflow-hidden max-h-48 md:max-h-none">
                 <ExtractionReviewList
                   drafts={reviewDrafts}
                   onSelectDraft={setSelectedDraftId}

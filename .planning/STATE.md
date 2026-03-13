@@ -157,5 +157,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 05-02-PLAN.md — DashboardClient, RoleCard, HiredRejectedTable, clickable ActivityFeed, CandidateDrawer on dashboard. Human verify approved. Phase 5 complete.
-Resume file: Run /gsd:execute-phase 06 to begin Phase 6 (Settings/Admin)
+Stopped at: Phases 1-5 COMPLETE. Phase 6 (Responsive Polish) is the ONLY remaining phase — needs research, planning, and execution.
+Resume: `/clear` then `/gsd:plan-phase 6` to plan the final phase, then `/gsd:execute-phase 6` to build it.
+Note: Phase 6 directory exists at .planning/phases/06-responsive-polish/ (may need creation). No research, context, or plans exist yet.

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { CandidateRow } from "@/components/candidates/candidate-row";
 import { CandidateAddRow } from "@/components/candidates/candidate-add-row";
+import { AddCandidateDialog } from "@/components/candidates/add-candidate-dialog";
 import { CandidateDrawer } from "@/components/candidates/candidate-drawer";
+import { BulkActionBar } from "@/components/candidates/bulk-action-bar";
 import type { Candidate } from "@/types";
 
 interface CandidateTableProps {
@@ -29,9 +31,10 @@ export function CandidateTable({
     null,
   );
   const [showAddRow, setShowAddRow] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const handleRowSelect = (candidate: Candidate) => {
-    // Auto-dismiss add row when opening a candidate
     if (showAddRow) {
       setShowAddRow(false);
     }
@@ -43,12 +46,36 @@ export function CandidateTable({
   };
 
   const handleAddClick = () => {
-    // Dismiss any open drawer when opening add row
     setSelectedCandidateId(null);
-    setShowAddRow(true);
+    setShowAddDialog(true);
   };
 
+  const handleCheckboxToggle = useCallback((candidateId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(candidateId)) {
+        next.delete(candidateId);
+      } else {
+        next.add(candidateId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedIds.size === candidates.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(candidates.map((c) => c.id)));
+    }
+  }, [candidates, selectedIds.size]);
+
+  const selectedCandidates = candidates.filter((c) => selectedIds.has(c.id));
+  const allSelected =
+    candidates.length > 0 && selectedIds.size === candidates.length;
+
   const isEmpty = candidates.length === 0 && !showAddRow;
+  const colCount = (showRoleColumn ? 9 : 8) + 1; // +1 for checkbox
 
   return (
     <div className="flex flex-col gap-3">
@@ -62,8 +89,7 @@ export function CandidateTable({
         </p>
         <button
           onClick={handleAddClick}
-          disabled={showAddRow}
-          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
         >
           + Add Candidate
         </button>
@@ -74,6 +100,15 @@ export function CandidateTable({
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
+              <th className="w-8 px-2 py-2">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={handleSelectAll}
+                  className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  aria-label="Select all candidates"
+                />
+              </th>
               <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 Name
               </th>
@@ -82,25 +117,25 @@ export function CandidateTable({
                   Role
                 </th>
               )}
-              <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <th className="hidden lg:table-cell px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 Email
               </th>
-              <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <th className="hidden xl:table-cell px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 Portfolio
               </th>
-              <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <th className="hidden xl:table-cell px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 Phone
               </th>
-              <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <th className="hidden lg:table-cell px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 Instagram
               </th>
               <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 Status
               </th>
-              <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <th className="hidden sm:table-cell px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 Tier
               </th>
-              <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <th className="hidden md:table-cell px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 Added
               </th>
             </tr>
@@ -119,16 +154,15 @@ export function CandidateTable({
                 onSelect={handleRowSelect}
                 showRoleColumn={showRoleColumn}
                 rolesMap={rolesMap}
+                isChecked={selectedIds.has(candidate.id)}
+                onCheckboxToggle={handleCheckboxToggle}
               />
             ))}
 
             {/* Empty state */}
             {isEmpty && (
               <tr>
-                <td
-                  colSpan={showRoleColumn ? 9 : 8}
-                  className="px-6 py-16 text-center"
-                >
+                <td colSpan={colCount} className="px-6 py-16 text-center">
                   <div className="flex flex-col items-center gap-3 text-gray-400">
                     <svg
                       className="h-10 w-10 text-gray-200"
@@ -158,7 +192,14 @@ export function CandidateTable({
         </table>
       </div>
 
-      {/* Pagination indicator — drawer integration comes in Plan 03 */}
+      {/* Bulk action bar */}
+      <BulkActionBar
+        selectedCandidates={selectedCandidates}
+        onClear={() => setSelectedIds(new Set())}
+        onDone={() => setSelectedIds(new Set())}
+      />
+
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
           <span>
@@ -171,6 +212,13 @@ export function CandidateTable({
       <CandidateDrawer
         candidateId={selectedCandidateId}
         onClose={() => setSelectedCandidateId(null)}
+      />
+
+      {/* Add candidate dialog */}
+      <AddCandidateDialog
+        roleId={roleId}
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
       />
     </div>
   );

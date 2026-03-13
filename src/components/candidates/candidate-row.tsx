@@ -10,6 +10,8 @@ interface CandidateRowProps {
   onSelect: (candidate: Candidate) => void;
   showRoleColumn?: boolean;
   rolesMap?: Record<string, string>;
+  isChecked?: boolean;
+  onCheckboxToggle?: (candidateId: string) => void;
 }
 
 /**
@@ -47,6 +49,8 @@ export function CandidateRow({
   onSelect,
   showRoleColumn = false,
   rolesMap = {},
+  isChecked = false,
+  onCheckboxToggle,
 }: CandidateRowProps) {
   const handleRowClick = () => {
     onSelect(candidate);
@@ -66,6 +70,21 @@ export function CandidateRow({
       onClick={handleRowClick}
       className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
     >
+      {/* Checkbox */}
+      <td className="w-8 px-2 py-2.5">
+        <input
+          type="checkbox"
+          checked={isChecked}
+          onChange={(e) => {
+            e.stopPropagation();
+            onCheckboxToggle?.(candidate.id);
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          aria-label={`Select ${candidate.name}`}
+        />
+      </td>
+
       {/* Name */}
       <td className="px-3 py-2.5 max-w-[160px]">
         <span className="font-medium text-sm text-gray-900 truncate flex items-center gap-1 min-w-0">
@@ -92,14 +111,14 @@ export function CandidateRow({
       )}
 
       {/* Email */}
-      <td className="px-3 py-2.5 max-w-[180px]">
+      <td className="hidden lg:table-cell px-3 py-2.5 max-w-[180px]">
         <span className="text-sm text-gray-500 truncate block">
           {candidate.email ?? <span className="text-gray-300">—</span>}
         </span>
       </td>
 
       {/* Portfolio Link */}
-      <td className="px-3 py-2.5 max-w-[160px]">
+      <td className="hidden xl:table-cell px-3 py-2.5 max-w-[160px]">
         {candidate.portfolioUrl ? (
           <a
             href={candidate.portfolioUrl}
@@ -117,14 +136,14 @@ export function CandidateRow({
       </td>
 
       {/* Phone/WhatsApp */}
-      <td className="px-3 py-2.5">
+      <td className="hidden xl:table-cell px-3 py-2.5">
         <span className="text-sm text-gray-500">
           {candidate.phone ?? <span className="text-gray-300">—</span>}
         </span>
       </td>
 
       {/* Instagram */}
-      <td className="px-3 py-2.5">
+      <td className="hidden lg:table-cell px-3 py-2.5">
         <span className="text-sm text-gray-500">
           {instagramHandle ?? <span className="text-gray-300">—</span>}
         </span>
@@ -136,12 +155,12 @@ export function CandidateRow({
       </td>
 
       {/* Tier Badge */}
-      <td className="px-3 py-2.5">
+      <td className="hidden sm:table-cell px-3 py-2.5">
         <TierBadge candidateId={candidate.id} tier={candidate.tier} />
       </td>
 
       {/* Date Added */}
-      <td className="px-3 py-2.5 whitespace-nowrap">
+      <td className="hidden md:table-cell px-3 py-2.5 whitespace-nowrap">
         <span
           className="text-sm text-gray-400"
           title={new Date(candidate.createdAt).toLocaleString()}

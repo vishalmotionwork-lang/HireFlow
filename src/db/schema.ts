@@ -6,6 +6,7 @@ import {
   boolean,
   integer,
   timestamp,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 // Enums
@@ -69,9 +70,19 @@ export const candidates = pgTable("candidates", {
   phone: text("phone"),
   instagram: text("instagram"),
   portfolioUrl: text("portfolio_url"),
+  portfolioLinks: jsonb("portfolio_links").default([]).notNull(), // [{url, sourceType, label}]
+  socialHandles: jsonb("social_handles").default([]).notNull(), // [{platform, handle, url}]
   status: candidateStatusEnum("status").default("left_to_review").notNull(),
   tier: tierEnum("tier").default("untiered").notNull(),
   isDuplicate: boolean("is_duplicate").default(false).notNull(),
+  duplicateOfId: uuid("duplicate_of_id"), // self-referencing — nullable
+  duplicateAction: text("duplicate_action"), // 'merged' | 'kept_separate' | null
+  rejectionReason: text("rejection_reason"),
+  rejectionMessage: text("rejection_message"),
+  rejectionMarkedAt: timestamp("rejection_marked_at"),
+  isDeleted: boolean("is_deleted").default(false).notNull(),
+  source: text("source").default("manual").notNull(), // 'manual' | 'excel' | 'csv' | 'paste' | 'url'
+  lastModifiedBy: text("last_modified_by"),
   importBatchId: uuid("import_batch_id").references(() => importBatches.id),
   createdBy: text("created_by").default("mock-user").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -97,6 +108,8 @@ export const candidateComments = pgTable("candidate_comments", {
     .notNull()
     .references(() => candidates.id),
   body: text("body").notNull(),
+  mentions: jsonb("mentions").default([]).notNull(), // [{userId, name}]
+  authorAvatar: text("author_avatar"),
   createdBy: text("created_by").default("mock-user").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   editedAt: timestamp("edited_at"),
@@ -104,10 +117,32 @@ export const candidateComments = pgTable("candidate_comments", {
 
 export const extractionDrafts = pgTable("extraction_drafts", {
   id: uuid("id").primaryKey().defaultRandom(),
+  candidateId: uuid("candidate_id").references(() => candidates.id),
   importBatchId: uuid("import_batch_id").references(() => importBatches.id),
   sourceUrl: text("source_url"),
-  rawData: text("raw_data"),
-  extractedData: text("extracted_data"), // JSON stored as text
-  status: text("status").default("pending").notNull(),
+  rawText: text("raw_text"),
+  extractedData: jsonb("extracted_data"), // ExtractionResult JSON
+  platform: text("platform"), // detected platform
+  overallConfidence: integer("overall_confidence"), // 0-100
+  fieldConfidence: jsonb("field_confidence"), // ConfidenceScore[]
+  status: text("status").default("pending").notNull(), // 'pending' | 'processing' | 'completed' | 'failed' | 'reviewed' | 'applied'
+  error: text("error"),
+  reviewedAt: timestamp("reviewed_at"),
+  appliedAt: timestamp("applied_at"),
+  createdBy: text("created_by").default("mock-user").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const activities = pgTable("activities", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  type: text("type").notNull(), // 'status_change' | 'tier_change' | 'comment' | 'created' | 'imported' | 'merged' | 'rejected' | 'field_update'
+  actorId: text("actor_id").notNull(),
+  actorName: text("actor_name").notNull(),
+  actorAvatar: text("actor_avatar"),
+  candidateId: uuid("candidate_id").references(() => candidates.id),
+  candidateName: text("candidate_name"),
+  roleId: uuid("role_id").references(() => roles.id),
+  roleName: text("role_name"),
+  metadata: jsonb("metadata").default({}).notNull(), // flexible payload per activity type
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

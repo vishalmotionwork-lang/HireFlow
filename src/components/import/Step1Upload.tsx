@@ -6,15 +6,24 @@ import { Upload, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { parseExcelFile } from "@/lib/import/parseExcel";
 import { parseCsvFile, parseCsvString } from "@/lib/import/parseCsv";
+import {
+  parseExcelMultiSheet,
+  isMultiSheetExcel,
+} from "@/lib/import/parseExcelMultiSheet";
+import type { SheetData } from "@/lib/import/parseExcelMultiSheet";
 import type { ParseResult } from "@/lib/import/types";
 
 interface Step1UploadProps {
   onParsed: (result: ParseResult, source: "excel" | "csv" | "paste") => void;
+  onMultiSheetParsed?: (sheets: SheetData[]) => void;
 }
 
 type ActiveTab = "file" | "paste";
 
-export function Step1Upload({ onParsed }: Step1UploadProps) {
+export function Step1Upload({
+  onParsed,
+  onMultiSheetParsed,
+}: Step1UploadProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>("file");
   const [isLoading, setIsLoading] = useState(false);
   const [parsedFile, setParsedFile] = useState<{
@@ -40,6 +49,24 @@ export function Step1Upload({ onParsed }: Step1UploadProps) {
         const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
 
         if (ext === "xlsx" || ext === "xls") {
+          // Check for multi-sheet workbook (one sheet per role)
+          const isMulti = await isMultiSheetExcel(file);
+          if (isMulti && onMultiSheetParsed) {
+            const multiResult = await parseExcelMultiSheet(file);
+            if (multiResult.sheets.length > 0) {
+              const totalRows = multiResult.sheets.reduce(
+                (sum, s) => sum + s.rows.length,
+                0,
+              );
+              setParsedFile({
+                name: file.name,
+                rowCount: totalRows,
+              });
+              onMultiSheetParsed(multiResult.sheets);
+              setIsLoading(false);
+              return;
+            }
+          }
           result = await parseExcelFile(file);
         } else if (ext === "csv") {
           result = await parseCsvFile(file);

@@ -1,17 +1,20 @@
 "use client";
 
 import { useState, useEffect, useTransition, useCallback } from "react";
-import { Copy, ExternalLink, MessageSquare } from "lucide-react";
+import { Copy, ExternalLink } from "lucide-react";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 import { EditField } from "@/components/candidates/edit-field";
 import { StatusBadge } from "@/components/candidates/status-badge";
 import { TierBadge } from "@/components/candidates/tier-badge";
 import { StatusHistory } from "@/components/candidates/status-history";
+import { CommentThread } from "@/components/candidates/comment-thread";
+import { DuplicateBanner } from "@/components/candidates/duplicate-banner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   fetchCandidateProfile,
@@ -91,7 +94,10 @@ function DrawerSkeleton() {
   );
 }
 
-export function CandidateDrawer({ candidateId, onClose }: CandidateDrawerProps) {
+export function CandidateDrawer({
+  candidateId,
+  onClose,
+}: CandidateDrawerProps) {
   const isMobile = useIsMobile();
   const [data, setData] = useState<DrawerData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -129,10 +135,20 @@ export function CandidateDrawer({ candidateId, onClose }: CandidateDrawerProps) 
   const side = isMobile ? "bottom" : "right";
 
   return (
-    <Sheet open={!!candidateId} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Sheet
+      open={!!candidateId}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <SheetContent
         side={side}
-        className="w-full sm:max-w-[480px] overflow-y-auto p-0"
+        className={cn(
+          "overflow-y-auto p-0",
+          isMobile
+            ? "!h-[100dvh] rounded-t-none border-t-0 w-full"
+            : "sm:max-w-[480px]",
+        )}
         showCloseButton
       >
         {isLoading || !candidate ? (
@@ -152,13 +168,19 @@ export function CandidateDrawer({ candidateId, onClose }: CandidateDrawerProps) 
                 <StatusBadge
                   candidateId={candidate.id}
                   status={candidate.status}
+                  candidateName={candidate.name}
                 />
-                <TierBadge
-                  candidateId={candidate.id}
-                  tier={candidate.tier}
-                />
+                <TierBadge candidateId={candidate.id} tier={candidate.tier} />
               </div>
             </SheetHeader>
+
+            {/* Duplicate banner */}
+            <DuplicateBanner
+              candidate={candidate}
+              onMerged={() => {
+                if (candidateId) loadProfile(candidateId);
+              }}
+            />
 
             {/* Body */}
             <div className="flex flex-col divide-y divide-gray-100">
@@ -170,7 +192,9 @@ export function CandidateDrawer({ candidateId, onClose }: CandidateDrawerProps) 
 
                 {/* Email */}
                 <div className="flex items-center gap-1 text-sm">
-                  <span className="w-20 shrink-0 text-xs text-gray-400">Email</span>
+                  <span className="w-20 shrink-0 text-xs text-gray-400">
+                    Email
+                  </span>
                   <div className="flex flex-1 items-center min-w-0">
                     <EditField
                       value={candidate.email ?? ""}
@@ -183,7 +207,9 @@ export function CandidateDrawer({ candidateId, onClose }: CandidateDrawerProps) 
 
                 {/* Phone */}
                 <div className="flex items-center gap-1 text-sm">
-                  <span className="w-20 shrink-0 text-xs text-gray-400">Phone</span>
+                  <span className="w-20 shrink-0 text-xs text-gray-400">
+                    Phone
+                  </span>
                   <div className="flex flex-1 items-center min-w-0">
                     <EditField
                       value={candidate.phone ?? ""}
@@ -196,7 +222,9 @@ export function CandidateDrawer({ candidateId, onClose }: CandidateDrawerProps) 
 
                 {/* Instagram */}
                 <div className="flex items-center gap-1 text-sm">
-                  <span className="w-20 shrink-0 text-xs text-gray-400">Instagram</span>
+                  <span className="w-20 shrink-0 text-xs text-gray-400">
+                    Instagram
+                  </span>
                   <div className="flex flex-1 items-center min-w-0">
                     <EditField
                       value={candidate.instagram ?? ""}
@@ -221,7 +249,9 @@ export function CandidateDrawer({ candidateId, onClose }: CandidateDrawerProps) 
 
                 {/* Portfolio URL */}
                 <div className="flex items-center gap-1 text-sm">
-                  <span className="w-20 shrink-0 text-xs text-gray-400">Portfolio</span>
+                  <span className="w-20 shrink-0 text-xs text-gray-400">
+                    Portfolio
+                  </span>
                   <div className="flex flex-1 items-center min-w-0">
                     {candidate.portfolioUrl ? (
                       <a
@@ -259,16 +289,44 @@ export function CandidateDrawer({ candidateId, onClose }: CandidateDrawerProps) 
                 </div>
               </section>
 
-              {/* Comments placeholder (CAND-04 — full implementation in Phase 5) */}
+              {/* Comments */}
               <section className="px-4 py-4 flex flex-col gap-3">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Comments
                 </h3>
-                <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-gray-200 py-6 text-center">
-                  <MessageSquare className="h-6 w-6 text-gray-300" aria-hidden="true" />
-                  <p className="text-sm italic text-gray-400">Comments coming soon</p>
-                </div>
+                <CommentThread candidateId={candidate.id} />
               </section>
+
+              {/* Rejection details — only when rejected */}
+              {candidate.status === "rejected" && candidate.rejectionReason && (
+                <section className="px-4 py-4 flex flex-col gap-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-red-400">
+                    Rejection
+                  </h3>
+                  <div className="rounded-lg border border-red-100 bg-red-50 p-3">
+                    <p className="text-sm font-medium text-red-700">
+                      {candidate.rejectionReason}
+                    </p>
+                    {candidate.rejectionMessage && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {candidate.rejectionMessage}
+                      </p>
+                    )}
+                    {candidate.rejectionMarkedAt && (
+                      <p className="mt-2 text-xs text-red-400">
+                        Rejected on{" "}
+                        {new Date(
+                          candidate.rejectionMarkedAt,
+                        ).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </p>
+                    )}
+                  </div>
+                </section>
+              )}
 
               {/* Status history timeline */}
               <section className="px-4 py-4 flex flex-col gap-3">
@@ -283,8 +341,10 @@ export function CandidateDrawer({ candidateId, onClose }: CandidateDrawerProps) 
             <div className="border-t border-gray-100 px-4 py-3 flex flex-col gap-1">
               <p className="text-xs text-gray-400">
                 Created by{" "}
-                <span className="text-gray-600">{candidate.createdBy ?? "Unknown"}</span>
-                {" "}on{" "}
+                <span className="text-gray-600">
+                  {candidate.createdBy ?? "Unknown"}
+                </span>{" "}
+                on{" "}
                 <span className="text-gray-600">
                   {new Date(candidate.createdAt).toLocaleDateString("en-US", {
                     month: "short",

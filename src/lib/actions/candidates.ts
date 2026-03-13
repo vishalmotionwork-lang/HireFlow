@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { candidates, candidateEvents } from "@/db/schema";
+import { candidates, candidateEvents, candidateComments } from "@/db/schema";
 import { MOCK_USER } from "@/lib/constants";
 import { getCandidateWithEvents } from "@/lib/queries/candidates";
 import type { CandidateStatus, Tier } from "@/types";
@@ -41,6 +41,9 @@ const UPDATABLE_FIELDS = [
   "phone",
   "instagram",
   "portfolioUrl",
+  "rejectionReason",
+  "rejectionMessage",
+  "lastModifiedBy",
 ] as const;
 
 type UpdatableField = (typeof UPDATABLE_FIELDS)[number];
@@ -50,7 +53,7 @@ type UpdatableField = (typeof UPDATABLE_FIELDS)[number];
  * Also inserts a 'created' event into candidateEvents.
  */
 export async function createCandidate(
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult> {
   try {
     const raw = {
@@ -68,8 +71,7 @@ export async function createCandidate(
       return { error: flat.fieldErrors as Record<string, string[]> };
     }
 
-    const { roleId, name, email, phone, instagram, portfolioUrl } =
-      parsed.data;
+    const { roleId, name, email, phone, instagram, portfolioUrl } = parsed.data;
 
     // Normalize empty strings to null
     const normalizeEmpty = (v: string | null | undefined) =>
@@ -101,6 +103,15 @@ export async function createCandidate(
       createdBy: MOCK_USER.name,
     });
 
+    // Activity record for dashboard feed
+    const { createActivity } = await import("@/lib/actions/activities");
+    await createActivity({
+      type: "created",
+      candidateId: newCandidate.id,
+      candidateName: name,
+      roleId,
+    });
+
     revalidatePath("/", "layout");
     return { success: true };
   } catch (err) {
@@ -111,18 +122,36 @@ export async function createCandidate(
 
 /**
  * Change candidate pipeline status.
+ * If rejecting, pass rejection details. If moving FROM rejected, clears rejectionMarkedAt.
  * Wraps UPDATE + INSERT in a transaction to ensure atomicity.
  */
 export async function changeStatus(
   candidateId: string,
   fromStatus: CandidateStatus,
-  toStatus: CandidateStatus
+  toStatus: CandidateStatus,
+  rejection?: { reason: string; message: string },
 ): Promise<ActionResult> {
   try {
     await db.transaction(async (tx) => {
+      const updatePayload: Record<string, unknown> = {
+        status: toStatus,
+        updatedAt: new Date(),
+      };
+
+      if (toStatus === "rejected" && rejection) {
+        updatePayload.rejectionReason = rejection.reason;
+        updatePayload.rejectionMessage = rejection.message || null;
+        updatePayload.rejectionMarkedAt = new Date();
+      }
+
+      // If moving FROM rejected, clear the rejection timestamp (keep reason in history)
+      if (fromStatus === "rejected" && toStatus !== "rejected") {
+        updatePayload.rejectionMarkedAt = null;
+      }
+
       await tx
         .update(candidates)
-        .set({ status: toStatus, updatedAt: new Date() })
+        .set(updatePayload)
         .where(eq(candidates.id, candidateId));
 
       // INSERT ONLY — status change event log
@@ -133,6 +162,18 @@ export async function changeStatus(
         toValue: toStatus,
         createdBy: MOCK_USER.name,
       });
+    });
+
+    // Create activity record (non-blocking — outside transaction)
+    const { createActivity } = await import("@/lib/actions/activities");
+    await createActivity({
+      type: toStatus === "rejected" ? "rejected" : "status_change",
+      candidateId,
+      metadata: {
+        from: fromStatus,
+        to: toStatus,
+        ...(rejection ? { reason: rejection.reason } : {}),
+      },
     });
 
     revalidatePath("/", "layout");
@@ -150,7 +191,7 @@ export async function changeStatus(
 export async function changeTier(
   candidateId: string,
   fromTier: Tier,
-  toTier: Tier
+  toTier: Tier,
 ): Promise<ActionResult> {
   try {
     await db.transaction(async (tx) => {
@@ -184,7 +225,7 @@ export async function changeTier(
 export async function updateCandidateField(
   candidateId: string,
   field: string,
-  value: string
+  value: string,
 ): Promise<ActionResult> {
   try {
     if (!UPDATABLE_FIELDS.includes(field as UpdatableField)) {
@@ -196,12 +237,18 @@ export async function updateCandidateField(
     const typedField = field as UpdatableField;
 
     // Map camelCase field names to Drizzle column references
-    const fieldMap: Record<UpdatableField, keyof typeof candidates.$inferInsert> = {
+    const fieldMap: Record<
+      UpdatableField,
+      keyof typeof candidates.$inferInsert
+    > = {
       name: "name",
       email: "email",
       phone: "phone",
       instagram: "instagram",
       portfolioUrl: "portfolioUrl",
+      rejectionReason: "rejectionReason",
+      rejectionMessage: "rejectionMessage",
+      lastModifiedBy: "lastModifiedBy",
     };
 
     await db
@@ -232,5 +279,110 @@ export async function fetchCandidateProfile(candidateId: string) {
   } catch (err) {
     console.error("[fetchCandidateProfile] Error:", err);
     return null;
+  }
+}
+
+/**
+ * Check for duplicate candidates matching the given candidate's email/phone.
+ * Returns array of matches (excludes self).
+ */
+export async function checkDuplicatesAction(candidateId: string) {
+  try {
+    const [candidate] = await db
+      .select({ email: candidates.email, phone: candidates.phone })
+      .from(candidates)
+      .where(eq(candidates.id, candidateId))
+      .limit(1);
+
+    if (!candidate) return [];
+
+    const { checkForDuplicates } = await import("@/lib/duplicate");
+    return checkForDuplicates({
+      email: candidate.email,
+      phone: candidate.phone,
+      excludeId: candidateId,
+    });
+  } catch (err) {
+    console.error("[checkDuplicatesAction] Error:", err);
+    return [];
+  }
+}
+
+/**
+ * Merge two candidates: combine contact info on target, move comments + events
+ * from source to target, soft-delete the source.
+ */
+export async function mergeCandidates(
+  sourceId: string,
+  targetId: string,
+): Promise<ActionResult> {
+  try {
+    const [source] = await db
+      .select()
+      .from(candidates)
+      .where(eq(candidates.id, sourceId))
+      .limit(1);
+
+    const [target] = await db
+      .select()
+      .from(candidates)
+      .where(eq(candidates.id, targetId))
+      .limit(1);
+
+    if (!source || !target) {
+      return { error: "Candidate not found" };
+    }
+
+    await db.transaction(async (tx) => {
+      // Merge contact info — prefer non-null target values
+      await tx
+        .update(candidates)
+        .set({
+          email: target.email ?? source.email,
+          phone: target.phone ?? source.phone,
+          instagram: target.instagram ?? source.instagram,
+          portfolioUrl: target.portfolioUrl ?? source.portfolioUrl,
+          updatedAt: new Date(),
+        })
+        .where(eq(candidates.id, targetId));
+
+      // Move comments from source to target
+      await tx
+        .update(candidateComments)
+        .set({ candidateId: targetId })
+        .where(eq(candidateComments.candidateId, sourceId));
+
+      // Move events from source to target
+      await tx
+        .update(candidateEvents)
+        .set({ candidateId: targetId })
+        .where(eq(candidateEvents.candidateId, sourceId));
+
+      // Soft-delete the source
+      await tx
+        .update(candidates)
+        .set({
+          isDeleted: true,
+          duplicateOfId: targetId,
+          duplicateAction: "merged",
+          updatedAt: new Date(),
+        })
+        .where(eq(candidates.id, sourceId));
+    });
+
+    // Activity record
+    const { createActivity } = await import("@/lib/actions/activities");
+    await createActivity({
+      type: "merged",
+      candidateId: targetId,
+      candidateName: target.name,
+      metadata: { mergedFrom: source.name, sourceId },
+    });
+
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch (err) {
+    console.error("[mergeCandidates] Error:", err);
+    return { error: "Failed to merge candidates. Please try again." };
   }
 }

@@ -45,7 +45,7 @@ export function Topbar() {
       </span>
 
       {/* Global search — navigates to /master?q=... on debounced input */}
-      <div className="relative mx-auto w-full max-w-sm">
+      <div className="relative mx-auto hidden sm:block w-full max-w-sm">
         <Search
           className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
           size={15}
@@ -59,6 +59,9 @@ export function Topbar() {
           aria-label="Global candidate search"
         />
       </div>
+
+      {/* Mobile spacer */}
+      <div className="flex-1 sm:hidden" />
 
       {/* Mock user avatar — using render prop pattern for base-ui compatibility */}
       <DropdownMenu>
@@ -78,7 +81,10 @@ export function Topbar() {
             <span className="block text-xs text-gray-500">Mock user</span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem disabled className="text-gray-400 cursor-not-allowed">
+          <DropdownMenuItem
+            disabled
+            className="text-gray-400 cursor-not-allowed"
+          >
             Sign out
           </DropdownMenuItem>
         </DropdownMenuContent>

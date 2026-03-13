@@ -1,95 +1,83 @@
 # HireFlow — Resume Context
 
 ## Last Session: 2026-03-13
-## Status: Phase 5 (Collaboration & Dashboard) — IN PROGRESS, fixing UI issues
+## Status: Phase 5 COMPLETE + 2 new features added
 
-## Current Blocker
+## What Was Built This Session
 
-Dashboard UI has issues after Plan 05-02 execution:
-1. **Stale `.next` cache** — cleared (`rm -rf .next`). Caused hydration error referencing non-existent `CandidateCard.tsx` in `pipeline/` directory with DnD attributes. User needs to restart dev server + hard refresh.
-2. **"Ratings" showing on dashboard** — user reported unexpected ratings UI. Likely the Star icon used for "Shortlisted" stat card looks like a rating. Need user screenshot after cache clear to confirm.
-3. **Bad fonts** — Geist font loads via `next/font/google` in layout.tsx. May be a cache issue or a CSS problem. Check after restart.
+### 1. Add Candidate Dialog (replaces inline row)
+- **File**: `src/components/candidates/add-candidate-dialog.tsx` (NEW)
+- **Two modes**: Manual entry OR Paste Link (auto-extract via Firecrawl + GPT-4o-mini)
+- **ShineBorder** animation on dialog (`@magicui/shine-border`)
+- **Confetti** animation on successful add (`canvas-confetti`)
+- **Flow**: Paste URL → Extract button → polls `/api/extraction-status/[batchId]` → pre-fills form → user reviews + saves
+- **Wired into**: `candidate-table.tsx` — "+" Add Candidate" button opens dialog instead of inline row
+- Inline add row (`CandidateAddRow`) still exists but is no longer triggered from the button
 
-## What To Do Next
+### 2. Multi-Role Excel Import (fixes "not yet supported" warning)
+- **Parser**: `src/lib/import/parseExcelMultiSheet.ts` (NEW) — reads all sheets, skips "Summary"
+- **Component**: `src/components/import/StepMultiRoleImport.tsx` (NEW)
+  - Fuzzy-matches sheet names to existing roles
+  - Shows sheet→role mapping table with row counts
+  - Auto-detects column mapping per sheet via `detectMapping()`
+  - Imports each sheet to its matched role sequentially
+  - Shows per-sheet results (imported/skipped/errors)
+- **Wired into**: `Step1Upload.tsx` calls `isMultiSheetExcel()` → if true, passes to `onMultiSheetParsed`
+- **ImportWizard.tsx** has new `multiSheets` state, renders `StepMultiRoleImport` when set
+- **Tested with**: `~/Downloads/applicants_by_role.xlsx` (8 role sheets, ~520 candidates)
 
-1. **Restart dev server**: `cd ~/HireFlow && npm run dev`
-2. **Hard refresh browser**: Cmd+Shift+R at http://localhost:3000
-3. **Take screenshot** of dashboard after fresh load — compare to issues reported
-4. **Fix any remaining visual issues** based on user feedback
-5. **Complete human-verify checkpoint** (Task 2 of Plan 05-02) — 9 verification steps
-6. **Run phase verification** after checkpoint approved
+### Installed UI Components
+- `src/components/ui/shine-border.tsx` — Magic UI shine border
+- `src/components/ui/confetti.tsx` — Magic UI confetti (canvas-confetti based)
 
-## Phase 5 Execution Progress
+## Build Status
+- ✅ Build passes clean (TypeScript + Next.js 16.1.6)
+- Dev server running on port 3000
 
-| Plan | Status | Commits |
-|------|--------|---------|
-| 05-01: Data layer + @mention foundation | DONE | 26d7526, 362190b |
-| 05-02: Interactive dashboard (Task 1/2) | Code DONE, checkpoint PENDING | ccd58ba |
+## Verification Needed
+1. **Add Candidate Dialog**: Open any role page → click "+ Add Candidate" → dialog should open with shine border
+   - Test Manual mode: fill fields → Save → confetti + candidate appears
+   - Test Paste Link mode: paste URL → Extract → wait for fields → Save → confetti
+2. **Multi-Role Import**: Go to /import → upload `applicants_by_role.xlsx` → should show multi-role mapping (not single-role selector)
+   - Verify sheet names auto-match to roles
+   - Import and check candidates appear in correct roles
+3. **Dashboard verification** (from Phase 5): Navigate to localhost:3000 → should show Dashboard (not old pipeline)
 
-### 05-01 Built (Data Layer)
-- `formatRelativeTime` shared utility
-- `getHiredRejectedByRole` query (tier breakdown, avg days to hire)
-- Import source filter end-to-end (SRCH-06)
-- @mention support in CommentThread (COLB-03)
-
-### 05-02 Built (Dashboard UI)
-- DashboardClient wrapper (`"use client"`, manages drawer + 30s auto-refresh)
-- Clickable stats bar → Link to `/master?status=X` (DASH-02)
-- RoleCard with tier breakdown mini-bar + Add/Import/View All quick actions (DASH-03)
-- HiredRejectedTable per-role summary (DASH-05)
-- ActivityFeed items clickable → opens CandidateDrawer (DASH-06, PIPE-05)
-- 30s auto-refresh via `router.refresh()` (DASH-06)
-
-### Human Verify Checklist (9 steps — NOT YET VERIFIED)
-1. Dashboard is landing page
-2. Stats cards clickable → filtered master view
-3. Role cards show tier mini-bar + quick actions
-4. Hired/Rejected table renders
-5. Activity feed items open candidate drawer
-6. 30s auto-refresh in network tab
-7. @mention comments work
-8. Import source filter in filter bar
-9. Rejection flow modal on status change
-
-## GSD Executor State
-
-- Phase: 05-collaboration-dashboard
-- Plan: 02 (wave 2)
-- Task: 2 of 2 (checkpoint:human-verify) — AWAITING USER
-- Agent ID: a09f4980b23a90574 (DO NOT resume — spawn fresh continuation agent)
+## Phase 5 Execution (from previous session — all done)
+| Plan | Status |
+|------|--------|
+| 05-01: Data layer + @mention | DONE |
+| 05-02: Interactive dashboard | DONE |
 
 ## All Phases Summary
+| Phase | Status |
+|-------|--------|
+| 1: Foundation | DONE |
+| 2: Candidate Core | DONE |
+| 3: Import Pipeline | DONE |
+| 4: AI Extraction | DONE |
+| 5: Collaboration & Dashboard | DONE |
+| 6: Responsive Polish | Not started |
 
-| Phase | Plans | Status |
-|-------|-------|--------|
-| 1: Foundation | 3/3 | DONE |
-| 2: Candidate Core | 5/5 | DONE |
-| 3: Import Pipeline | 4/4 | DONE |
-| 4: AI Extraction | 3/3 | DONE |
-| 5: Collaboration & Dashboard | 1/2 | IN PROGRESS — checkpoint pending |
-| 6: Responsive Polish | 0/TBD | Not started (roadmap has old responsive work here) |
-
-## Key Files Modified This Session
+## Key Files Modified
 | File | What |
 |------|------|
-| `src/lib/utils/format-relative-time.ts` | NEW — shared relative time utility |
-| `src/lib/queries/stats.ts` | Added getHiredRejectedByRole, getRoleTierBreakdown |
-| `src/lib/queries/candidates.ts` | Added importSource filter param |
-| `src/components/candidates/comment-thread.tsx` | @mention popover + blue rendering |
-| `src/components/candidates/candidate-filter-bar.tsx` | Source multi-select dropdown |
-| `src/components/dashboard/dashboard-client.tsx` | NEW — client wrapper with drawer + auto-refresh |
-| `src/components/dashboard/role-card.tsx` | NEW — tier mini-bar + quick actions |
-| `src/components/dashboard/hired-rejected-table.tsx` | NEW — per-role hire summary |
-| `src/components/dashboard/activity-feed.tsx` | Made items clickable |
-| `src/app/dashboard/page.tsx` | Refactored to server-only data fetcher → DashboardClient |
+| `src/components/candidates/add-candidate-dialog.tsx` | NEW — dialog with manual + link extraction modes |
+| `src/components/candidates/candidate-table.tsx` | Wired dialog, replaced inline add trigger |
+| `src/lib/import/parseExcelMultiSheet.ts` | NEW — multi-sheet Excel parser |
+| `src/components/import/StepMultiRoleImport.tsx` | NEW — multi-role import UI |
+| `src/components/import/Step1Upload.tsx` | Added multi-sheet detection + callback |
+| `src/components/import/ImportWizard.tsx` | Added multi-sheet state + routing |
+| `src/components/ui/shine-border.tsx` | NEW — Magic UI component |
+| `src/components/ui/confetti.tsx` | NEW — Magic UI component |
 
 ## Tech Stack (DO NOT CHANGE)
 - Next.js 16 + React 19 + TypeScript 5
-- Drizzle ORM (NOT Prisma) + PostgreSQL 16
-- shadcn/ui v4 (@base-ui/react, NOT Radix)
+- Drizzle ORM + PostgreSQL 16
+- shadcn/ui v4 (@base-ui/react)
 - Tailwind CSS 4
 - OpenAI SDK (gpt-4o-mini) + Firecrawl
-- Server actions (NOT REST API routes)
+- Server actions (NOT API routes)
 - MOCK_USER auth (Clerk deferred)
 
 ## Resume Command

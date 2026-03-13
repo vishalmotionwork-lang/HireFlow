@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { roles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { AppShell } from "@/components/layout/app-shell";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +39,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AppShell roles={activeRoles}>{children}</AppShell>
+        <Toaster richColors position="bottom-right" />
       </body>
     </html>
   );

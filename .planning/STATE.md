@@ -50,6 +50,7 @@ Progress: [██████████] 92%
 | Phase 05-collaboration-dashboard P01 | 5 | 2 tasks | 9 files |
 | Phase 05-collaboration-dashboard P02 | 8 | 2 tasks | 5 files |
 | Phase 05 Complete (human verify) | - | checkpoint approved | - |
+| Phase 06 P01 | 3 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -143,6 +144,8 @@ Recent decisions affecting current work:
 - [Phase 05-01]: TEAM_MEMBERS as mock constant in constants.ts — consistent with MOCK_USER, replaced when Clerk auth added
 - [Phase 05-01]: getHiredRejectedByRole fetches hire events separately and joins in JS to avoid complex Drizzle SQL for avg days computation
 - [Phase 05-02]: DashboardClient as use client wrapper — server component page.tsx stays pure async, no use client; 30s auto-refresh uses router.refresh() — triggers server component re-render without full page reload; Tier mini-bar uses proportional CSS widths — avoids chart library dependency
+- [Phase 06]: Use !h-[100dvh] with important modifier on SheetContent — Tailwind v4 data-[side=bottom]:h-auto has higher specificity than plain utility class
+- [Phase 06]: Dashboard grids and overflow-x-auto already correct — no changes needed to dashboard-client.tsx or hired-rejected-table.tsx
 
 ### Pending Todos
 

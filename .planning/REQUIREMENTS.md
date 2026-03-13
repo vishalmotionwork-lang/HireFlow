@@ -119,10 +119,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Responsive
 
-- [ ] **RESP-01**: All screens mobile responsive — sidebar collapses to bottom nav or hamburger on mobile
-- [ ] **RESP-02**: Candidate profile opens full-screen on mobile instead of drawer
-- [ ] **RESP-03**: Role cards stack to single column on mobile
-- [ ] **RESP-04**: Filter bar collapses to expandable panel on mobile
+- [x] **RESP-01**: All screens mobile responsive — sidebar collapses to bottom nav or hamburger on mobile
+- [x] **RESP-02**: Candidate profile opens full-screen on mobile instead of drawer
+- [x] **RESP-03**: Role cards stack to single column on mobile
+- [x] **RESP-04**: Filter bar collapses to expandable panel on mobile
 
 ## v2 Requirements
 
@@ -243,10 +243,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-04 | Phase 5 | Complete |
 | DASH-05 | Phase 5 | Complete |
 | DASH-06 | Phase 5 | Complete |
-| RESP-01 | Phase 6 | Pending |
-| RESP-02 | Phase 6 | Pending |
-| RESP-03 | Phase 6 | Pending |
-| RESP-04 | Phase 6 | Pending |
+| RESP-01 | Phase 6 | Complete |
+| RESP-02 | Phase 6 | Complete |
+| RESP-03 | Phase 6 | Complete |
+| RESP-04 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 68 total

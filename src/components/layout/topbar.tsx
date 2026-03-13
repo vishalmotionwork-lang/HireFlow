@@ -68,7 +68,7 @@ export function Topbar() {
         <DropdownMenuTrigger
           render={
             <button
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-sm font-semibold hover:bg-blue-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="flex h-9 w-9 min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-blue-100 text-blue-700 text-sm font-semibold hover:bg-blue-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
               aria-label="User menu"
             />
           }

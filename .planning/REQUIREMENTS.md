@@ -64,16 +64,16 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Import
 
-- [ ] **IMPT-01**: File upload — drag-and-drop or browse, accepts .xlsx, .xls, .csv
-- [ ] **IMPT-02**: Paste import — copy-paste raw spreadsheet data from Excel/Sheets/Notion into text area
-- [ ] **IMPT-03**: Smart column mapping screen: preview first 5 rows, auto-detect column types, user confirms/overrides each mapping
+- [x] **IMPT-01**: File upload — drag-and-drop or browse, accepts .xlsx, .xls, .csv
+- [x] **IMPT-02**: Paste import — copy-paste raw spreadsheet data from Excel/Sheets/Notion into text area
+- [x] **IMPT-03**: Smart column mapping screen: preview first 5 rows, auto-detect column types, user confirms/overrides each mapping
 - [x] **IMPT-04**: Handle inconsistent formats: columns in any order, missing columns left blank, extra columns shown as Unknown, mixed data in one column separated, empty rows skipped
 - [x] **IMPT-05**: Encoding-safe parsing — detect BOM, handle Windows-1252, preserve Indian names and +91 numbers
 - [x] **IMPT-06**: Role assignment on import — map from sheet column or user selects target role
 - [ ] **IMPT-07**: Rows with missing name or portfolio link flagged in red before proceeding
 - [ ] **IMPT-08**: Bulk URL paste — paste multiple portfolio links one per line, all queued for AI extraction
 - [ ] **IMPT-09**: Single URL entry — paste one portfolio link, AI extracts and creates one candidate card
-- [ ] **IMPT-10**: Manual entry form — fill in fields one by one for individual candidates
+- [x] **IMPT-10**: Manual entry form — fill in fields one by one for individual candidates
 - [x] **IMPT-11**: Import summary after completion: imported count, skipped count, duplicates found, extraction queued count
 
 ### AI Extraction
@@ -206,16 +206,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRCH-08 | Phase 2 | Complete |
 | SRCH-09 | Phase 2 | Complete |
 | SRCH-10 | Phase 2 | Complete |
-| IMPT-01 | Phase 3 | Pending |
-| IMPT-02 | Phase 3 | Pending |
-| IMPT-03 | Phase 3 | Pending |
+| IMPT-01 | Phase 3 | Complete |
+| IMPT-02 | Phase 3 | Complete |
+| IMPT-03 | Phase 3 | Complete |
 | IMPT-04 | Phase 3 | Complete |
 | IMPT-05 | Phase 3 | Complete |
 | IMPT-06 | Phase 3 | Complete |
 | IMPT-07 | Phase 3 | Pending |
 | IMPT-08 | Phase 4 | Pending |
 | IMPT-09 | Phase 4 | Pending |
-| IMPT-10 | Phase 3 | Pending |
+| IMPT-10 | Phase 3 | Complete |
 | IMPT-11 | Phase 3 | Complete |
 | AIEX-01 | Phase 4 | Pending |
 | AIEX-02 | Phase 4 | Pending |

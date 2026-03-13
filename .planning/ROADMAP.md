@@ -58,11 +58,11 @@ Plans:
   3. Before import completes, rows with missing name or portfolio link are flagged in red and must be resolved or skipped — no silent bad data
   4. After import, the user sees a summary showing how many candidates were imported, how many were skipped, and how many duplicates were detected
   5. When a duplicate is detected (matching email or phone), the candidate row shows a yellow warning icon and the user is prompted to Merge or Keep Separate — no auto-merge ever occurs
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 Plans:
-- [ ] 03-01-PLAN.md — Install deps + parsing/normalization/validation utilities (Wave 1)
-- [ ] 03-02-PLAN.md — Server action: duplicate detection + bulk insert + duplicate icon (Wave 1)
-- [ ] 03-03-PLAN.md — Import page + sidebar nav + wizard Steps 1-2 (Upload + Mapping) (Wave 2)
+- [x] 03-01-PLAN.md — Install deps + parsing/normalization/validation utilities (Wave 1) — DONE 2026-03-13
+- [x] 03-02-PLAN.md — Server action: duplicate detection + bulk insert + duplicate icon (Wave 1) — DONE 2026-03-13
+- [x] 03-03-PLAN.md — Import page + sidebar nav + wizard Steps 1-2 (Upload + Mapping) (Wave 2) — DONE 2026-03-13
 - [ ] 03-04-PLAN.md — Wizard Steps 3-4 (Validate/Dedup + Summary) + human verify (Wave 3)
 
 ### Phase 4: AI Extraction

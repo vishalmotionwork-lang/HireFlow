@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Team can import candidates in bulk, review portfolios by role, and move candidates through the hiring pipeline — without switching between spreadsheets, emails, and messaging apps.
-**Current focus:** Phase 3 — Import Pipeline IN PROGRESS (2 of 4 plans complete).
+**Current focus:** Phase 3 — Import Pipeline IN PROGRESS (3 of 4 plans complete).
 
 ## Current Position
 
 Phase: 3 of 6 (Import Pipeline) — IN PROGRESS
-Plan: 2 of 4 in current phase — 03-02 done
-Status: Phase 3 in progress — 03-01 (deps+types) and 03-02 (import action+duplicate icon) complete
-Last activity: 2026-03-13 — 03-02 complete: importCandidates action, detectDuplicates, CandidateRow duplicate icon
+Plan: 3 of 4 in current phase — 03-03 done
+Status: Phase 3 in progress — 03-01 (deps+types), 03-02 (import action+duplicate icon), and 03-03 (import wizard UI) complete
+Last activity: 2026-03-13 — 03-03 complete: ImportWizard, Step1Upload, Step2Mapping, /import route, sidebar nav
 
-Progress: [█████████░] 60%
+Progress: [█████████░] 65%
 
 ## Performance Metrics
 
@@ -41,6 +41,7 @@ Progress: [█████████░] 60%
 | Phase 02-candidate-core P03 | 3 | 2 tasks | 3 files |
 | Phase 03-import-pipeline P02 | 2 | 2 tasks | 2 files |
 | Phase 03-import-pipeline P01 | 3 | 2 tasks | 6 files |
+| Phase 03-import-pipeline P03 | 12 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,12 @@ Recent decisions affecting current work:
 - [Phase 02]: Drawer owns its data fetch (candidateId only) — keeps table lean and avoids stale object state
 - [Phase 02]: selectedCandidateId (string | null) in table state — drawer is self-contained
 
+**Phase 3 implementation (03-03):**
+- Wizard state serialized to sessionStorage as-is (JSON) — survives accidental navigation, cleared on reset or back-to-upload
+- Step2Mapping uses native <select> (not base-ui Select) in compact table header cells — cleaner than nested base-ui portal in thead
+- updateMapping is a pure function — removes stale bidirectional assignments before applying new mapping
+- Step3Validate + Step4Summary rendered as placeholders so wizard compiles end-to-end; Plan 04 replaces them
+
 **Phase 3 implementation (03-02):**
 - detectDuplicates normalises emails to lowercase; guards inArray([]) by only adding non-empty conditions
 - importCandidates uses single transaction: inserts + merges + importBatch count update atomically
@@ -128,5 +135,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 03-02-PLAN.md — import server action and duplicate icon done. Ready for 03-03 (import wizard UI).
-Resume file: Run /gsd:execute-phase 03-import-pipeline to continue with 03-03
+Stopped at: Completed 03-03-PLAN.md — import wizard UI done. Ready for 03-04 (validate + summary steps).
+Resume file: Run /gsd:execute-phase 03-import-pipeline to continue with 03-04

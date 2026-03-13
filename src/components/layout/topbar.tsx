@@ -35,19 +35,19 @@ export function Topbar() {
   }, [debouncedSearch]);
 
   return (
-    <header className="flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4">
+    <header className="flex h-14 items-center gap-3 border-b border-border bg-card px-4">
       {/* Hamburger / sidebar collapse trigger */}
-      <SidebarTrigger className="text-gray-500 hover:text-gray-700" />
+      <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
 
       {/* Logo */}
-      <span className="text-base font-semibold text-blue-500 select-none">
+      <span className="text-base font-bold tracking-tight text-foreground select-none">
         HireFlow
       </span>
 
       {/* Global search — navigates to /master?q=... on debounced input */}
-      <div className="relative mx-auto hidden sm:block w-full max-w-sm">
+      <div className="relative mx-auto hidden sm:block w-full max-w-md">
         <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
           size={15}
         />
         <input
@@ -55,7 +55,7 @@ export function Topbar() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Search all candidates..."
-          className="w-full rounded-md border border-gray-200 bg-gray-50 py-1.5 pl-9 pr-3 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 transition"
+          className="w-full rounded-xl border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-ring focus:bg-card focus:ring-2 focus:ring-ring/10 transition"
           aria-label="Global candidate search"
         />
       </div>
@@ -63,12 +63,12 @@ export function Topbar() {
       {/* Mobile spacer */}
       <div className="flex-1 sm:hidden" />
 
-      {/* Mock user avatar — using render prop pattern for base-ui compatibility */}
+      {/* User avatar */}
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
             <button
-              className="flex h-9 w-9 min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-blue-100 text-blue-700 text-sm font-semibold hover:bg-blue-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring"
               aria-label="User menu"
             />
           }
@@ -78,12 +78,14 @@ export function Topbar() {
         <DropdownMenuContent align="end" className="w-44">
           <DropdownMenuLabel className="font-normal">
             <span className="block text-sm font-medium">{MOCK_USER.name}</span>
-            <span className="block text-xs text-gray-500">Mock user</span>
+            <span className="block text-xs text-muted-foreground">
+              Mock user
+            </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             disabled
-            className="text-gray-400 cursor-not-allowed"
+            className="text-muted-foreground cursor-not-allowed"
           >
             Sign out
           </DropdownMenuItem>

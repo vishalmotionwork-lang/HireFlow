@@ -14,7 +14,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { createCandidate } from "@/lib/actions/candidates";
-import { startSingleExtraction, confirmExtraction } from "@/lib/actions/extraction";
+import {
+  startSingleExtraction,
+  confirmExtraction,
+} from "@/lib/actions/extraction";
 
 type Mode = "manual" | "link";
 type ExtractionState = "idle" | "extracting" | "done" | "error";
@@ -77,7 +80,8 @@ export function AddCandidateDialog({
 
   // Link extraction state
   const [linkUrl, setLinkUrl] = useState("");
-  const [extractionState, setExtractionState] = useState<ExtractionState>("idle");
+  const [extractionState, setExtractionState] =
+    useState<ExtractionState>("idle");
   const [extractionError, setExtractionError] = useState<string | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -239,11 +243,12 @@ export function AddCandidateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md relative overflow-hidden">
+      <DialogContent className="sm:max-w-md">
         <ShineBorder
           shineColor={["#3b82f6", "#8b5cf6", "#06b6d4"]}
           borderWidth={2}
           duration={8}
+          className="rounded-xl"
         />
 
         <DialogHeader>
@@ -419,9 +424,7 @@ export function AddCandidateDialog({
               </div>
             </div>
 
-            {error && (
-              <p className="text-sm text-red-500">{error}</p>
-            )}
+            {error && <p className="text-sm text-red-500">{error}</p>}
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-2 pt-1">

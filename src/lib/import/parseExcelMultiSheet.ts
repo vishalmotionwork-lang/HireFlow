@@ -74,8 +74,13 @@ export function parseExcelMultiSheet(file: File): Promise<MultiSheetResult> {
 }
 
 /**
- * Detect if an Excel file has multiple data sheets (multi-role format).
- * Returns true if there are 2+ sheets with data (excluding "Summary").
+ * Detect if an Excel file has multiple data sheets with DIFFERENT headers
+ * (multi-role format where each sheet = one role).
+ *
+ * Returns false when:
+ * - Only 0-1 data sheets exist
+ * - All sheets share identical headers (Google Forms / duplicated data)
+ * - Sheet names suggest form responses ("Form responses", "Duplicate", etc.)
  */
 export function isMultiSheetExcel(file: File): Promise<boolean> {
   return new Promise((resolve) => {
@@ -84,24 +89,61 @@ export function isMultiSheetExcel(file: File): Promise<boolean> {
       .then((buffer) => {
         try {
           const workbook = XLSX.read(buffer);
-          let dataSheetCount = 0;
+          const SKIP_NAMES = ["summary"];
+          const FORM_PATTERNS = [
+            /^form\s*responses?/i,
+            /^duplicate/i,
+            /^sheet\d+$/i,
+          ];
+
+          const sheetHeaders: string[][] = [];
+          let formLikeSheets = 0;
 
           for (const sheetName of workbook.SheetNames) {
-            if (sheetName.toLowerCase() === "summary") continue;
+            if (SKIP_NAMES.includes(sheetName.toLowerCase())) continue;
             const ws = workbook.Sheets[sheetName];
             if (!ws) continue;
 
             const data = XLSX.utils.sheet_to_json<unknown[]>(ws, {
               header: 1,
             });
-            if (data.length >= 2) dataSheetCount++;
-            if (dataSheetCount >= 2) {
-              resolve(true);
-              return;
+            if (data.length < 2) continue;
+
+            const headers = (data[0] as unknown[]).map((h) =>
+              String(h ?? "")
+                .trim()
+                .toLowerCase(),
+            );
+            sheetHeaders.push(headers);
+
+            if (FORM_PATTERNS.some((p) => p.test(sheetName))) {
+              formLikeSheets++;
             }
           }
 
-          resolve(false);
+          // Need 2+ data sheets to be multi-role
+          if (sheetHeaders.length < 2) {
+            resolve(false);
+            return;
+          }
+
+          // If all sheets have identical headers, it's a form response (not multi-role)
+          const firstKey = sheetHeaders[0].join("|");
+          const allSameHeaders = sheetHeaders.every(
+            (h) => h.join("|") === firstKey,
+          );
+          if (allSameHeaders) {
+            resolve(false);
+            return;
+          }
+
+          // If most sheets look like form responses, not multi-role
+          if (formLikeSheets >= sheetHeaders.length - 1) {
+            resolve(false);
+            return;
+          }
+
+          resolve(true);
         } catch {
           resolve(false);
         }

@@ -1,96 +1,84 @@
 # HireFlow — Resume Context
 
-## Last Session: 2026-03-13
-## Status: Phase 5 COMPLETE + 2 new features added
+## Last Session: 2026-03-14
+## Status: UI overhaul + import fix + extraction fix
 
-## What Was Built This Session
+## What Was Done This Session
 
-### 1. Add Candidate Dialog (replaces inline row)
-- **File**: `src/components/candidates/add-candidate-dialog.tsx` (NEW)
-- **Two modes**: Manual entry OR Paste Link (auto-extract via Firecrawl + GPT-4o-mini)
-- **ShineBorder** animation on dialog (`@magicui/shine-border`)
-- **Confetti** animation on successful add (`canvas-confetti`)
-- **Flow**: Paste URL → Extract button → polls `/api/extraction-status/[batchId]` → pre-fills form → user reviews + saves
-- **Wired into**: `candidate-table.tsx` — "+" Add Candidate" button opens dialog instead of inline row
-- Inline add row (`CandidateAddRow`) still exists but is no longer triggered from the button
+### 1. Add Candidate Dialog — Fixed
+- **File**: `src/components/candidates/add-candidate-dialog.tsx`
+- Removed `relative overflow-hidden` from DialogContent — was clipping ShineBorder
+- Added explicit `className="rounded-xl"` on ShineBorder
+- Dialog now centers properly with animated border
 
-### 2. Multi-Role Excel Import (fixes "not yet supported" warning)
-- **Parser**: `src/lib/import/parseExcelMultiSheet.ts` (NEW) — reads all sheets, skips "Summary"
-- **Component**: `src/components/import/StepMultiRoleImport.tsx` (NEW)
-  - Fuzzy-matches sheet names to existing roles
-  - Shows sheet→role mapping table with row counts
-  - Auto-detects column mapping per sheet via `detectMapping()`
-  - Imports each sheet to its matched role sequentially
-  - Shows per-sheet results (imported/skipped/errors)
-- **Wired into**: `Step1Upload.tsx` calls `isMultiSheetExcel()` → if true, passes to `onMultiSheetParsed`
-- **ImportWizard.tsx** has new `multiSheets` state, renders `StepMultiRoleImport` when set
-- **Tested with**: `~/Downloads/applicants_by_role.xlsx` (8 role sheets, ~520 candidates)
+### 2. Extraction Pipeline — Fixed for OpenRouter
+- **File**: `src/lib/ai/openai.ts`
+- Added `OPENAI_BASE_URL` support (reads from env)
+- Auto-selects `openai/gpt-4o-mini` model when using OpenRouter
+- Replaced `zodResponseFormat` (OpenAI-only) with `json_object` mode + Zod validation
+- **File**: `.env.local` — Added `FIRECRAWL_API_KEY` + `OPENAI_BASE_URL=https://openrouter.ai/api/v1`
 
-### Installed UI Components
-- `src/components/ui/shine-border.tsx` — Magic UI shine border
-- `src/components/ui/confetti.tsx` — Magic UI confetti (canvas-confetti based)
+### 3. UI Overhaul — Warm Design System
+- **File**: `src/app/globals.css` — Complete rewrite of CSS variables
+  - Warm palette: page bg #F5F3EE, card white, borders #E8E5DF, sidebar #FAF9F6
+  - Accent blue #2563EB, text #111111, muted #888888
+  - Font: Inter directly via font-family (NOT CSS variable indirection)
+  - Radius bumped to 0.75rem base
+- **File**: `src/app/layout.tsx` — Switched from Geist to Inter + JetBrains Mono
+  - Uses `inter.className` (not `.variable`) to apply font directly to body
+- **File**: `src/components/layout/topbar.tsx` — Updated to use semantic tokens
+- **File**: `src/components/layout/app-sidebar.tsx` — Updated logo styling
+- **File**: `src/components/layout/app-shell.tsx` — Main area uses `bg-background p-6 md:p-8 lg:p-10`
+- **File**: `src/components/dashboard/dashboard-client.tsx` — Updated all hardcoded grays to tokens
+- **File**: `src/components/dashboard/role-card.tsx` — Updated to warm card style
+
+### 4. Excel Import — Google Forms Support
+- **File**: `src/lib/import/parseExcelMultiSheet.ts`
+  - `isMultiSheetExcel()` now returns FALSE when sheets have identical headers (Google Forms pattern)
+  - Detects form-like sheet names: "Form responses", "Duplicate", "Sheet1"
+- **File**: `src/lib/import/parseExcel.ts`
+  - Merges sheets with identical headers (deduplicates by email)
+  - Handles Google Forms response files with "Form responses 1" + "Duplicate" sheets
+- **File**: `src/lib/import/columnHeuristics.ts`
+  - Better keyword matching for Google Forms headers ("Full Name", "Phone Number (whatsapp)", etc.)
+  - Added IGNORE_KEYWORDS list to skip: timestamps, resume uploads, free-text, salary, experience, linkedin, location
+
+## STILL TODO / VERIFY
+1. **Font rendering** — Inter should now render via `inter.className`. Verify in browser.
+2. **Google Forms import** — Test with `~/Downloads/Job Application Form - Zeeel.Ai (Responses).xlsx`
+   - Should detect as single-sheet (not multi-role), merge 119 + 74 rows (dedup by email)
+   - Should auto-map: Full Name→name, Email Address→email, Phone Number→phone, Portfolio→portfolioUrl
+   - Role column ("Which role are you interested in applying for?") is ignored — user picks target role manually
+3. **Paste Link extraction** — Test with any URL. OpenRouter + Firecrawl should now work.
+4. **Remaining UI pages** — Only dashboard/sidebar/topbar were updated to warm palette. Other pages (role detail, master view, import wizard, settings) still use hardcoded gray-* classes.
 
 ## Build Status
-- ✅ Build passes clean (TypeScript + Next.js 16.1.6)
+- Build passes clean
 - Dev server running on port 3000
 
-## BUGS TO FIX (Next Session)
-
-### Add Candidate Dialog — "super buggy" + not centered
-- **File**: `src/components/candidates/add-candidate-dialog.tsx`
-- **Dialog base**: `src/components/ui/dialog.tsx` (uses `@base-ui/react/dialog`)
-- **Issues reported**: Not opening centered, "super buggy" (likely ShineBorder overlay or @base-ui positioning)
-- **Partial fix applied**: Changed default `sm:max-w-sm` → `sm:max-w-md` in dialog.tsx
-- **Still TODO**:
-  1. ShineBorder has `pointer-events-none absolute inset-0` — may block clicks or cause visual glitches. Test removing it or wrapping differently.
-  2. The `@base-ui/react` Dialog uses `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2` for centering — check if the ShineBorder's mask/padding breaks the layout.
-  3. Consider replacing ShineBorder with a simpler `ring` or `border` animation if it keeps causing issues.
-  4. Test the full flow: Manual save → confetti, Paste Link → Extract → Save → confetti.
-- **Reference screenshot**: User showed dialog rendering slightly off-center with visible form fields working.
-
-## Verification Needed
-1. **Add Candidate Dialog**: Open any role page → click "+ Add Candidate" → dialog should open with shine border
-   - Test Manual mode: fill fields → Save → confetti + candidate appears
-   - Test Paste Link mode: paste URL → Extract → wait for fields → Save → confetti
-2. **Multi-Role Import**: Go to /import → upload `applicants_by_role.xlsx` → should show multi-role mapping (not single-role selector)
-   - Verify sheet names auto-match to roles
-   - Import and check candidates appear in correct roles
-3. **Dashboard verification** (from Phase 5): Navigate to localhost:3000 → should show Dashboard (not old pipeline)
-
-## Phase 5 Execution (from previous session — all done)
-| Plan | Status |
-|------|--------|
-| 05-01: Data layer + @mention | DONE |
-| 05-02: Interactive dashboard | DONE |
-
-## All Phases Summary
-| Phase | Status |
-|-------|--------|
-| 1: Foundation | DONE |
-| 2: Candidate Core | DONE |
-| 3: Import Pipeline | DONE |
-| 4: AI Extraction | DONE |
-| 5: Collaboration & Dashboard | DONE |
-| 6: Responsive Polish | Not started |
-
-## Key Files Modified
+## Key Files Modified This Session
 | File | What |
 |------|------|
-| `src/components/candidates/add-candidate-dialog.tsx` | NEW — dialog with manual + link extraction modes |
-| `src/components/candidates/candidate-table.tsx` | Wired dialog, replaced inline add trigger |
-| `src/lib/import/parseExcelMultiSheet.ts` | NEW — multi-sheet Excel parser |
-| `src/components/import/StepMultiRoleImport.tsx` | NEW — multi-role import UI |
-| `src/components/import/Step1Upload.tsx` | Added multi-sheet detection + callback |
-| `src/components/import/ImportWizard.tsx` | Added multi-sheet state + routing |
-| `src/components/ui/shine-border.tsx` | NEW — Magic UI component |
-| `src/components/ui/confetti.tsx` | NEW — Magic UI component |
+| `src/app/globals.css` | Complete warm palette rewrite |
+| `src/app/layout.tsx` | Inter + JetBrains Mono fonts |
+| `src/components/layout/topbar.tsx` | Semantic token styling |
+| `src/components/layout/app-sidebar.tsx` | Logo update |
+| `src/components/layout/app-shell.tsx` | Warm bg + spacing |
+| `src/components/dashboard/dashboard-client.tsx` | Token-based styling |
+| `src/components/dashboard/role-card.tsx` | Warm card style |
+| `src/components/candidates/add-candidate-dialog.tsx` | Dialog centering fix |
+| `src/lib/ai/openai.ts` | OpenRouter support |
+| `src/lib/import/parseExcel.ts` | Multi-sheet merge for forms |
+| `src/lib/import/parseExcelMultiSheet.ts` | Smart multi-sheet detection |
+| `src/lib/import/columnHeuristics.ts` | Google Forms header matching |
+| `.env.local` | Added FIRECRAWL_API_KEY + OPENAI_BASE_URL |
 
 ## Tech Stack (DO NOT CHANGE)
 - Next.js 16 + React 19 + TypeScript 5
 - Drizzle ORM + PostgreSQL 16
 - shadcn/ui v4 (@base-ui/react)
 - Tailwind CSS 4
-- OpenAI SDK (gpt-4o-mini) + Firecrawl
+- OpenAI SDK via OpenRouter (gpt-4o-mini) + Firecrawl
 - Server actions (NOT API routes)
 - MOCK_USER auth (Clerk deferred)
 

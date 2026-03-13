@@ -102,26 +102,30 @@ export function DashboardClient({
     <div className="space-y-8">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          Dashboard
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Overview of your hiring pipeline
         </p>
       </div>
 
       {/* Stats bar — clickable cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {STAT_CARDS.map(({ label, icon: Icon, key, href }) => {
           const value = stats[key];
           return (
             <Link key={label} href={href}>
-              <Card className="border-gray-200 shadow-none cursor-pointer hover:border-blue-200 transition-colors h-full">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 text-gray-400 mb-2">
+              <Card className="border-border shadow-sm cursor-pointer hover:border-ring/30 hover:shadow-md transition-all h-full">
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-3">
                     <Icon size={15} />
-                    <span className="text-xs font-medium truncate">{label}</span>
+                    <span className="text-xs font-medium truncate">
+                      {label}
+                    </span>
                   </div>
                   <p
-                    className={`text-2xl font-semibold ${value > 0 ? "text-gray-900" : "text-gray-300"}`}
+                    className={`text-2xl font-bold ${value > 0 ? "text-foreground" : "text-muted-foreground/40"}`}
                   >
                     {value}
                   </p>
@@ -133,13 +137,13 @@ export function DashboardClient({
       </div>
 
       {/* Two-column: Roles + Activity Feed */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Role cards — 2/3 width */}
         <div className="lg:col-span-2">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">
+          <h2 className="mb-5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Roles
           </h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             {activeRoles.map((role) => (
               <RoleCard
                 key={role.id}
@@ -151,10 +155,10 @@ export function DashboardClient({
 
             {/* Create New Role card */}
             <Link href="/settings">
-              <Card className="border-dashed border-gray-300 shadow-none hover:border-blue-300 hover:bg-blue-50/30 transition-colors cursor-pointer h-full">
+              <Card className="border-dashed border-border shadow-none hover:border-ring/30 hover:bg-accent/50 transition-all cursor-pointer h-full">
                 <CardContent className="flex h-full min-h-[72px] items-center justify-center gap-2 p-5">
-                  <PlusCircle size={16} className="text-gray-400" />
-                  <span className="text-sm font-medium text-gray-400">
+                  <PlusCircle size={16} className="text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">
                     Create New Role
                   </span>
                 </CardContent>
@@ -165,7 +169,7 @@ export function DashboardClient({
 
         {/* Activity Feed — 1/3 width */}
         <div>
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">
+          <h2 className="mb-5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Recent Activity
           </h2>
           <ActivityFeed
@@ -177,7 +181,7 @@ export function DashboardClient({
 
       {/* Hired vs Rejected summary table */}
       <div>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-400">
+        <h2 className="mb-5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Hired vs Rejected by Role
         </h2>
         <HiredRejectedTable data={hireSummary} />

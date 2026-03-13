@@ -14,7 +14,9 @@ export function AppShell({ roles, children }: AppShellProps) {
       <AppSidebar roles={roles} />
       <SidebarInset>
         <Topbar />
-        <main className="flex-1 bg-gray-50/50 p-4 md:p-6">{children}</main>
+        <main className="flex-1 bg-background p-6 md:p-8 lg:p-10">
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

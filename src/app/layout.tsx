@@ -10,13 +10,14 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
-  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const mono = JetBrains_Mono({
-  variable: "--font-jetbrains",
   subsets: ["latin"],
+  display: "swap",
+  variable: "--font-mono-next",
 });
 
 export const metadata: Metadata = {
@@ -37,7 +38,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className="light">
-      <body className={`${inter.variable} ${mono.variable} antialiased`}>
+      <body className={`${inter.className} ${mono.variable} antialiased`}>
         <AppShell roles={activeRoles}>{children}</AppShell>
         <Toaster richColors position="bottom-right" />
       </body>

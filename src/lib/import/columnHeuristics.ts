@@ -6,21 +6,53 @@ import type { CandidateField, ColumnMapping } from "./types";
  * First match wins per field.
  */
 const FIELD_KEYWORDS: Record<Exclude<CandidateField, "ignore">, string[]> = {
-  name: ["name", "full name", "candidate", "applicant", "person"],
-  email: ["email", "e-mail", "mail"],
-  phone: ["phone", "mobile", "whatsapp", "contact", "number", "ph", "wa"],
-  instagram: ["instagram", "ig", "insta", "handle"],
+  name: ["full name", "name", "candidate", "applicant", "person"],
+  email: ["email", "e-mail", "mail address"],
+  phone: ["phone", "mobile", "whatsapp", "contact number", "ph no"],
+  instagram: ["instagram", "ig handle", "insta"],
   portfolioUrl: [
     "portfolio",
-    "link",
-    "url",
+    "professional portfolio",
     "website",
-    "work",
     "behance",
     "dribbble",
     "youtube",
   ],
 };
+
+/**
+ * Headers to always ignore — timestamps, file uploads, free-text responses,
+ * role/position columns (handled separately), location, experience, salary, etc.
+ */
+const IGNORE_KEYWORDS = [
+  "timestamp",
+  "submitted",
+  "date",
+  "resume",
+  "cv",
+  "upload",
+  "file",
+  "statement",
+  "why are you",
+  "cover letter",
+  "brief",
+  "role",
+  "position",
+  "applied for",
+  "job",
+  "vacancy",
+  "location",
+  "city",
+  "country",
+  "experience",
+  "years",
+  "compensation",
+  "ctc",
+  "salary",
+  "expected",
+  "notice period",
+  "linkedin",
+];
 
 /**
  * Auto-detect column mapping from spreadsheet headers using keyword heuristics.
@@ -36,6 +68,11 @@ export function detectMapping(headers: string[]): ColumnMapping {
   for (let index = 0; index < headers.length; index++) {
     const header = headers[index];
     const normalized = header.toLowerCase().trim();
+
+    // Skip columns that match ignore patterns (timestamps, uploads, etc.)
+    if (IGNORE_KEYWORDS.some((kw) => normalized.includes(kw))) {
+      continue;
+    }
 
     const entries = Object.entries(FIELD_KEYWORDS) as [
       Exclude<CandidateField, "ignore">,

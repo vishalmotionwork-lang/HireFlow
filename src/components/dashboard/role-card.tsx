@@ -24,7 +24,11 @@ const TIER_LABELS: Record<string, string> = {
   both: "Both",
 };
 
-export function RoleCard({ role, candidateCount, tierBreakdown }: RoleCardProps) {
+export function RoleCard({
+  role,
+  candidateCount,
+  tierBreakdown,
+}: RoleCardProps) {
   const TIER_ORDER = ["untiered", "junior", "senior", "both"] as const;
   const totalWithTier = TIER_ORDER.reduce(
     (sum, tier) => sum + (tierBreakdown[tier] ?? 0),
@@ -34,23 +38,30 @@ export function RoleCard({ role, candidateCount, tierBreakdown }: RoleCardProps)
   const tierSegments = TIER_ORDER.map((tier) => ({
     tier,
     count: tierBreakdown[tier] ?? 0,
-    pct: totalWithTier > 0 ? ((tierBreakdown[tier] ?? 0) / totalWithTier) * 100 : 0,
+    pct:
+      totalWithTier > 0
+        ? ((tierBreakdown[tier] ?? 0) / totalWithTier) * 100
+        : 0,
     color: TIER_COLORS[tier],
     label: TIER_LABELS[tier],
   })).filter((s) => s.count > 0);
 
   return (
-    <Card className="border-gray-200 shadow-none hover:border-gray-300 transition-colors">
-      <CardContent className="p-5">
+    <Card className="border-border shadow-sm hover:border-ring/30 hover:shadow-md transition-all">
+      <CardContent className="p-6">
         {/* Role header */}
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50">
-              <DynamicIcon name={role.icon} size={18} className="text-blue-500" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent">
+              <DynamicIcon
+                name={role.icon}
+                size={18}
+                className="text-accent-foreground"
+              />
             </div>
             <div>
-              <p className="font-medium text-gray-900">{role.name}</p>
-              <p className="text-xs text-gray-400">
+              <p className="font-semibold text-foreground">{role.name}</p>
+              <p className="text-xs text-muted-foreground">
                 {candidateCount}{" "}
                 {candidateCount === 1 ? "candidate" : "candidates"}
               </p>
@@ -60,8 +71,8 @@ export function RoleCard({ role, candidateCount, tierBreakdown }: RoleCardProps)
 
         {/* Tier breakdown mini-bar */}
         {totalWithTier > 0 && (
-          <div className="mb-3">
-            <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+          <div className="mb-4">
+            <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-secondary">
               {tierSegments.map((seg) => (
                 <div
                   key={seg.tier}
@@ -71,9 +82,9 @@ export function RoleCard({ role, candidateCount, tierBreakdown }: RoleCardProps)
                 />
               ))}
             </div>
-            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5">
               {tierSegments.map((seg) => (
-                <span key={seg.tier} className="text-xs text-gray-400">
+                <span key={seg.tier} className="text-xs text-muted-foreground">
                   <span
                     className={`inline-block h-1.5 w-1.5 rounded-full ${seg.color} mr-1 align-middle`}
                   />
@@ -85,22 +96,22 @@ export function RoleCard({ role, candidateCount, tierBreakdown }: RoleCardProps)
         )}
 
         {/* Quick action links */}
-        <div className="flex items-center gap-3 pt-1 border-t border-gray-100">
+        <div className="flex items-center gap-3 pt-3 border-t border-border">
           <Link
             href={`/roles/${role.slug}?addCandidate=true`}
-            className="text-xs font-medium text-gray-400 hover:text-blue-500 transition-colors"
+            className="text-xs font-medium text-muted-foreground hover:text-accent-foreground transition-colors"
           >
             Add
           </Link>
           <Link
             href="/import"
-            className="text-xs font-medium text-gray-400 hover:text-blue-500 transition-colors"
+            className="text-xs font-medium text-muted-foreground hover:text-accent-foreground transition-colors"
           >
             Import
           </Link>
           <Link
             href={`/roles/${role.slug}`}
-            className="text-xs font-medium text-blue-500 hover:text-blue-600 transition-colors ml-auto"
+            className="text-xs font-semibold text-accent-foreground hover:text-accent-foreground/80 transition-colors ml-auto"
           >
             View All
           </Link>

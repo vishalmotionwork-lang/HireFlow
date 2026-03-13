@@ -1,9 +1,9 @@
 import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
 });
 
 export interface ExtractionResult {
@@ -72,25 +72,45 @@ export async function extractProfileData(
 ): Promise<ExtractionResult> {
   const context = sourceUrl ? `\nSource URL: ${sourceUrl}` : "";
 
-  const completion = await openai.chat.completions.parse({
-    model: "gpt-4o-mini",
+  const jsonSchema = `Respond with ONLY valid JSON matching this schema:
+{
+  "name": string | null,
+  "email": string | null,
+  "phone": string | null,
+  "instagram": string | null,
+  "portfolioLinks": [{ "url": string, "sourceType": string, "label": string }],
+  "socialHandles": [{ "platform": string, "handle": string, "url": string }],
+  "bio": string | null,
+  "location": string | null,
+  "followerCount": number | null,
+  "contentNiche": string | null,
+  "confidence": { [field: string]: number }
+}`;
+
+  const model = process.env.OPENAI_BASE_URL?.includes("openrouter")
+    ? "openai/gpt-4o-mini"
+    : "gpt-4o-mini";
+
+  const completion = await openai.chat.completions.create({
+    model,
     temperature: 0.1,
     max_tokens: 1500,
     messages: [
-      { role: "system", content: EXTRACTION_SYSTEM_PROMPT },
+      {
+        role: "system",
+        content: `${EXTRACTION_SYSTEM_PROMPT}\n\n${jsonSchema}`,
+      },
       { role: "user", content: `${context}\n\nRaw text:\n${rawText}` },
     ],
-    response_format: zodResponseFormat(
-      CandidateExtractionSchema,
-      "candidate_extraction",
-    ),
+    response_format: { type: "json_object" },
   });
 
-  const parsed = completion.choices[0]?.message?.parsed;
-
-  if (!parsed) {
-    throw new Error("Empty or unparseable response from OpenAI");
+  const content = completion.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error("Empty response from AI");
   }
+
+  const parsed = CandidateExtractionSchema.parse(JSON.parse(content));
 
   return {
     name: parsed.name,

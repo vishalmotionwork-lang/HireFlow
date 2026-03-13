@@ -40,6 +40,7 @@ Progress: [█████████░] 60%
 | Phase 02 P04 | 3 | 2 tasks | 3 files |
 | Phase 02-candidate-core P03 | 3 | 2 tasks | 3 files |
 | Phase 03-import-pipeline P02 | 2 | 2 tasks | 2 files |
+| Phase 03-import-pipeline P01 | 3 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,9 @@ Recent decisions affecting current work:
 - Merge logic: fills null fields only, never overwrites non-null existing data, sets isDuplicate=true
 - importBatch.importedCount = new inserts only; mergedCount separate in ImportResult for clarity
 - TriangleAlert (lucide) wrapped in span with title attribute — lucide SVGs don't accept title prop directly
+- [Phase 03-01]: PapaParse requires namespace import (import * as Papa) — @types/papaparse has no default export
+- [Phase 03-01]: Zod v4 uses result.error.issues not result.error.errors for field-level errors
+- [Phase 03-01]: SheetJS 0.20.3 installed from cdn.sheetjs.com CDN tarball — npm registry has stale 0.18.5
 
 ### Pending Todos
 

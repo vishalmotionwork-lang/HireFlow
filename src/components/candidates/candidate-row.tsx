@@ -1,5 +1,6 @@
 "use client";
 
+import { TriangleAlert } from "lucide-react";
 import { StatusBadge } from "@/components/candidates/status-badge";
 import { TierBadge } from "@/components/candidates/tier-badge";
 import type { Candidate } from "@/types";
@@ -67,8 +68,17 @@ export function CandidateRow({
     >
       {/* Name */}
       <td className="px-3 py-2.5 max-w-[160px]">
-        <span className="font-medium text-sm text-gray-900 truncate block">
-          {candidate.name}
+        <span className="font-medium text-sm text-gray-900 truncate flex items-center gap-1 min-w-0">
+          {candidate.isDuplicate && (
+            <span
+              title="Potential duplicate"
+              aria-label="Potential duplicate"
+              className="flex-shrink-0"
+            >
+              <TriangleAlert size={14} className="text-amber-500" />
+            </span>
+          )}
+          <span className="truncate">{candidate.name}</span>
         </span>
       </td>
 

@@ -46,7 +46,7 @@ Plans:
 - [x] 02-02-PLAN.md — Candidate UI components (table, row, status/tier badges, inline add, edit-field) — DONE 2026-03-13
 - [x] 02-03-PLAN.md — Profile drawer + status history timeline + click-to-edit wiring — DONE 2026-03-13
 - [x] 02-04-PLAN.md — Filter bar + search + pagination + role page data wiring — DONE 2026-03-13
-- [ ] 02-05-PLAN.md — Master view + global search + deferred requirement handling
+- [x] 02-05-PLAN.md — Master view + global search + deferred requirement handling — DONE 2026-03-13
 
 ### Phase 3: Import Pipeline
 **Goal**: Team can migrate their existing spreadsheets into HireFlow — uploading Excel/CSV, mapping columns, validating rows, detecting duplicates, and getting a clear import summary

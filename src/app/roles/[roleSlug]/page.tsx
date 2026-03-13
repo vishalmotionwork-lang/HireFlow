@@ -1,17 +1,59 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Inbox } from "lucide-react";
 import { db } from "@/db";
 import { roles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { DynamicIcon } from "@/components/layout/dynamic-icon";
+import { CandidateTable } from "@/components/candidates/candidate-table";
+import { CandidateFilterBar } from "@/components/candidates/candidate-filter-bar";
+import { CandidatePagination } from "@/components/candidates/candidate-pagination";
+import { getCandidates } from "@/lib/queries/candidates";
+import { CANDIDATE_STATUSES } from "@/types";
+import type { CandidateStatus } from "@/types";
 
 interface RolePageProps {
   params: Promise<{ roleSlug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function RolePage({ params }: RolePageProps) {
+export default async function RolePage({ params, searchParams }: RolePageProps) {
+  // Next.js 16: both params and searchParams must be awaited
   const { roleSlug } = await params;
+  const sp = await searchParams;
+
+  // Parse filter params from URL search params
+  const page = Math.max(1, Number(sp.page) || 1);
+
+  const rawStatus = typeof sp.status === "string" ? sp.status : "";
+  const status: CandidateStatus[] = rawStatus
+    ? (rawStatus
+        .split(",")
+        .filter((s) =>
+          (CANDIDATE_STATUSES as readonly string[]).includes(s)
+        ) as CandidateStatus[])
+    : [];
+
+  const rawTier = typeof sp.tier === "string" ? sp.tier : null;
+  const tier =
+    rawTier === "junior" || rawTier === "senior" || rawTier === "both" || rawTier === "untiered"
+      ? rawTier
+      : null;
+
+  const rawSort = typeof sp.sort === "string" ? sp.sort : "newest";
+  const sort: "newest" | "oldest" | "name_asc" | "updated" =
+    rawSort === "oldest" || rawSort === "name_asc" || rawSort === "updated"
+      ? rawSort
+      : "newest";
+
+  const q = typeof sp.q === "string" ? sp.q : "";
+
+  const rawDate = typeof sp.date === "string" ? sp.date : null;
+  const dateRange: "today" | "week" | "month" | null =
+    rawDate === "today" || rawDate === "week" || rawDate === "month"
+      ? rawDate
+      : null;
+
+  const duplicatesOnly = sp.duplicates === "true";
 
   // Fetch the current role
   const [role] = await db
@@ -31,8 +73,20 @@ export default async function RolePage({ params }: RolePageProps) {
     .where(eq(roles.isActive, true))
     .orderBy(roles.sortOrder);
 
+  // Fetch filtered, paginated candidates for this role
+  const { candidates, total, totalPages } = await getCandidates({
+    roleId: role.id,
+    page,
+    status,
+    tier,
+    sort,
+    q,
+    dateRange,
+    duplicatesOnly,
+  });
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Role header */}
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50">
@@ -41,7 +95,9 @@ export default async function RolePage({ params }: RolePageProps) {
         <div>
           <h1 className="text-xl font-semibold text-gray-900">
             {role.name}{" "}
-            <span className="text-sm font-normal text-gray-400">(0)</span>
+            <span className="text-sm font-normal text-gray-400">
+              ({total})
+            </span>
           </h1>
           {role.description && (
             <p className="text-xs text-gray-400">{role.description}</p>
@@ -66,16 +122,24 @@ export default async function RolePage({ params }: RolePageProps) {
         ))}
       </div>
 
-      {/* Empty state */}
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white py-20 text-center">
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-          <Inbox size={22} className="text-gray-400" />
-        </div>
-        <h3 className="text-sm font-medium text-gray-700">No candidates yet</h3>
-        <p className="mt-1 max-w-xs text-xs text-gray-400">
-          Candidates will appear here once imported or added manually.
-        </p>
-      </div>
+      {/* Filter bar — between tab strip and table */}
+      <CandidateFilterBar showing={candidates.length} total={total} />
+
+      {/* Candidates table */}
+      <CandidateTable
+        candidates={candidates}
+        total={total}
+        roleId={role.id}
+        currentPage={page}
+        totalPages={totalPages}
+      />
+
+      {/* Pagination — below the table */}
+      <CandidatePagination
+        currentPage={page}
+        totalPages={totalPages}
+        total={total}
+      />
     </div>
   );
 }

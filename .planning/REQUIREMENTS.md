@@ -18,10 +18,10 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Roles
 
 - [x] **ROLE-01**: Default roles seeded on first run: Video Editor, Writer/Scriptwriter, Designer, AI/Tech
-- [ ] **ROLE-02**: User can create custom roles from Settings with name, icon, and description
+- [x] **ROLE-02**: User can create custom roles from Settings with name, icon, and description
 - [ ] **ROLE-03**: Each role has its own dedicated candidate list view at /roles/[slug]
 - [ ] **ROLE-04**: Role switcher tab strip at top of list view for quick navigation between roles
-- [ ] **ROLE-05**: User can edit or deactivate custom roles (cannot delete roles with candidates)
+- [x] **ROLE-05**: User can edit or deactivate custom roles (cannot delete roles with candidates)
 
 ### Candidates
 
@@ -175,10 +175,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FOUND-04 | Phase 1 | Pending |
 | FOUND-05 | Phase 1 | Pending |
 | ROLE-01 | Phase 1 | Complete |
-| ROLE-02 | Phase 1 | Pending |
+| ROLE-02 | Phase 1 | Complete |
 | ROLE-03 | Phase 2 | Pending |
 | ROLE-04 | Phase 2 | Pending |
-| ROLE-05 | Phase 1 | Pending |
+| ROLE-05 | Phase 1 | Complete |
 | CAND-01 | Phase 2 | Pending |
 | CAND-02 | Phase 2 | Pending |
 | CAND-03 | Phase 2 | Pending |

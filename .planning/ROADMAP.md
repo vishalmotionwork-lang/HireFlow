@@ -6,7 +6,7 @@ Six phases that build from foundation to a fully usable hiring CRM. Phase 1 esta
 
 ## Phases
 
-- [ ] **Phase 1: Foundation** - Next.js + Supabase + schema + auth + app shell
+- [x] **Phase 1: Foundation** - Next.js + Supabase + schema + auth + app shell
 - [ ] **Phase 2: Candidate Core** - Role views, candidate CRUD, pipeline status, tiers, search, filter
 - [ ] **Phase 3: Import Pipeline** - Spreadsheet import, column mapping, duplicate detection, manual entry
 - [ ] **Phase 4: AI Extraction** - Portfolio URL scraping, structured extraction, review queue
@@ -28,7 +28,7 @@ Six phases that build from foundation to a fully usable hiring CRM. Phase 1 esta
 **Plans:** 3 plans
 - [x] 01-01-PLAN.md — Project scaffold + database schema + seed (Wave 1) — DONE 2026-03-13
 - [x] 01-02-PLAN.md — App shell: sidebar, topbar, layout, all page skeletons (Wave 2) — DONE 2026-03-13
-- [x] 01-03-PLAN.md — Settings page: role CRUD with icon picker + human verification (Wave 2) — Tasks 1+2 DONE 2026-03-13, awaiting Task 3 human verification
+- [x] 01-03-PLAN.md — Settings page: role CRUD with icon picker + human verification (Wave 2) — DONE 2026-03-13
 
 ### Phase 2: Candidate Core
 **Goal**: Team can view candidates organized by role, manage individual profiles, move candidates through the 12-stage pipeline, assign tiers, and search/filter within role views — covering the full daily-use workflow
@@ -93,7 +93,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 2/3 | In progress | - |
+| 1. Foundation | 3/3 | Complete | 2026-03-13 |
 | 2. Candidate Core | 0/TBD | Not started | - |
 | 3. Import Pipeline | 0/TBD | Not started | - |
 | 4. AI Extraction | 0/TBD | Not started | - |

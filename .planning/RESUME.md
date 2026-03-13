@@ -34,6 +34,20 @@
 - ✅ Build passes clean (TypeScript + Next.js 16.1.6)
 - Dev server running on port 3000
 
+## BUGS TO FIX (Next Session)
+
+### Add Candidate Dialog — "super buggy" + not centered
+- **File**: `src/components/candidates/add-candidate-dialog.tsx`
+- **Dialog base**: `src/components/ui/dialog.tsx` (uses `@base-ui/react/dialog`)
+- **Issues reported**: Not opening centered, "super buggy" (likely ShineBorder overlay or @base-ui positioning)
+- **Partial fix applied**: Changed default `sm:max-w-sm` → `sm:max-w-md` in dialog.tsx
+- **Still TODO**:
+  1. ShineBorder has `pointer-events-none absolute inset-0` — may block clicks or cause visual glitches. Test removing it or wrapping differently.
+  2. The `@base-ui/react` Dialog uses `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2` for centering — check if the ShineBorder's mask/padding breaks the layout.
+  3. Consider replacing ShineBorder with a simpler `ring` or `border` animation if it keeps causing issues.
+  4. Test the full flow: Manual save → confetti, Paste Link → Extract → Save → confetti.
+- **Reference screenshot**: User showed dialog rendering slightly off-center with visible form fields working.
+
 ## Verification Needed
 1. **Add Candidate Dialog**: Open any role page → click "+ Add Candidate" → dialog should open with shine border
    - Test Manual mode: fill fields → Save → confetti + candidate appears

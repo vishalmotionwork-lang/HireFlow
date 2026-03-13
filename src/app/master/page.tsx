@@ -53,6 +53,11 @@ export default async function MasterPage({ searchParams }: MasterPageProps) {
 
   const duplicatesOnly = sp.duplicates === "true";
 
+  const rawSource = typeof sp.source === "string" ? sp.source : "";
+  const importSource: string[] = rawSource
+    ? rawSource.split(",").filter(Boolean)
+    : [];
+
   // Fetch all active roles for role name lookup
   const allRoles = await db
     .select()
@@ -75,6 +80,7 @@ export default async function MasterPage({ searchParams }: MasterPageProps) {
     q,
     dateRange,
     duplicatesOnly,
+    importSource,
   });
 
   return (

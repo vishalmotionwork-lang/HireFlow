@@ -16,7 +16,10 @@ interface RolePageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function RolePage({ params, searchParams }: RolePageProps) {
+export default async function RolePage({
+  params,
+  searchParams,
+}: RolePageProps) {
   // Next.js 16: both params and searchParams must be awaited
   const { roleSlug } = await params;
   const sp = await searchParams;
@@ -29,13 +32,16 @@ export default async function RolePage({ params, searchParams }: RolePageProps) 
     ? (rawStatus
         .split(",")
         .filter((s) =>
-          (CANDIDATE_STATUSES as readonly string[]).includes(s)
+          (CANDIDATE_STATUSES as readonly string[]).includes(s),
         ) as CandidateStatus[])
     : [];
 
   const rawTier = typeof sp.tier === "string" ? sp.tier : null;
   const tier =
-    rawTier === "junior" || rawTier === "senior" || rawTier === "both" || rawTier === "untiered"
+    rawTier === "junior" ||
+    rawTier === "senior" ||
+    rawTier === "both" ||
+    rawTier === "untiered"
       ? rawTier
       : null;
 
@@ -54,6 +60,11 @@ export default async function RolePage({ params, searchParams }: RolePageProps) 
       : null;
 
   const duplicatesOnly = sp.duplicates === "true";
+
+  const rawSource = typeof sp.source === "string" ? sp.source : "";
+  const importSource: string[] = rawSource
+    ? rawSource.split(",").filter(Boolean)
+    : [];
 
   // Fetch the current role
   const [role] = await db
@@ -83,6 +94,7 @@ export default async function RolePage({ params, searchParams }: RolePageProps) 
     q,
     dateRange,
     duplicatesOnly,
+    importSource,
   });
 
   return (
@@ -95,9 +107,7 @@ export default async function RolePage({ params, searchParams }: RolePageProps) 
         <div>
           <h1 className="text-xl font-semibold text-gray-900">
             {role.name}{" "}
-            <span className="text-sm font-normal text-gray-400">
-              ({total})
-            </span>
+            <span className="text-sm font-normal text-gray-400">({total})</span>
           </h1>
           {role.description && (
             <p className="text-xs text-gray-400">{role.description}</p>

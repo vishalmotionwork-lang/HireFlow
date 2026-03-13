@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Search, ChevronDown, X } from "lucide-react";
+import { Search, ChevronDown, X, SlidersHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -36,6 +36,14 @@ const SORT_OPTIONS = [
   { value: "updated", label: "Last Updated" },
 ] as const;
 
+const SOURCE_OPTIONS = [
+  { value: "manual", label: "Manual" },
+  { value: "excel", label: "Excel" },
+  { value: "csv", label: "CSV" },
+  { value: "paste", label: "Paste" },
+  { value: "url", label: "URL" },
+] as const;
+
 interface CandidateFilterBarProps {
   showing: number;
   total: number;
@@ -63,6 +71,14 @@ export function CandidateFilterBar({
   const selectedDate = searchParams.get("date") ?? "";
   const selectedSort = searchParams.get("sort") ?? "newest";
   const duplicatesOnly = searchParams.get("duplicates") === "true";
+
+  // Import source multi-select (comma-separated, same pattern as status)
+  const rawSource = searchParams.get("source") ?? "";
+  const selectedSources: string[] = rawSource
+    ? rawSource
+        .split(",")
+        .filter((s) => SOURCE_OPTIONS.some((o) => o.value === s))
+    : [];
 
   // Search — local state + debounce
   const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "");
@@ -108,6 +124,18 @@ export function CandidateFilterBar({
     setFilter("status", newValue);
   }
 
+  /** Toggle an import source in the comma-separated source list */
+  function toggleSource(source: string) {
+    const current = new Set(selectedSources);
+    if (current.has(source)) {
+      current.delete(source);
+    } else {
+      current.add(source);
+    }
+    const newValue = Array.from(current).join(",") || null;
+    setFilter("source", newValue);
+  }
+
   /** Clear all active filters */
   function clearAll() {
     setSearchInput("");
@@ -121,9 +149,13 @@ export function CandidateFilterBar({
     !!selectedDate,
     duplicatesOnly,
     !!searchParams.get("q"),
+    selectedSources.length > 0,
   ].filter(Boolean).length;
 
   const hasActiveFilters = activeFilterCount > 0;
+
+  // Mobile filter toggle
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Current sort label
   const sortLabel =
@@ -136,8 +168,43 @@ export function CandidateFilterBar({
 
   return (
     <div className="space-y-2">
-      {/* Main filter row */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Mobile: search + filter toggle */}
+      <div className="flex items-center gap-2 md:hidden">
+        <div className="relative flex-1">
+          <Search
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+          />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search..."
+            className="w-full rounded-md border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
+          />
+        </div>
+        <button
+          onClick={() => setFiltersOpen((v) => !v)}
+          className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+            filtersOpen || hasActiveFilters
+              ? "border-blue-300 bg-blue-50 text-blue-700"
+              : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          <SlidersHorizontal size={14} />
+          Filters
+          {activeFilterCount > 0 && (
+            <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-100 px-1 text-xs font-semibold text-blue-700">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Main filter row — always visible on desktop, toggleable on mobile */}
+      <div
+        className={`flex-wrap items-center gap-2 ${filtersOpen ? "flex" : "hidden md:flex"}`}
+      >
         {/* 1. Status multi-select */}
         <DropdownMenu>
           <DropdownMenuTrigger className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
@@ -253,7 +320,31 @@ export function CandidateFilterBar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* 5. Duplicates toggle */}
+        {/* 5. Import source multi-select */}
+        <DropdownMenu>
+          <DropdownMenuTrigger className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            Source
+            {selectedSources.length > 0 && (
+              <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-100 px-1 text-xs font-semibold text-blue-700">
+                {selectedSources.length}
+              </span>
+            )}
+            <ChevronDown size={14} className="text-gray-400" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-44">
+            {SOURCE_OPTIONS.map((option) => (
+              <DropdownMenuCheckboxItem
+                key={option.value}
+                checked={selectedSources.includes(option.value)}
+                onCheckedChange={() => toggleSource(option.value)}
+              >
+                {option.label}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* 6. Duplicates toggle */}
         <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors select-none">
           <input
             type="checkbox"

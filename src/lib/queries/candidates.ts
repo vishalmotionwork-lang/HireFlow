@@ -23,6 +23,7 @@ interface GetCandidatesParams {
   q?: string;
   dateRange?: "today" | "week" | "month" | null;
   duplicatesOnly?: boolean;
+  importSource?: string[];
 }
 
 /**
@@ -67,12 +68,16 @@ export async function getCandidates({
   q = "",
   dateRange = null,
   duplicatesOnly = false,
+  importSource = [],
 }: GetCandidatesParams) {
   const PAGE_SIZE = 50;
   const offset = (page - 1) * PAGE_SIZE;
 
   // Build conditions — guard every condition to avoid Drizzle undefined pitfall
   const conditions = [];
+
+  // Always exclude soft-deleted candidates
+  conditions.push(eq(candidates.isDeleted, false));
 
   if (roleId) {
     conditions.push(eq(candidates.roleId, roleId));
@@ -93,8 +98,8 @@ export async function getCandidates({
       or(
         ilike(candidates.name, search),
         ilike(candidates.email, search),
-        ilike(candidates.phone, search)
-      )!
+        ilike(candidates.phone, search),
+      )!,
     );
   }
 
@@ -105,6 +110,10 @@ export async function getCandidates({
 
   if (duplicatesOnly) {
     conditions.push(eq(candidates.isDuplicate, true));
+  }
+
+  if (importSource && importSource.length > 0) {
+    conditions.push(inArray(candidates.source, importSource));
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

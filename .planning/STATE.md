@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Team can import candidates in bulk, review portfolios by role, and move candidates through the hiring pipeline — without switching between spreadsheets, emails, and messaging apps.
-**Current focus:** Phase 4 — AI Extraction (3 of 3 plans complete — awaiting human verify).
+**Current focus:** Phase 5 — Pipeline Board (next phase).
 
 ## Current Position
 
-Phase: 4 of 6 (AI Extraction) — IN PROGRESS (checkpoint)
-Plan: 3 of 3 in current phase — 04-03 built, awaiting human verify
-Status: 04-03 built — ExtractionReviewList, ExtractionReviewModal, ContactParseField, ImportWizard review step wired. Checkpoint: human must verify full AI extraction flow end-to-end.
-Last activity: 2026-03-13 — 04-03 complete: ExtractionReviewList.tsx, ExtractionReviewModal.tsx, ContactParseField.tsx, ImportWizard.tsx review step wired
+Phase: 4 of 6 (AI Extraction) — COMPLETE
+Plan: 3 of 3 in current phase — all plans complete, human verify approved 2026-03-13
+Status: Phase 4 complete — full AI extraction pipeline: Firecrawl scrape + OpenAI extraction + async polling + review modal with confidence badges + ImportWizard end-to-end flow verified by user.
+Last activity: 2026-03-13 — 04-03 human verify approved. Phase 4 AI Extraction complete.
 
-Progress: [█████████░] 87%
+Progress: [██████████] 92%
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Progress: [█████████░] 87%
 | Phase 04-ai-extraction P01 | 5 | 2 tasks | 4 files |
 | Phase 04-ai-extraction P02 | 7 | 2 tasks | 3 files |
 | Phase 04 P03 | 6 | 2 tasks | 6 files |
+| Phase 04 Complete (human verify) | - | checkpoint approved | - |
 
 ## Accumulated Context
 
@@ -135,6 +136,7 @@ Recent decisions affecting current work:
 - [Phase 04-02]: Review Results state stored in ImportWizard useState — Plan 03 consumes extractionDrafts array to open review modal
 - [Phase 04]: Cast ExtractionStatusDraft as ExtractionDraft — same polling API shape, avoids redundant DB roundtrip
 - [Phase 04]: fieldConfidence added to polling API so review modal renders per-field confidence badges without a separate fetch
+- [Phase 04 complete]: Full extraction pipeline verified end-to-end by user — URL paste -> async progress -> review modal with confidence badges -> confirm/skip -> candidate created
 
 ### Pending Todos
 
@@ -149,5 +151,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 04-02-PLAN.md — URL paste UI and extraction progress wired into ImportWizard. StepUrlPaste, ExtractionProgress, ImportWizard URL tab all done.
-Resume file: Run /gsd:execute-phase 04-ai-extraction to execute 04-03 (review modal)
+Stopped at: Completed 04-03-PLAN.md — ExtractionReviewList, ExtractionReviewModal, ContactParseField, ImportWizard review step wired. Human verify approved. Phase 4 complete.
+Resume file: Run /gsd:execute-phase 05-pipeline-board to begin Phase 5

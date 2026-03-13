@@ -76,9 +76,9 @@ Plans:
   4. Pasting raw text containing contact info (phone number, email, Instagram handle, YouTube URL) into a candidate field automatically detects and parses each contact type into the correct field
 **Plans:** 3/3 plans complete
 Plans:
-- [ ] 04-01-PLAN.md — Firecrawl scrape wrapper + async extraction pipeline + polling endpoint (Wave 1)
-- [ ] 04-02-PLAN.md — URL paste input + extraction progress UI (Wave 2)
-- [ ] 04-03-PLAN.md — Extraction review modal + contact parse field + human verify (Wave 2)
+- [x] 04-01-PLAN.md — Firecrawl scrape wrapper + async extraction pipeline + polling endpoint (Wave 1) — DONE 2026-03-13
+- [x] 04-02-PLAN.md — URL paste input + extraction progress UI (Wave 2) — DONE 2026-03-13
+- [x] 04-03-PLAN.md — Extraction review modal + contact parse field + human verify (Wave 2) — DONE 2026-03-13
 
 ### Phase 5: Collaboration and Dashboard
 **Goal**: Team can log rejection reasons, compose custom rejection messages, comment on candidates with @mentions, and see hiring stats on the dashboard landing page

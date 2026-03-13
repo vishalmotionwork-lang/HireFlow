@@ -10,6 +10,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { STATUS_LABELS } from "@/lib/constants";
 import { CANDIDATE_STATUSES } from "@/types";
@@ -203,7 +204,11 @@ export function CandidateFilterBar({
 
       {/* Main filter row — always visible on desktop, toggleable on mobile */}
       <div
-        className={`flex-wrap items-center gap-2 ${filtersOpen ? "flex" : "hidden md:flex"}`}
+        className={cn(
+          filtersOpen
+            ? "flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-2"
+            : "hidden md:flex md:flex-wrap md:items-center md:gap-2",
+        )}
       >
         {/* 1. Status multi-select */}
         <DropdownMenu>
@@ -218,7 +223,7 @@ export function CandidateFilterBar({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="start"
-            className="w-52 max-h-72 overflow-y-auto"
+            className="w-52 max-h-72 overflow-y-auto max-w-[calc(100vw-32px)]"
           >
             {CANDIDATE_STATUSES.map((status) => (
               <DropdownMenuCheckboxItem
@@ -233,7 +238,7 @@ export function CandidateFilterBar({
         </DropdownMenu>
 
         {/* 2. Tier pill buttons */}
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           {TIER_OPTIONS.map((option) => {
             const isActive =
               option.value === "all"
@@ -331,7 +336,10 @@ export function CandidateFilterBar({
             )}
             <ChevronDown size={14} className="text-gray-400" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-44">
+          <DropdownMenuContent
+            align="start"
+            className="w-44 max-w-[calc(100vw-32px)]"
+          >
             {SOURCE_OPTIONS.map((option) => (
               <DropdownMenuCheckboxItem
                 key={option.value}
@@ -374,6 +382,16 @@ export function CandidateFilterBar({
             className="w-52 rounded-md border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
           />
         </div>
+
+        {/* Done button — closes filter panel on mobile */}
+        {filtersOpen && (
+          <button
+            onClick={() => setFiltersOpen(false)}
+            className="mt-1 w-full rounded-md bg-gray-100 py-2 text-sm font-medium text-gray-700 md:hidden"
+          >
+            Done
+          </button>
+        )}
       </div>
 
       {/* 7. Active filter summary row */}

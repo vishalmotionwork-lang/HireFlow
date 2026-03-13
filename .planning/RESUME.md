@@ -1,86 +1,98 @@
 # HireFlow — Resume Context
 
 ## Last Session: 2026-03-13
-## Status: PHASES 3-4 COMPLETE — Phase 5 (AI Extraction) + Phase 6 (Responsive) remaining
+## Status: Phase 5 (Collaboration & Dashboard) — IN PROGRESS, fixing UI issues
 
-## What Was Built This Session
+## Current Blocker
 
-### Phase 3: Core CRM Completion (ALL 5 PLANS DONE)
-- **3.1 Schema Migration**: 9 new candidate columns (portfolioLinks, socialHandles, rejectionReason, rejectionMessage, rejectionMarkedAt, isDeleted, duplicateOfId, duplicateAction, source, lastModifiedBy), 2 new comment columns (mentions, authorAvatar), new `activities` table. DB pushed.
-- **3.2 Rejection + Bulk**: RejectionModal (reason chips + message compose), StatusBadge intercepts rejection, BulkActionBar (checkbox column + sticky bar for multi-select status change)
-- **3.3 Comments**: CommentThread component (post, edit within 5min, threaded display), CRUD server actions
-- **3.4 Dashboard**: Real stats from DB (getDashboardStats, getRoleCandidateCounts), ActivityFeed component, two-column layout (roles + feed)
-- **3.5 Duplicates**: checkForDuplicates utility, DuplicateBanner in drawer, MergeModal (side-by-side comparison), mergeCandidates server action (combines contacts, moves events/comments, soft-deletes source)
-
-### Phase 4: Import Pipeline (ALL PLANS DONE)
-- Already built by prior session: parseCsv, parseExcel, columnHeuristics, normalizeRows, validateRows
-- Already built by prior session: ImportWizard (4-step reducer + session persistence), Step1Upload (file drag-drop + paste), Step2Mapping (auto-detect + preview), Step3Validate (row validation + duplicate detection + per-row decisions), Step4Summary
-- Server actions: detectDuplicates (batch lookup), importCandidates (insert/merge/skip with transaction)
+Dashboard UI has issues after Plan 05-02 execution:
+1. **Stale `.next` cache** — cleared (`rm -rf .next`). Caused hydration error referencing non-existent `CandidateCard.tsx` in `pipeline/` directory with DnD attributes. User needs to restart dev server + hard refresh.
+2. **"Ratings" showing on dashboard** — user reported unexpected ratings UI. Likely the Star icon used for "Shortlisted" stat card looks like a rating. Need user screenshot after cache clear to confirm.
+3. **Bad fonts** — Geist font loads via `next/font/google` in layout.tsx. May be a cache issue or a CSS problem. Check after restart.
 
 ## What To Do Next
 
-### Phase 5: AI Extraction Engine (3 plans)
-#### Plan 5.1: Extraction Infrastructure
-- Install `@anthropic-ai/sdk`
-- Create `src/lib/ai/extract.ts` — orchestrator
-- Create `src/lib/ai/claude.ts` — Claude API wrapper with extraction prompt
-- Create `src/lib/ai/textParser.ts` — regex contact parser (email, phone, IG, URLs)
-- Create `src/lib/ai/confidence.ts` — platform-specific confidence scoring
-- Create platform detector (Instagram, YouTube, Behance, LinkedIn, etc.)
-- Update extractionDrafts table schema if needed
+1. **Restart dev server**: `cd ~/HireFlow && npm run dev`
+2. **Hard refresh browser**: Cmd+Shift+R at http://localhost:3000
+3. **Take screenshot** of dashboard after fresh load — compare to issues reported
+4. **Fix any remaining visual issues** based on user feedback
+5. **Complete human-verify checkpoint** (Task 2 of Plan 05-02) — 9 verification steps
+6. **Run phase verification** after checkpoint approved
 
-#### Plan 5.2: Extraction Queue + Progress UI
-- Extraction queue using extractionDrafts table (no Redis)
-- `ExtractionQueue` component (progress bar, status per URL)
-- Extraction worker (processes pending jobs)
-- Wire "Extract info" button on candidate profile
-- Batch extraction after import
+## Phase 5 Execution Progress
 
-#### Plan 5.3: Extraction Review Screen
-- `ExtractionReviewCard` (confidence badges, editable fields, confirm/skip)
-- Wire into post-import flow + single-candidate extraction
+| Plan | Status | Commits |
+|------|--------|---------|
+| 05-01: Data layer + @mention foundation | DONE | 26d7526, 362190b |
+| 05-02: Interactive dashboard (Task 1/2) | Code DONE, checkpoint PENDING | ccd58ba |
 
-### Phase 6: Responsive Polish (2 plans)
-#### Plan 6.1: Mobile Layout
-- Sidebar → hamburger, drawer → full-screen, cards → single column, filter bar → collapsible
+### 05-01 Built (Data Layer)
+- `formatRelativeTime` shared utility
+- `getHiredRejectedByRole` query (tier breakdown, avg days to hire)
+- Import source filter end-to-end (SRCH-06)
+- @mention support in CommentThread (COLB-03)
 
-#### Plan 6.2: Polish + Error States
-- Empty states, loading skeletons, error boundaries, toast notifications, keyboard shortcuts
+### 05-02 Built (Dashboard UI)
+- DashboardClient wrapper (`"use client"`, manages drawer + 30s auto-refresh)
+- Clickable stats bar → Link to `/master?status=X` (DASH-02)
+- RoleCard with tier breakdown mini-bar + Add/Import/View All quick actions (DASH-03)
+- HiredRejectedTable per-role summary (DASH-05)
+- ActivityFeed items clickable → opens CandidateDrawer (DASH-06, PIPE-05)
+- 30s auto-refresh via `router.refresh()` (DASH-06)
 
-## Key Files Created This Session
+### Human Verify Checklist (9 steps — NOT YET VERIFIED)
+1. Dashboard is landing page
+2. Stats cards clickable → filtered master view
+3. Role cards show tier mini-bar + quick actions
+4. Hired/Rejected table renders
+5. Activity feed items open candidate drawer
+6. 30s auto-refresh in network tab
+7. @mention comments work
+8. Import source filter in filter bar
+9. Rejection flow modal on status change
+
+## GSD Executor State
+
+- Phase: 05-collaboration-dashboard
+- Plan: 02 (wave 2)
+- Task: 2 of 2 (checkpoint:human-verify) — AWAITING USER
+- Agent ID: a09f4980b23a90574 (DO NOT resume — spawn fresh continuation agent)
+
+## All Phases Summary
+
+| Phase | Plans | Status |
+|-------|-------|--------|
+| 1: Foundation | 3/3 | DONE |
+| 2: Candidate Core | 5/5 | DONE |
+| 3: Import Pipeline | 4/4 | DONE |
+| 4: AI Extraction | 3/3 | DONE |
+| 5: Collaboration & Dashboard | 1/2 | IN PROGRESS — checkpoint pending |
+| 6: Responsive Polish | 0/TBD | Not started (roadmap has old responsive work here) |
+
+## Key Files Modified This Session
 | File | What |
 |------|------|
-| `src/db/schema.ts` | Updated: +9 candidate cols, +2 comment cols, +activities table |
-| `src/types/index.ts` | Updated: +Activity, PortfolioLink, SocialHandle types |
-| `src/lib/constants.ts` | Updated: +REJECTION_REASONS, IMPORT_SOURCES |
-| `src/lib/queries/candidates.ts` | Updated: +isDeleted filter |
-| `src/lib/queries/stats.ts` | NEW: getDashboardStats, getRoleCandidateCounts, getRoleTierBreakdown |
-| `src/lib/queries/activities.ts` | NEW: getRecentActivities |
-| `src/lib/actions/candidates.ts` | Updated: rejection in changeStatus, +checkDuplicatesAction, +mergeCandidates |
-| `src/lib/actions/activities.ts` | NEW: createActivity helper |
-| `src/lib/actions/comments.ts` | NEW: createComment, editComment, getComments |
-| `src/lib/duplicate.ts` | NEW: checkForDuplicates (email + phone matching) |
-| `src/components/candidates/rejection-modal.tsx` | NEW |
-| `src/components/candidates/comment-thread.tsx` | NEW |
-| `src/components/candidates/duplicate-banner.tsx` | NEW |
-| `src/components/candidates/merge-modal.tsx` | NEW |
-| `src/components/candidates/bulk-action-bar.tsx` | NEW |
-| `src/components/candidates/status-badge.tsx` | Rewritten: +rejection modal intercept |
-| `src/components/candidates/candidate-table.tsx` | Rewritten: +checkbox selection + bulk bar |
-| `src/components/candidates/candidate-row.tsx` | Updated: +checkbox column |
-| `src/components/candidates/candidate-drawer.tsx` | Updated: +CommentThread, +DuplicateBanner, +rejection section |
-| `src/components/dashboard/activity-feed.tsx` | NEW |
-| `src/app/dashboard/page.tsx` | Rewritten: real stats + activity feed |
+| `src/lib/utils/format-relative-time.ts` | NEW — shared relative time utility |
+| `src/lib/queries/stats.ts` | Added getHiredRejectedByRole, getRoleTierBreakdown |
+| `src/lib/queries/candidates.ts` | Added importSource filter param |
+| `src/components/candidates/comment-thread.tsx` | @mention popover + blue rendering |
+| `src/components/candidates/candidate-filter-bar.tsx` | Source multi-select dropdown |
+| `src/components/dashboard/dashboard-client.tsx` | NEW — client wrapper with drawer + auto-refresh |
+| `src/components/dashboard/role-card.tsx` | NEW — tier mini-bar + quick actions |
+| `src/components/dashboard/hired-rejected-table.tsx` | NEW — per-role hire summary |
+| `src/components/dashboard/activity-feed.tsx` | Made items clickable |
+| `src/app/dashboard/page.tsx` | Refactored to server-only data fetcher → DashboardClient |
 
 ## Tech Stack (DO NOT CHANGE)
 - Next.js 16 + React 19 + TypeScript 5
 - Drizzle ORM (NOT Prisma) + PostgreSQL 16
 - shadcn/ui v4 (@base-ui/react, NOT Radix)
 - Tailwind CSS 4
+- OpenAI SDK (gpt-4o-mini) + Firecrawl
 - Server actions (NOT REST API routes)
 - MOCK_USER auth (Clerk deferred)
 
-## Build Status: PASSES CLEAN
+## Resume Command
 ```bash
 cd ~/HireFlow && cat .planning/RESUME.md
 ```

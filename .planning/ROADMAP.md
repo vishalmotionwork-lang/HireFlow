@@ -40,7 +40,7 @@ Six phases that build from foundation to a fully usable hiring CRM. Phase 1 esta
   3. A reviewer can change a candidate's pipeline status via dropdown, and the change is immediately logged in the status history with who made it and when — the previous status is never overwritten
   4. A reviewer can assign Junior, Senior, or Both tier to a candidate from the profile, and the tier filter pills on the role list immediately reflect the assignment
   5. A user can search by name or email within a role view, filter by status (multi-select), tier, date added, and import source — all filters combine and show a count badge with a reset button
-**Plans:** 5 plans
+**Plans:** 2/5 plans executed
 Plans:
 - [ ] 02-01-PLAN.md — Server actions + query layer (create, status, tier, field update, getCandidates with filters)
 - [ ] 02-02-PLAN.md — Candidate UI components (table, row, status/tier badges, inline add, edit-field)
@@ -100,7 +100,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-03-13 |
-| 2. Candidate Core | 0/5 | Planned | - |
+| 2. Candidate Core | 2/5 | In Progress|  |
 | 3. Import Pipeline | 0/TBD | Not started | - |
 | 4. AI Extraction | 0/TBD | Not started | - |
 | 5. Collaboration and Dashboard | 0/TBD | Not started | - |

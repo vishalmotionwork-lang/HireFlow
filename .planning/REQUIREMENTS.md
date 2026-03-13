@@ -25,7 +25,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Candidates
 
-- [ ] **CAND-01**: User can manually add a candidate with name, email, phone/WhatsApp, Instagram, social handles, portfolio links, and role assignment
+- [x] **CAND-01**: User can manually add a candidate with name, email, phone/WhatsApp, Instagram, social handles, portfolio links, and role assignment
 - [ ] **CAND-02**: Candidate list view shows: name, contact snippet, portfolio link (clickable), status badge, tier badge, date added, last updated
 - [ ] **CAND-03**: Clicking a candidate row opens profile as right-side drawer (desktop) or full screen (mobile)
 - [ ] **CAND-04**: Candidate profile shows: editable header (name, role, tier, status), contact block with copy buttons, portfolio link chips, status history timeline, comment thread, metadata footer
@@ -34,20 +34,20 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Pipeline
 
-- [ ] **PIPE-01**: 12-stage pipeline statuses: Left to Review, Under Review, Good Work/Shortlisted, Not Good Work, Maybe/On the Fence, Assignment Pending, Assignment Sent, Assignment Follow-up, Assignment Passed, Assignment Failed, Hired, Rejected
-- [ ] **PIPE-02**: User can change candidate status via dropdown on profile — change is logged immediately with who, from, to, when
-- [ ] **PIPE-03**: Status history stored as insert-only event log (never overwrite) — full audit trail visible on candidate profile
+- [x] **PIPE-01**: 12-stage pipeline statuses: Left to Review, Under Review, Good Work/Shortlisted, Not Good Work, Maybe/On the Fence, Assignment Pending, Assignment Sent, Assignment Follow-up, Assignment Passed, Assignment Failed, Hired, Rejected
+- [x] **PIPE-02**: User can change candidate status via dropdown on profile — change is logged immediately with who, from, to, when
+- [x] **PIPE-03**: Status history stored as insert-only event log (never overwrite) — full audit trail visible on candidate profile
 - [ ] **PIPE-04**: Activity feed on dashboard shows last 10 status changes across all roles with real-time refresh (30s)
 - [ ] **PIPE-05**: Clicking any activity item opens that candidate's profile
 - [ ] **PIPE-06**: Bulk status change — select multiple candidates via checkboxes, change status in one action
 
 ### Tiers
 
-- [ ] **TIER-01**: All candidates start as Untiered on import or manual entry
+- [x] **TIER-01**: All candidates start as Untiered on import or manual entry
 - [ ] **TIER-02**: Reviewer assigns tier (Junior/Senior/Both) from candidate profile after reviewing portfolio
 - [ ] **TIER-03**: Tier filter pills on every role list: All, Untiered, Junior, Senior, Both
-- [ ] **TIER-04**: Tier is changeable at any time — not locked after assignment
-- [ ] **TIER-05**: Tier changes logged in activity/audit trail
+- [x] **TIER-04**: Tier is changeable at any time — not locked after assignment
+- [x] **TIER-05**: Tier changes logged in activity/audit trail
 
 ### Search & Filter
 
@@ -179,23 +179,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ROLE-03 | Phase 2 | Pending |
 | ROLE-04 | Phase 2 | Pending |
 | ROLE-05 | Phase 1 | Complete |
-| CAND-01 | Phase 2 | Pending |
+| CAND-01 | Phase 2 | Complete |
 | CAND-02 | Phase 2 | Pending |
 | CAND-03 | Phase 2 | Pending |
 | CAND-04 | Phase 2 | Pending |
 | CAND-05 | Phase 2 | Pending |
 | CAND-06 | Phase 2 | Pending |
-| PIPE-01 | Phase 2 | Pending |
-| PIPE-02 | Phase 2 | Pending |
-| PIPE-03 | Phase 2 | Pending |
+| PIPE-01 | Phase 2 | Complete |
+| PIPE-02 | Phase 2 | Complete |
+| PIPE-03 | Phase 2 | Complete |
 | PIPE-04 | Phase 2 | Pending |
 | PIPE-05 | Phase 2 | Pending |
 | PIPE-06 | Phase 2 | Pending |
-| TIER-01 | Phase 2 | Pending |
+| TIER-01 | Phase 2 | Complete |
 | TIER-02 | Phase 2 | Pending |
 | TIER-03 | Phase 2 | Pending |
-| TIER-04 | Phase 2 | Pending |
-| TIER-05 | Phase 2 | Pending |
+| TIER-04 | Phase 2 | Complete |
+| TIER-05 | Phase 2 | Complete |
 | SRCH-01 | Phase 2 | Pending |
 | SRCH-02 | Phase 2 | Pending |
 | SRCH-03 | Phase 2 | Pending |

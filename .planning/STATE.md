@@ -5,35 +5,38 @@
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Team can import candidates in bulk, review portfolios by role, and move candidates through the hiring pipeline — without switching between spreadsheets, emails, and messaging apps.
-**Current focus:** Phase 2 — Candidate Core (context gathered, ready for planning)
+**Current focus:** Phase 2 — Candidate Core (plan 1 complete)
 
 ## Current Position
 
 Phase: 2 of 6 (Candidate Core)
-Plan: 0 of TBD in current phase
-Status: Context gathered — ready for planning
-Last activity: 2026-03-13 — Phase 2 context discussion complete, CONTEXT.md written
+Plan: 1 of 5 in current phase
+Status: Executing — 02-01 complete, 02-02 through 02-05 remaining
+Last activity: 2026-03-13 — 02-01 complete: candidate data layer (server actions, queries, vitest)
 
-Progress: [██░░░░░░░░] 17%
+Progress: [███░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 22 min
-- Total execution time: 1.1 hours
+- Total plans completed: 4
+- Average duration: 20 min
+- Total execution time: 1.2 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation | 3/3 | 69 min | 23 min |
+| 02-candidate-core | 1/5 | 4 min | 4 min |
 
 **Recent Trend:**
 - Phase 1 complete — all 3 plans executed, 17/17 must-haves verified
+- Phase 2 underway — 02-01 done (data layer), UI plans next
 - Trend: On track
 
 *Updated after each plan completion*
+| Phase 02 P02 | 4 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -74,6 +77,12 @@ Recent decisions affecting current work:
 - Inline "Add Candidate" form (button expands form row in table)
 - Default sort: newest first
 
+**Phase 2 implementation (02-01):**
+- vitest setupFiles must load .env.local before any test module imports (ESM hoisting + Drizzle client init order)
+- Shared conditions array for count + data queries prevents total mismatch (pitfall 6)
+- fetchCandidateProfile server action wraps getCandidateWithEvents — Drizzle cannot run in client components
+- updateCandidateField uses explicit whitelist to prevent mass assignment
+
 ### Pending Todos
 
 None yet.
@@ -87,5 +96,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Phase 2 context gathered — CONTEXT.md written with all UI/UX decisions. Ready for /gsd:plan-phase 2.
-Resume file: .planning/phases/02-candidate-core/02-CONTEXT.md
+Stopped at: 02-01 complete — candidate data layer built and tested. Proceed with 02-02 (candidate table UI).
+Resume file: .planning/phases/02-candidate-core/02-01-SUMMARY.md

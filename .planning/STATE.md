@@ -47,6 +47,7 @@ Progress: [██████████] 92%
 | Phase 04-ai-extraction P02 | 7 | 2 tasks | 3 files |
 | Phase 04 P03 | 6 | 2 tasks | 6 files |
 | Phase 04 Complete (human verify) | - | checkpoint approved | - |
+| Phase 05-collaboration-dashboard P01 | 5 | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -137,6 +138,8 @@ Recent decisions affecting current work:
 - [Phase 04]: Cast ExtractionStatusDraft as ExtractionDraft — same polling API shape, avoids redundant DB roundtrip
 - [Phase 04]: fieldConfidence added to polling API so review modal renders per-field confidence badges without a separate fetch
 - [Phase 04 complete]: Full extraction pipeline verified end-to-end by user — URL paste -> async progress -> review modal with confidence badges -> confirm/skip -> candidate created
+- [Phase 05-01]: TEAM_MEMBERS as mock constant in constants.ts — consistent with MOCK_USER, replaced when Clerk auth added
+- [Phase 05-01]: getHiredRejectedByRole fetches hire events separately and joins in JS to avoid complex Drizzle SQL for avg days computation
 
 ### Pending Todos
 

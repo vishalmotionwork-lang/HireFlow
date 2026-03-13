@@ -39,7 +39,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **PIPE-03**: Status history stored as insert-only event log (never overwrite) — full audit trail visible on candidate profile
 - [ ] **PIPE-04**: Activity feed on dashboard shows last 10 status changes across all roles with real-time refresh (30s)
 - [ ] **PIPE-05**: Clicking any activity item opens that candidate's profile
-- [ ] **PIPE-06**: Bulk status change — select multiple candidates via checkboxes, change status in one action
+- [x] **PIPE-06**: Bulk status change — select multiple candidates via checkboxes, change status in one action
 
 ### Tiers
 
@@ -56,7 +56,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **SRCH-03**: Filter by status (multi-select dropdown)
 - [x] **SRCH-04**: Filter by tier (pill buttons)
 - [x] **SRCH-05**: Filter by date added (Today/This Week/This Month/Custom Range)
-- [ ] **SRCH-06**: Filter by import source (Excel/CSV/Manual/Paste/URL/Form)
+- [x] **SRCH-06**: Filter by import source (Excel/CSV/Manual/Paste/URL/Form)
 - [x] **SRCH-07**: Show duplicates only toggle
 - [x] **SRCH-08**: Sort by: Last Updated (default), Date Added, Name A-Z, Status grouped
 - [x] **SRCH-09**: Active filter count badge + reset all filters button
@@ -95,18 +95,18 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Rejection
 
-- [ ] **REJC-01**: When status set to Rejected, rejection reason modal appears before save
-- [ ] **REJC-02**: Quick-select chips for common reasons: Quality below bar, Wrong niche, Assignment failed, Not responsive, Overqualified, Other
-- [ ] **REJC-03**: Custom reason text field (or both chip + custom text)
-- [ ] **REJC-04**: Message compose box for custom rejection message — logged reason shown above for reference
-- [ ] **REJC-05**: Two save options: Save Only (internal log) or Save & Copy Message (copies to clipboard for external send)
+- [x] **REJC-01**: When status set to Rejected, rejection reason modal appears before save
+- [x] **REJC-02**: Quick-select chips for common reasons: Quality below bar, Wrong niche, Assignment failed, Not responsive, Overqualified, Other
+- [x] **REJC-03**: Custom reason text field (or both chip + custom text)
+- [x] **REJC-04**: Message compose box for custom rejection message — logged reason shown above for reference
+- [x] **REJC-05**: Two save options: Save Only (internal log) or Save & Copy Message (copies to clipboard for external send)
 
 ### Comments & Collaboration
 
-- [ ] **COLB-01**: Any team member can leave a comment on any candidate profile
-- [ ] **COLB-02**: Comments timestamped with commenter name and avatar
-- [ ] **COLB-03**: @mention support — reference other team members in comments
-- [ ] **COLB-04**: Comments editable within 5 minutes of posting — not deletable (audit integrity)
+- [x] **COLB-01**: Any team member can leave a comment on any candidate profile
+- [x] **COLB-02**: Comments timestamped with commenter name and avatar
+- [x] **COLB-03**: @mention support — reference other team members in comments
+- [x] **COLB-04**: Comments editable within 5 minutes of posting — not deletable (audit integrity)
 
 ### Dashboard
 
@@ -114,7 +114,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **DASH-02**: Global stats bar: Total Candidates, Left to Review, Under Review, Shortlisted, Hired, Rejected — clicking any stat filters Master View
 - [ ] **DASH-03**: Role cards grid (2 cols desktop, 1 mobile): icon, name, candidate count, tier breakdown, top 3 status mini-bar, quick actions (Add, Import, View All)
 - [ ] **DASH-04**: "Create New Role" card at end of grid
-- [ ] **DASH-05**: Hired vs Rejected summary table: per role counts, hire rate %, Junior/Senior hire breakdown, avg days to hire
+- [x] **DASH-05**: Hired vs Rejected summary table: per role counts, hire rate %, Junior/Senior hire breakdown, avg days to hire
 - [ ] **DASH-06**: Recent activity feed — last 10 actions, auto-refresh 30s, clickable to candidate profile
 
 ### Responsive
@@ -190,7 +190,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PIPE-03 | Phase 2 | Complete |
 | PIPE-04 | Phase 2 | Pending |
 | PIPE-05 | Phase 5 | Pending |
-| PIPE-06 | Phase 2 | Pending |
+| PIPE-06 | Phase 2 | Complete |
 | TIER-01 | Phase 2 | Complete |
 | TIER-02 | Phase 2 | Complete |
 | TIER-03 | Phase 2 | Complete |
@@ -201,7 +201,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRCH-03 | Phase 2 | Complete |
 | SRCH-04 | Phase 2 | Complete |
 | SRCH-05 | Phase 2 | Complete |
-| SRCH-06 | Phase 2 | Pending |
+| SRCH-06 | Phase 2 | Complete |
 | SRCH-07 | Phase 2 | Complete |
 | SRCH-08 | Phase 2 | Complete |
 | SRCH-09 | Phase 2 | Complete |
@@ -228,20 +228,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DUPL-03 | Phase 3 | Complete |
 | DUPL-04 | Phase 3 | Complete |
 | DUPL-05 | Phase 3 | Complete |
-| REJC-01 | Phase 5 | Pending |
-| REJC-02 | Phase 5 | Pending |
-| REJC-03 | Phase 5 | Pending |
-| REJC-04 | Phase 5 | Pending |
-| REJC-05 | Phase 5 | Pending |
-| COLB-01 | Phase 5 | Pending |
-| COLB-02 | Phase 5 | Pending |
-| COLB-03 | Phase 5 | Pending |
-| COLB-04 | Phase 5 | Pending |
+| REJC-01 | Phase 5 | Complete |
+| REJC-02 | Phase 5 | Complete |
+| REJC-03 | Phase 5 | Complete |
+| REJC-04 | Phase 5 | Complete |
+| REJC-05 | Phase 5 | Complete |
+| COLB-01 | Phase 5 | Complete |
+| COLB-02 | Phase 5 | Complete |
+| COLB-03 | Phase 5 | Complete |
+| COLB-04 | Phase 5 | Complete |
 | DASH-01 | Phase 5 | Pending |
 | DASH-02 | Phase 5 | Pending |
 | DASH-03 | Phase 5 | Pending |
 | DASH-04 | Phase 5 | Pending |
-| DASH-05 | Phase 5 | Pending |
+| DASH-05 | Phase 5 | Complete |
 | DASH-06 | Phase 5 | Pending |
 | RESP-01 | Phase 6 | Pending |
 | RESP-02 | Phase 6 | Pending |

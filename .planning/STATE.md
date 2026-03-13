@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-03-13)
 ## Current Position
 
 Phase: 1 of 6 (Foundation)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-03-13 — Plan 01-02 complete (app shell, sidebar, topbar, page skeletons)
+Plan: 3 of 3 in current phase
+Status: Awaiting checkpoint — Task 3 (human verification) pending
+Last activity: 2026-03-13 — Plan 01-03 Tasks 1+2 complete (Server Actions, Settings page with role CRUD)
 
-Progress: [██░░░░░░░░] 10%
+Progress: [███░░░░░░░] 14%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 20 min
-- Total execution time: 0.7 hours
+- Total plans completed: 3 (Plans 01, 02, and 03 Tasks 1+2)
+- Average duration: 22 min
+- Total execution time: 1.1 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation | 2/3 | 39 min | 20 min |
+| 01-foundation | 3/3 tasks (checkpoint pending) | 69 min | 23 min |
 
 **Recent Trend:**
-- 2 plans completed in Phase 1
-- Trend: On track (Plan 02 was very fast due to pages being pre-scaffolded)
+- Phase 1 fully implemented, awaiting human verification
+- Trend: On track
 
 *Updated after each plan completion*
 
@@ -55,6 +55,9 @@ Recent decisions affecting current work:
 - [01-02]: Use @base-ui/react render prop pattern (render=) not asChild= — this shadcn port uses base-ui not Radix UI
 - [01-02]: AppShell is a server component wrapping SidebarProvider — sidebar client state lives in sidebar.tsx
 - [01-02]: Settings stub created early so sidebar links don't 404 — full role management in Plan 03
+- [01-03]: Zod v4 error.flatten() returns same fieldErrors structure as v3 — compatible with existing patterns
+- [01-03]: Icon state managed in React component, injected into FormData before server action call
+- [01-03]: Drizzle count() function used for candidate guard check — type-safe, no raw SQL
 
 ### Pending Todos
 
@@ -69,5 +72,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 01-02-PLAN.md — app shell, sidebar, topbar, and all page skeletons done. Ready for 01-03-PLAN.md (Settings / role management)
-Resume file: .planning/phases/01-foundation/01-03-PLAN.md
+Stopped at: 01-03 Tasks 1+2 complete — awaiting human verification (Task 3 checkpoint). Start dev server and verify 12-step checklist in 01-03-PLAN.md Task 3.
+Resume file: .planning/phases/01-foundation/01-03-PLAN.md (Task 3 verification)

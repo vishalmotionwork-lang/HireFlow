@@ -42,6 +42,7 @@ Progress: [█████████░] 65%
 | Phase 03-import-pipeline P02 | 2 | 2 tasks | 2 files |
 | Phase 03-import-pipeline P01 | 3 | 2 tasks | 6 files |
 | Phase 03-import-pipeline P03 | 12 | 2 tasks | 5 files |
+| Phase 03-import-pipeline P04 | 4 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -121,6 +122,8 @@ Recent decisions affecting current work:
 - [Phase 03-01]: PapaParse requires namespace import (import * as Papa) — @types/papaparse has no default export
 - [Phase 03-01]: Zod v4 uses result.error.issues not result.error.errors for field-level errors
 - [Phase 03-01]: SheetJS 0.20.3 installed from cdn.sheetjs.com CDN tarball — npm registry has stale 0.18.5
+- [Phase 03-import-pipeline]: Step3Validate runs normalize+validate+detectDuplicates on mount via useEffect with cancellation flag
+- [Phase 03-import-pipeline]: source field (excel|csv|paste) added to WizardState, propagated via Step1Upload onParsed callback signature
 
 ### Pending Todos
 

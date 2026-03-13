@@ -8,7 +8,7 @@ Six phases that build from foundation to a fully usable hiring CRM. Phase 1 esta
 
 - [x] **Phase 1: Foundation** - Next.js + Supabase + schema + auth + app shell
 - [x] **Phase 2: Candidate Core** - Role views, candidate CRUD, pipeline status, tiers, search, filter (completed 2026-03-13)
-- [ ] **Phase 3: Import Pipeline** - Spreadsheet import, column mapping, duplicate detection, manual entry
+- [x] **Phase 3: Import Pipeline** - Spreadsheet import, column mapping, duplicate detection, manual entry (completed 2026-03-13)
 - [ ] **Phase 4: AI Extraction** - Portfolio URL scraping, structured extraction, review queue
 - [ ] **Phase 5: Collaboration and Dashboard** - Rejection flow, team comments, dashboard stats
 - [ ] **Phase 6: Responsive Polish** - Mobile layout, collapsible nav, full-screen profile, filter panel
@@ -58,7 +58,7 @@ Plans:
   3. Before import completes, rows with missing name or portfolio link are flagged in red and must be resolved or skipped — no silent bad data
   4. After import, the user sees a summary showing how many candidates were imported, how many were skipped, and how many duplicates were detected
   5. When a duplicate is detected (matching email or phone), the candidate row shows a yellow warning icon and the user is prompted to Merge or Keep Separate — no auto-merge ever occurs
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 Plans:
 - [x] 03-01-PLAN.md — Install deps + parsing/normalization/validation utilities (Wave 1) — DONE 2026-03-13
 - [x] 03-02-PLAN.md — Server action: duplicate detection + bulk insert + duplicate icon (Wave 1) — DONE 2026-03-13
@@ -106,7 +106,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-03-13 |
 | 2. Candidate Core | 5/5 | Complete   | 2026-03-13 |
-| 3. Import Pipeline | 2/4 | In Progress|  |
+| 3. Import Pipeline | 4/4 | Complete   | 2026-03-13 |
 | 4. AI Extraction | 0/TBD | Not started | - |
 | 5. Collaboration and Dashboard | 0/TBD | Not started | - |
 | 6. Responsive Polish | 0/TBD | Not started | - |

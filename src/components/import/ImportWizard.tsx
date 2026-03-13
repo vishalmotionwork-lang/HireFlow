@@ -1,10 +1,13 @@
 "use client";
 
-import { useReducer, useEffect } from "react";
+import { useReducer, useEffect, useState } from "react";
 import { Step1Upload } from "@/components/import/Step1Upload";
 import { Step2Mapping } from "@/components/import/Step2Mapping";
 import { Step3Validate } from "@/components/import/Step3Validate";
 import { Step4Summary } from "@/components/import/Step4Summary";
+import { StepUrlPaste } from "@/components/import/StepUrlPaste";
+import { ExtractionProgress } from "@/components/import/ExtractionProgress";
+import type { ExtractionStatusDraft } from "@/components/import/ExtractionProgress";
 import type {
   ParseResult,
   RawRow,
@@ -14,6 +17,12 @@ import type {
   ImportResult,
 } from "@/lib/import/types";
 import type { Role } from "@/types";
+
+// ---------------------------------------------------------------------------
+// Import tab type (top-level mode switcher)
+// ---------------------------------------------------------------------------
+
+type ImportTab = "file" | "url";
 
 // ---------------------------------------------------------------------------
 // Wizard state
@@ -239,7 +248,27 @@ interface ImportWizardProps {
 }
 
 export function ImportWizard({ roles }: ImportWizardProps) {
-  // Restore state from sessionStorage on mount
+  // ---------------------------------------------------------------------------
+  // Top-level tab (File Upload flow vs URL flow)
+  // ---------------------------------------------------------------------------
+  const [activeTab, setActiveTab] = useState<ImportTab>("file");
+
+  // ---------------------------------------------------------------------------
+  // URL extraction flow state
+  // ---------------------------------------------------------------------------
+  const [extractionBatchId, setExtractionBatchId] = useState<string | null>(
+    null,
+  );
+  const [extractionCandidateId, setExtractionCandidateId] = useState<
+    string | null
+  >(null);
+  const [extractionDrafts, setExtractionDrafts] = useState<
+    ExtractionStatusDraft[] | null
+  >(null);
+
+  // ---------------------------------------------------------------------------
+  // File/paste import flow state (existing reducer)
+  // ---------------------------------------------------------------------------
   const [state, dispatch] = useReducer(wizardReducer, INITIAL_STATE, () => {
     return loadSessionState() ?? INITIAL_STATE;
   });
@@ -252,6 +281,10 @@ export function ImportWizard({ roles }: ImportWizardProps) {
       saveSessionState(state);
     }
   }, [state]);
+
+  // ---------------------------------------------------------------------------
+  // File/paste handlers
+  // ---------------------------------------------------------------------------
 
   const handleParsed = (
     result: ParseResult,
@@ -280,42 +313,171 @@ export function ImportWizard({ roles }: ImportWizardProps) {
     dispatch({ type: "RESET" });
   };
 
+  // ---------------------------------------------------------------------------
+  // URL extraction handlers
+  // ---------------------------------------------------------------------------
+
+  const handleBatchStarted = (batchId: string, candidateId?: string) => {
+    setExtractionBatchId(batchId);
+    setExtractionCandidateId(candidateId ?? null);
+    setExtractionDrafts(null);
+  };
+
+  const handleExtractionComplete = (drafts: ExtractionStatusDraft[]) => {
+    setExtractionDrafts(drafts);
+  };
+
+  const handleExtractionReset = () => {
+    setExtractionBatchId(null);
+    setExtractionCandidateId(null);
+    setExtractionDrafts(null);
+  };
+
+  // ---------------------------------------------------------------------------
+  // Tab switcher resets URL flow when switching tabs
+  // ---------------------------------------------------------------------------
+
+  const handleTabChange = (tab: ImportTab) => {
+    setActiveTab(tab);
+    if (tab === "file") {
+      handleExtractionReset();
+    } else {
+      handleReset();
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+
+  // Determine whether we're deep in the file/paste wizard (past upload step)
+  const isDeepInFileWizard = state.step !== "upload";
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <StepIndicator currentStep={state.step} />
+      {/* Top-level import mode tabs — hidden when deep in the file/paste wizard */}
+      {!isDeepInFileWizard && !extractionBatchId && (
+        <div className="flex gap-1 border-b border-gray-200 mb-6">
+          <button
+            onClick={() => handleTabChange("file")}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === "file"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            File Upload
+          </button>
+          <button
+            onClick={() => handleTabChange("url")}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === "url"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            URL
+          </button>
+        </div>
+      )}
 
-      {state.step === "upload" && <Step1Upload onParsed={handleParsed} />}
+      {/* ------------------------------------------------------------------ */}
+      {/* FILE/PASTE FLOW                                                     */}
+      {/* ------------------------------------------------------------------ */}
 
-      {state.step === "map" && (
-        <Step2Mapping
-          headers={state.headers}
-          rows={state.rawRows}
-          roles={roles}
-          onConfirm={handleMappingConfirmed}
-          onBack={handleBack}
+      {activeTab === "file" && (
+        <>
+          <StepIndicator currentStep={state.step} />
+
+          {state.step === "upload" && <Step1Upload onParsed={handleParsed} />}
+
+          {state.step === "map" && (
+            <Step2Mapping
+              headers={state.headers}
+              rows={state.rawRows}
+              roles={roles}
+              onConfirm={handleMappingConfirmed}
+              onBack={handleBack}
+            />
+          )}
+
+          {state.step === "validate" && (
+            <Step3Validate
+              rows={state.rawRows}
+              headers={state.headers}
+              mapping={state.mapping}
+              targetRoleId={state.targetRoleId}
+              roles={roles}
+              source={state.source}
+              onImportComplete={handleImportComplete}
+              onBack={handleBack}
+            />
+          )}
+
+          {state.step === "summary" && state.result !== null && (
+            <Step4Summary
+              result={state.result}
+              onStartNew={handleReset}
+              targetRoleId={state.targetRoleId}
+              roles={roles}
+            />
+          )}
+        </>
+      )}
+
+      {/* ------------------------------------------------------------------ */}
+      {/* URL EXTRACTION FLOW                                                 */}
+      {/* ------------------------------------------------------------------ */}
+
+      {activeTab === "url" && !extractionBatchId && (
+        <StepUrlPaste
+          roles={roles.map((r) => ({ id: r.id, name: r.name }))}
+          onBatchStarted={handleBatchStarted}
         />
       )}
 
-      {state.step === "validate" && (
-        <Step3Validate
-          rows={state.rawRows}
-          headers={state.headers}
-          mapping={state.mapping}
-          targetRoleId={state.targetRoleId}
-          roles={roles}
-          source={state.source}
-          onImportComplete={handleImportComplete}
-          onBack={handleBack}
+      {activeTab === "url" && extractionBatchId && !extractionDrafts && (
+        <ExtractionProgress
+          batchId={extractionBatchId}
+          onComplete={handleExtractionComplete}
         />
       )}
 
-      {state.step === "summary" && state.result !== null && (
-        <Step4Summary
-          result={state.result}
-          onStartNew={handleReset}
-          targetRoleId={state.targetRoleId}
-          roles={roles}
-        />
+      {activeTab === "url" && extractionDrafts && (
+        <div className="space-y-4">
+          <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+            <p className="text-sm font-medium text-green-800">
+              Extraction complete —{" "}
+              {extractionDrafts.filter((d) => d.status === "completed").length}{" "}
+              of {extractionDrafts.length} portfolio
+              {extractionDrafts.length !== 1 ? "s" : ""} extracted successfully.
+            </p>
+            {extractionCandidateId && (
+              <p className="text-xs text-green-700 mt-1">
+                Candidate ID: {extractionCandidateId}
+              </p>
+            )}
+          </div>
+
+          {/* Plan 03 will wire the review modal here */}
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={handleExtractionReset}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              Extract More
+            </button>
+            <button
+              onClick={() => {
+                // Plan 03 will replace this placeholder with the review modal
+                console.log("Review drafts:", extractionDrafts);
+              }}
+              className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600"
+            >
+              Review Results
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

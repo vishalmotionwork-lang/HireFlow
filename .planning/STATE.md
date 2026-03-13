@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Team can import candidates in bulk, review portfolios by role, and move candidates through the hiring pipeline — without switching between spreadsheets, emails, and messaging apps.
-**Current focus:** Phase 2 — Candidate Core COMPLETE. Ready for Phase 3 (Import Pipeline).
+**Current focus:** Phase 3 — Import Pipeline IN PROGRESS (2 of 4 plans complete).
 
 ## Current Position
 
-Phase: 2 of 6 (Candidate Core) — COMPLETE
-Plan: 5 of 5 in current phase — ALL DONE
-Status: Phase 2 complete — human verify approved, all 5 plans executed and verified
-Last activity: 2026-03-13 — Phase 2 complete: master view, global search, human verify approved
+Phase: 3 of 6 (Import Pipeline) — IN PROGRESS
+Plan: 2 of 4 in current phase — 03-02 done
+Status: Phase 3 in progress — 03-01 (deps+types) and 03-02 (import action+duplicate icon) complete
+Last activity: 2026-03-13 — 03-02 complete: importCandidates action, detectDuplicates, CandidateRow duplicate icon
 
 Progress: [█████████░] 60%
 
@@ -39,6 +39,7 @@ Progress: [█████████░] 60%
 | Phase 02 P02 | 4 | 2 tasks | 6 files |
 | Phase 02 P04 | 3 | 2 tasks | 3 files |
 | Phase 02-candidate-core P03 | 3 | 2 tasks | 3 files |
+| Phase 03-import-pipeline P02 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,13 @@ Recent decisions affecting current work:
 - [Phase 02]: Drawer owns its data fetch (candidateId only) — keeps table lean and avoids stale object state
 - [Phase 02]: selectedCandidateId (string | null) in table state — drawer is self-contained
 
+**Phase 3 implementation (03-02):**
+- detectDuplicates normalises emails to lowercase; guards inArray([]) by only adding non-empty conditions
+- importCandidates uses single transaction: inserts + merges + importBatch count update atomically
+- Merge logic: fills null fields only, never overwrites non-null existing data, sets isDuplicate=true
+- importBatch.importedCount = new inserts only; mergedCount separate in ImportResult for clarity
+- TriangleAlert (lucide) wrapped in span with title attribute — lucide SVGs don't accept title prop directly
+
 ### Pending Todos
 
 None yet.
@@ -116,5 +124,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Phase 2 complete — all plans done, human verify approved. Ready for Phase 3 planning.
-Resume file: Run /gsd:plan-phase 3 to plan Phase 3 (Import Pipeline)
+Stopped at: Completed 03-02-PLAN.md — import server action and duplicate icon done. Ready for 03-03 (import wizard UI).
+Resume file: Run /gsd:execute-phase 03-import-pipeline to continue with 03-03

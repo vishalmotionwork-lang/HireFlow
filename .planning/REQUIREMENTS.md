@@ -69,12 +69,12 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **IMPT-03**: Smart column mapping screen: preview first 5 rows, auto-detect column types, user confirms/overrides each mapping
 - [ ] **IMPT-04**: Handle inconsistent formats: columns in any order, missing columns left blank, extra columns shown as Unknown, mixed data in one column separated, empty rows skipped
 - [ ] **IMPT-05**: Encoding-safe parsing — detect BOM, handle Windows-1252, preserve Indian names and +91 numbers
-- [ ] **IMPT-06**: Role assignment on import — map from sheet column or user selects target role
+- [x] **IMPT-06**: Role assignment on import — map from sheet column or user selects target role
 - [ ] **IMPT-07**: Rows with missing name or portfolio link flagged in red before proceeding
 - [ ] **IMPT-08**: Bulk URL paste — paste multiple portfolio links one per line, all queued for AI extraction
 - [ ] **IMPT-09**: Single URL entry — paste one portfolio link, AI extracts and creates one candidate card
 - [ ] **IMPT-10**: Manual entry form — fill in fields one by one for individual candidates
-- [ ] **IMPT-11**: Import summary after completion: imported count, skipped count, duplicates found, extraction queued count
+- [x] **IMPT-11**: Import summary after completion: imported count, skipped count, duplicates found, extraction queued count
 
 ### AI Extraction
 
@@ -87,11 +87,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Duplicate Detection
 
-- [ ] **DUPL-01**: On import/creation, system checks for matching email or phone across all existing candidates
-- [ ] **DUPL-02**: Match found: yellow duplicate flag with "This candidate may already exist as [Name] in [Role]"
-- [ ] **DUPL-03**: Team chooses: Merge (combines records, keeps all links, prefers non-null fields) or Keep Separate (saves as new, flag remains)
-- [ ] **DUPL-04**: Duplicate rows show yellow warning icon in candidate table
-- [ ] **DUPL-05**: Filter to show only flagged duplicates
+- [x] **DUPL-01**: On import/creation, system checks for matching email or phone across all existing candidates
+- [x] **DUPL-02**: Match found: yellow duplicate flag with "This candidate may already exist as [Name] in [Role]"
+- [x] **DUPL-03**: Team chooses: Merge (combines records, keeps all links, prefers non-null fields) or Keep Separate (saves as new, flag remains)
+- [x] **DUPL-04**: Duplicate rows show yellow warning icon in candidate table
+- [x] **DUPL-05**: Filter to show only flagged duplicates
 
 ### Rejection
 
@@ -211,23 +211,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IMPT-03 | Phase 3 | Pending |
 | IMPT-04 | Phase 3 | Pending |
 | IMPT-05 | Phase 3 | Pending |
-| IMPT-06 | Phase 3 | Pending |
+| IMPT-06 | Phase 3 | Complete |
 | IMPT-07 | Phase 3 | Pending |
 | IMPT-08 | Phase 4 | Pending |
 | IMPT-09 | Phase 4 | Pending |
 | IMPT-10 | Phase 3 | Pending |
-| IMPT-11 | Phase 3 | Pending |
+| IMPT-11 | Phase 3 | Complete |
 | AIEX-01 | Phase 4 | Pending |
 | AIEX-02 | Phase 4 | Pending |
 | AIEX-03 | Phase 4 | Pending |
 | AIEX-04 | Phase 4 | Pending |
 | AIEX-05 | Phase 4 | Pending |
 | AIEX-06 | Phase 4 | Pending |
-| DUPL-01 | Phase 3 | Pending |
-| DUPL-02 | Phase 3 | Pending |
-| DUPL-03 | Phase 3 | Pending |
-| DUPL-04 | Phase 3 | Pending |
-| DUPL-05 | Phase 3 | Pending |
+| DUPL-01 | Phase 3 | Complete |
+| DUPL-02 | Phase 3 | Complete |
+| DUPL-03 | Phase 3 | Complete |
+| DUPL-04 | Phase 3 | Complete |
+| DUPL-05 | Phase 3 | Complete |
 | REJC-01 | Phase 5 | Pending |
 | REJC-02 | Phase 5 | Pending |
 | REJC-03 | Phase 5 | Pending |

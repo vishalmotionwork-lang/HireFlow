@@ -58,7 +58,7 @@ Plans:
   3. Before import completes, rows with missing name or portfolio link are flagged in red and must be resolved or skipped — no silent bad data
   4. After import, the user sees a summary showing how many candidates were imported, how many were skipped, and how many duplicates were detected
   5. When a duplicate is detected (matching email or phone), the candidate row shows a yellow warning icon and the user is prompted to Merge or Keep Separate — no auto-merge ever occurs
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 Plans:
 - [ ] 03-01-PLAN.md — Install deps + parsing/normalization/validation utilities (Wave 1)
 - [ ] 03-02-PLAN.md — Server action: duplicate detection + bulk insert + duplicate icon (Wave 1)
@@ -106,7 +106,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-03-13 |
 | 2. Candidate Core | 5/5 | Complete   | 2026-03-13 |
-| 3. Import Pipeline | 0/4 | In Progress | - |
+| 3. Import Pipeline | 1/4 | In Progress|  |
 | 4. AI Extraction | 0/TBD | Not started | - |
 | 5. Collaboration and Dashboard | 0/TBD | Not started | - |
 | 6. Responsive Polish | 0/TBD | Not started | - |

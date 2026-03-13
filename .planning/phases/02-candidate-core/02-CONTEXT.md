@@ -64,6 +64,9 @@ Team can view candidates organized by role, manage individual profiles, move can
 - Bulk status changes (select multiple candidates, change status at once) — future phase
 - Import source filter — will make sense after Phase 3 (Import Pipeline) is built
 - Keyboard shortcuts for status changes — future enhancement
+- PIPE-04 (dashboard activity feed with 30s refresh) — deferred to Phase 5, dashboard is basic in Phase 2
+- PIPE-05 (clicking activity item opens candidate profile) — deferred to Phase 5, depends on PIPE-04
+- CAND-04 comment thread — Phase 2 adds a placeholder "Comments coming soon" section in profile drawer; full comment thread built in Phase 5 (COLB-01..04)
 
 </deferred>
 

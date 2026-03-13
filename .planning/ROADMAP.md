@@ -91,8 +91,8 @@ Plans:
   4. The dashboard shows global stats (total candidates, left to review, shortlisted, hired, rejected), role cards with candidate counts and status breakdowns, a hired vs rejected summary table, and a recent activity feed that refreshes every 30 seconds
 **Plans:** 2/2 plans complete
 Plans:
-- [ ] 05-01-PLAN.md — Shared util + query extensions + import source filter + @mention support (Wave 1)
-- [ ] 05-02-PLAN.md — Dashboard completion: clickable stats, role cards, hired/rejected table, auto-refresh activity feed + human verify (Wave 2)
+- [x] 05-01-PLAN.md — Shared util + query extensions + import source filter + @mention support (Wave 1) — DONE 2026-03-13
+- [x] 05-02-PLAN.md — Dashboard completion: clickable stats, role cards, hired/rejected table, auto-refresh activity feed + human verify (Wave 2) — DONE 2026-03-13
 
 ### Phase 6: Responsive Polish
 **Goal**: Every screen in the app works correctly on mobile — sidebar collapses, candidate profile opens full-screen, role cards stack, and filters are accessible without a wide viewport
@@ -102,7 +102,10 @@ Plans:
   1. On a mobile device, the sidebar collapses to a bottom navigation bar or hamburger menu — all navigation destinations remain reachable
   2. Opening a candidate profile on mobile shows a full-screen view instead of a side drawer — all profile sections are scrollable and accessible
   3. The role cards grid stacks to a single column on mobile, and the filter bar collapses to an expandable panel accessible via a tap
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 06-01-PLAN.md — Full-screen mobile profile, filter bar polish, dashboard mobile audit, topbar touch targets (Wave 1)
+- [ ] 06-02-PLAN.md — Human verification of all responsive requirements at 375px and 1440px (Wave 2)
 
 ## Progress
 
@@ -116,4 +119,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 3. Import Pipeline | 4/4 | Complete   | 2026-03-13 |
 | 4. AI Extraction | 3/3 | Complete   | 2026-03-13 |
 | 5. Collaboration and Dashboard | 2/2 | Complete   | 2026-03-13 |
-| 6. Responsive Polish | 0/TBD | Not started | - |
+| 6. Responsive Polish | 0/2 | In Progress | - |

@@ -58,7 +58,12 @@ Plans:
   3. Before import completes, rows with missing name or portfolio link are flagged in red and must be resolved or skipped — no silent bad data
   4. After import, the user sees a summary showing how many candidates were imported, how many were skipped, and how many duplicates were detected
   5. When a duplicate is detected (matching email or phone), the candidate row shows a yellow warning icon and the user is prompted to Merge or Keep Separate — no auto-merge ever occurs
-**Plans**: TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 03-01-PLAN.md — Install deps + parsing/normalization/validation utilities (Wave 1)
+- [ ] 03-02-PLAN.md — Server action: duplicate detection + bulk insert + duplicate icon (Wave 1)
+- [ ] 03-03-PLAN.md — Import page + sidebar nav + wizard Steps 1-2 (Upload + Mapping) (Wave 2)
+- [ ] 03-04-PLAN.md — Wizard Steps 3-4 (Validate/Dedup + Summary) + human verify (Wave 3)
 
 ### Phase 4: AI Extraction
 **Goal**: Team can extract name, contact info, and social handles from portfolio URLs automatically, review confidence-scored results before saving, and queue bulk URL extractions in the background
@@ -101,7 +106,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-03-13 |
 | 2. Candidate Core | 5/5 | Complete   | 2026-03-13 |
-| 3. Import Pipeline | 0/TBD | Not started | - |
+| 3. Import Pipeline | 0/4 | In Progress | - |
 | 4. AI Extraction | 0/TBD | Not started | - |
 | 5. Collaboration and Dashboard | 0/TBD | Not started | - |
 | 6. Responsive Polish | 0/TBD | Not started | - |

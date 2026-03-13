@@ -1,12 +1,14 @@
 "use client";
 
-import { useReducer, useEffect, useState } from "react";
+import { useReducer, useEffect, useState, useCallback } from "react";
 import { Step1Upload } from "@/components/import/Step1Upload";
 import { Step2Mapping } from "@/components/import/Step2Mapping";
 import { Step3Validate } from "@/components/import/Step3Validate";
 import { Step4Summary } from "@/components/import/Step4Summary";
 import { StepUrlPaste } from "@/components/import/StepUrlPaste";
 import { ExtractionProgress } from "@/components/import/ExtractionProgress";
+import { ExtractionReviewList } from "@/components/import/ExtractionReviewList";
+import { ExtractionReviewModal } from "@/components/import/ExtractionReviewModal";
 import type { ExtractionStatusDraft } from "@/components/import/ExtractionProgress";
 import type {
   ParseResult,
@@ -16,7 +18,7 @@ import type {
   DuplicateInfo,
   ImportResult,
 } from "@/lib/import/types";
-import type { Role } from "@/types";
+import type { Role, ExtractionDraft } from "@/types";
 
 // ---------------------------------------------------------------------------
 // Import tab type (top-level mode switcher)
@@ -265,6 +267,11 @@ export function ImportWizard({ roles }: ImportWizardProps) {
   const [extractionDrafts, setExtractionDrafts] = useState<
     ExtractionStatusDraft[] | null
   >(null);
+  // Review state
+  const [reviewDrafts, setReviewDrafts] = useState<ExtractionDraft[] | null>(
+    null,
+  );
+  const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
 
   // ---------------------------------------------------------------------------
   // File/paste import flow state (existing reducer)
@@ -321,17 +328,65 @@ export function ImportWizard({ roles }: ImportWizardProps) {
     setExtractionBatchId(batchId);
     setExtractionCandidateId(candidateId ?? null);
     setExtractionDrafts(null);
+    setReviewDrafts(null);
+    setSelectedDraftId(null);
   };
 
   const handleExtractionComplete = (drafts: ExtractionStatusDraft[]) => {
     setExtractionDrafts(drafts);
+    // Transition directly to review: use the drafts from polling as ExtractionDraft
+    const asDrafts = drafts as unknown as ExtractionDraft[];
+    setReviewDrafts(asDrafts);
+    // Auto-select the first reviewable draft
+    const firstReviewable = asDrafts.find((d) => d.status === "completed");
+    setSelectedDraftId(firstReviewable?.id ?? null);
   };
 
   const handleExtractionReset = () => {
     setExtractionBatchId(null);
     setExtractionCandidateId(null);
     setExtractionDrafts(null);
+    setReviewDrafts(null);
+    setSelectedDraftId(null);
   };
+
+  // Re-fetch drafts from API after confirm/skip to get updated statuses
+  const refreshReviewDrafts = useCallback(async () => {
+    if (!extractionBatchId) return;
+    try {
+      const res = await fetch(`/api/extraction-status/${extractionBatchId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const asDrafts = data.drafts as unknown as ExtractionDraft[];
+      setReviewDrafts(asDrafts);
+    } catch {
+      // ignore — stale data is acceptable
+    }
+  }, [extractionBatchId]);
+
+  // Navigate to the next/prev reviewable draft
+  const getReviewableIds = (drafts: ExtractionDraft[]) =>
+    drafts.filter((d) => d.status === "completed").map((d) => d.id);
+
+  const handleReviewConfirm = useCallback(async () => {
+    await refreshReviewDrafts();
+    // Auto-advance to next completed draft
+    if (!reviewDrafts || !selectedDraftId) return;
+    const ids = getReviewableIds(reviewDrafts);
+    const idx = ids.indexOf(selectedDraftId);
+    const nextId = ids[idx + 1] ?? ids[idx - 1] ?? null;
+    setSelectedDraftId(nextId);
+  }, [refreshReviewDrafts, reviewDrafts, selectedDraftId]);
+
+  const handleReviewSkip = useCallback(async () => {
+    await refreshReviewDrafts();
+    // Auto-advance to next completed draft
+    if (!reviewDrafts || !selectedDraftId) return;
+    const ids = getReviewableIds(reviewDrafts);
+    const idx = ids.indexOf(selectedDraftId);
+    const nextId = ids[idx + 1] ?? ids[idx - 1] ?? null;
+    setSelectedDraftId(nextId);
+  }, [refreshReviewDrafts, reviewDrafts, selectedDraftId]);
 
   // ---------------------------------------------------------------------------
   // Tab switcher resets URL flow when switching tabs
@@ -443,42 +498,109 @@ export function ImportWizard({ roles }: ImportWizardProps) {
         />
       )}
 
-      {activeTab === "url" && extractionDrafts && (
-        <div className="space-y-4">
-          <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-            <p className="text-sm font-medium text-green-800">
-              Extraction complete —{" "}
-              {extractionDrafts.filter((d) => d.status === "completed").length}{" "}
-              of {extractionDrafts.length} portfolio
-              {extractionDrafts.length !== 1 ? "s" : ""} extracted successfully.
-            </p>
-            {extractionCandidateId && (
-              <p className="text-xs text-green-700 mt-1">
-                Candidate ID: {extractionCandidateId}
-              </p>
-            )}
-          </div>
+      {activeTab === "url" &&
+        extractionDrafts &&
+        reviewDrafts &&
+        (() => {
+          const allDone = reviewDrafts.every(
+            (d) =>
+              d.status === "applied" ||
+              d.status === "reviewed" ||
+              d.status === "failed",
+          );
+          const confirmedCount = reviewDrafts.filter(
+            (d) => d.status === "applied",
+          ).length;
+          const skippedCount = reviewDrafts.filter(
+            (d) => d.status === "reviewed",
+          ).length;
+          const failedCount = reviewDrafts.filter(
+            (d) => d.status === "failed",
+          ).length;
 
-          {/* Plan 03 will wire the review modal here */}
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={handleExtractionReset}
-              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-            >
-              Extract More
-            </button>
-            <button
-              onClick={() => {
-                // Plan 03 will replace this placeholder with the review modal
-                console.log("Review drafts:", extractionDrafts);
-              }}
-              className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600"
-            >
-              Review Results
-            </button>
-          </div>
-        </div>
-      )}
+          const reviewableIds = reviewDrafts
+            .filter((d) => d.status === "completed")
+            .map((d) => d.id);
+          const selectedDraft = selectedDraftId
+            ? (reviewDrafts.find((d) => d.id === selectedDraftId) ?? null)
+            : null;
+          const selectedIdx = selectedDraft
+            ? reviewableIds.indexOf(selectedDraft.id)
+            : -1;
+
+          if (allDone) {
+            return (
+              <div className="space-y-4">
+                <div className="rounded-lg border border-green-200 bg-green-50 p-5">
+                  <p className="text-sm font-semibold text-green-800 mb-2">
+                    All done!
+                  </p>
+                  <ul className="text-sm text-green-700 space-y-1">
+                    <li>
+                      {confirmedCount} candidate
+                      {confirmedCount !== 1 ? "s" : ""} confirmed and saved
+                    </li>
+                    <li>{skippedCount} skipped</li>
+                    {failedCount > 0 && (
+                      <li>
+                        {failedCount} URL{failedCount !== 1 ? "s" : ""} failed
+                        to extract
+                      </li>
+                    )}
+                  </ul>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleExtractionReset}
+                    className="rounded-lg bg-blue-500 px-5 py-2 text-sm font-medium text-white hover:bg-blue-600 transition-colors"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div className="flex gap-4 min-h-[520px]">
+              {/* List panel */}
+              <div className="w-64 flex-shrink-0 rounded-xl border border-gray-200 overflow-hidden">
+                <ExtractionReviewList
+                  drafts={reviewDrafts}
+                  onSelectDraft={setSelectedDraftId}
+                  selectedDraftId={selectedDraftId}
+                />
+              </div>
+
+              {/* Modal panel */}
+              <div className="flex-1 min-w-0">
+                {selectedDraft ? (
+                  <ExtractionReviewModal
+                    draft={selectedDraft}
+                    onConfirm={handleReviewConfirm}
+                    onSkip={handleReviewSkip}
+                    onNext={() => {
+                      const nextId = reviewableIds[selectedIdx + 1];
+                      if (nextId) setSelectedDraftId(nextId);
+                    }}
+                    onPrev={() => {
+                      const prevId = reviewableIds[selectedIdx - 1];
+                      if (prevId) setSelectedDraftId(prevId);
+                    }}
+                    hasNext={selectedIdx < reviewableIds.length - 1}
+                    hasPrev={selectedIdx > 0}
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-gray-200 p-8">
+                    <p className="text-sm text-gray-500">
+                      Select a portfolio from the list to review extracted data.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
     </div>
   );
 }

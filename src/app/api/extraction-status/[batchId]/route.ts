@@ -11,6 +11,7 @@ interface ExtractedDraftSummary {
   sourceUrl: string | null;
   status: string;
   extractedData: unknown;
+  fieldConfidence: unknown;
   error: string | null;
   overallConfidence: number | null;
 }
@@ -60,6 +61,7 @@ export async function GET(
     sourceUrl: d.sourceUrl,
     status: d.status,
     extractedData: d.extractedData,
+    fieldConfidence: d.fieldConfidence,
     error: d.error,
     overallConfidence: d.overallConfidence,
   }));

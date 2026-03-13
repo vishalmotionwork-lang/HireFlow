@@ -11,6 +11,7 @@ export interface ExtractionStatusDraft {
   sourceUrl: string | null;
   status: string;
   extractedData: unknown;
+  fieldConfidence: unknown;
   error: string | null;
   overallConfidence: number | null;
 }
@@ -58,8 +59,18 @@ function SpinnerIcon() {
 function CheckIcon() {
   return (
     <div className="h-4 w-4 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-      <svg className="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+      <svg
+        className="w-2.5 h-2.5 text-green-600"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={3}
+          d="M5 13l4 4L19 7"
+        />
       </svg>
     </div>
   );
@@ -68,8 +79,18 @@ function CheckIcon() {
 function ErrorIcon() {
   return (
     <div className="h-4 w-4 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-      <svg className="w-2.5 h-2.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+      <svg
+        className="w-2.5 h-2.5 text-red-600"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={3}
+          d="M6 18L18 6M6 6l12 12"
+        />
       </svg>
     </div>
   );
@@ -79,7 +100,10 @@ function ErrorIcon() {
 // ExtractionProgress component
 // ---------------------------------------------------------------------------
 
-export function ExtractionProgress({ batchId, onComplete }: ExtractionProgressProps) {
+export function ExtractionProgress({
+  batchId,
+  onComplete,
+}: ExtractionProgressProps) {
   const [status, setStatus] = useState<ExtractionStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const isCompleteRef = useRef(false);
@@ -129,7 +153,8 @@ export function ExtractionProgress({ batchId, onComplete }: ExtractionProgressPr
           onComplete(data.drafts);
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Network error while polling";
+        const message =
+          err instanceof Error ? err.message : "Network error while polling";
         setError(message);
       }
     }
@@ -163,7 +188,9 @@ export function ExtractionProgress({ batchId, onComplete }: ExtractionProgressPr
     return (
       <div className="flex items-center gap-3 py-8 justify-center">
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
-        <p className="text-sm text-gray-500">Connecting to extraction pipeline...</p>
+        <p className="text-sm text-gray-500">
+          Connecting to extraction pipeline...
+        </p>
       </div>
     );
   }
@@ -197,14 +224,17 @@ export function ExtractionProgress({ batchId, onComplete }: ExtractionProgressPr
           />
         </div>
 
-        <p className="text-xs text-gray-400 text-right">{percentage}% complete</p>
+        <p className="text-xs text-gray-400 text-right">
+          {percentage}% complete
+        </p>
       </div>
 
       {/* Per-URL status list */}
       <div className="rounded-lg border border-gray-200 overflow-hidden">
         <div className="divide-y divide-gray-100">
           {drafts.map((draft) => {
-            const isPending = draft.status === "pending" || draft.status === "processing";
+            const isPending =
+              draft.status === "pending" || draft.status === "processing";
             const isFailed = draft.status === "failed";
 
             return (
@@ -226,11 +256,13 @@ export function ExtractionProgress({ batchId, onComplete }: ExtractionProgressPr
                   {isFailed && draft.error && (
                     <p className="text-xs text-red-500 mt-0.5">{draft.error}</p>
                   )}
-                  {draft.overallConfidence !== null && !isPending && !isFailed && (
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {draft.overallConfidence}% confidence
-                    </p>
-                  )}
+                  {draft.overallConfidence !== null &&
+                    !isPending &&
+                    !isFailed && (
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {draft.overallConfidence}% confidence
+                      </p>
+                    )}
                 </div>
 
                 <span
@@ -242,7 +274,10 @@ export function ExtractionProgress({ batchId, onComplete }: ExtractionProgressPr
                         : "bg-green-50 text-green-600"
                   }`}
                 >
-                  {draft.status === "processing" ? "Processing" : draft.status.charAt(0).toUpperCase() + draft.status.slice(1)}
+                  {draft.status === "processing"
+                    ? "Processing"
+                    : draft.status.charAt(0).toUpperCase() +
+                      draft.status.slice(1)}
                 </span>
               </div>
             );

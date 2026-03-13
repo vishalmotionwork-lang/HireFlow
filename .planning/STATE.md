@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Team can import candidates in bulk, review portfolios by role, and move candidates through the hiring pipeline — without switching between spreadsheets, emails, and messaging apps.
-**Current focus:** Phase 1 — Foundation
+**Current focus:** Phase 2 — Candidate Core (context gathered, ready for planning)
 
 ## Current Position
 
 Phase: 2 of 6 (Candidate Core)
 Plan: 0 of TBD in current phase
-Status: Ready — Phase 1 complete, awaiting Phase 2 planning
-Last activity: 2026-03-13 — Plan 01-03 fully complete (human verification APPROVED)
+Status: Context gathered — ready for planning
+Last activity: 2026-03-13 — Phase 2 context discussion complete, CONTEXT.md written
 
-Progress: [████░░░░░░] 17%
+Progress: [██░░░░░░░░] 17%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3 (Plans 01, 02, and 03 Tasks 1+2)
+- Total plans completed: 3
 - Average duration: 22 min
 - Total execution time: 1.1 hours
 
@@ -27,10 +27,10 @@ Progress: [████░░░░░░] 17%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation | 3/3 tasks (checkpoint pending) | 69 min | 23 min |
+| 01-foundation | 3/3 | 69 min | 23 min |
 
 **Recent Trend:**
-- Phase 1 fully implemented, awaiting human verification
+- Phase 1 complete — all 3 plans executed, 17/17 must-haves verified
 - Trend: On track
 
 *Updated after each plan completion*
@@ -42,22 +42,37 @@ Progress: [████░░░░░░] 17%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Roadmap]: Next.js 16 + Supabase + Drizzle ORM chosen over Prisma (90% smaller bundle, no cold-start)
-- [Roadmap]: Clerk for auth in v1, migrate to NextAuth + RBAC in v2
-- [Roadmap]: Firecrawl + OpenAI gpt-4o-mini for AI extraction pipeline
-- [Roadmap]: SheetJS Community + PapaParse for Excel/CSV import (Apache 2.0)
-- [Roadmap]: Immutable event log for pipeline status (candidate_events table) — must be established in Phase 1 or it's expensive to retrofit
-- [Roadmap]: Supabase RLS enabled before any data is written — not a cleanup step
-- [01-01]: Use dotenv config({ path: '.env.local' }) not 'dotenv/config' — Next.js convention uses .env.local, not .env
-- [01-01]: Table declaration order matters for FK exports: roles first, then importBatches, then candidates — Drizzle uses lazy callbacks but export variable must exist
-- [01-01]: PostgreSQL installed via Homebrew (brew install postgresql@16) — Docker not available on this machine
-- [01-01]: candidateStatusEnum has 12 statuses covering full hiring pipeline from left_to_review to hired/rejected
-- [01-02]: Use @base-ui/react render prop pattern (render=) not asChild= — this shadcn port uses base-ui not Radix UI
-- [01-02]: AppShell is a server component wrapping SidebarProvider — sidebar client state lives in sidebar.tsx
-- [01-02]: Settings stub created early so sidebar links don't 404 — full role management in Plan 03
-- [01-03]: Zod v4 error.flatten() returns same fieldErrors structure as v3 — compatible with existing patterns
-- [01-03]: Icon state managed in React component, injected into FormData before server action call
-- [01-03]: Drizzle count() function used for candidate guard check — type-safe, no raw SQL
+**Roadmap-level:**
+- Next.js 16 + local PostgreSQL + Drizzle ORM chosen over Prisma (90% smaller bundle, no cold-start)
+- Clerk for auth in v1, migrate to NextAuth + RBAC in v2 (DEFERRED — not in Phase 1)
+- Firecrawl + OpenAI gpt-4o-mini for AI extraction pipeline (Phase 4)
+- SheetJS Community + PapaParse for Excel/CSV import (Apache 2.0, Phase 3)
+- Immutable event log for pipeline status (candidate_events table) — INSERT ONLY
+- Supabase RLS deferred (FOUND-04) — not in Phase 1
+
+**Phase 1 implementation:**
+- Use dotenv config({ path: '.env.local' }) not 'dotenv/config' — Next.js convention
+- Table declaration order matters for FK exports: roles → importBatches → candidates
+- PostgreSQL installed via Homebrew (brew install postgresql@16) — Docker not available
+- shadcn/ui v4 uses @base-ui/react NOT Radix UI — no `asChild`, use `render={<Component />}`
+- AppShell is a server component wrapping SidebarProvider
+- Zod v4 error.flatten() returns same fieldErrors structure as v3
+- Icon state managed in React component, injected into FormData before server action call
+- Drizzle count() function used for candidate guard check — type-safe, no raw SQL
+
+**Phase 2 context decisions (from discuss-phase):**
+- Table rows layout (8 columns: Name, Email, Portfolio, Phone, Instagram, Status, Tier, Date Added)
+- Side drawer for profile (right, ~400-500px), bottom sheet on mobile
+- Click-to-edit fields (saves on blur/Enter, no edit mode toggle)
+- Vertical timeline for status history (newest at top)
+- Clickable status badge in table row (dropdown, no confirmation)
+- No bulk actions in Phase 2
+- Tier badge cycles on click (Untiered → Junior → Senior → Both)
+- Horizontal filter bar above table (Status multi-select, Tier, Date Added)
+- Instant search (debounced 300ms, searches name + email)
+- Count badges on active filters + "Clear all" reset button
+- Inline "Add Candidate" form (button expands form row in table)
+- Default sort: newest first
 
 ### Pending Todos
 
@@ -72,5 +87,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Phase 1 fully complete — all 3 plans done, human verification approved. Ready to plan Phase 2 (Candidate Core).
-Resume file: .planning/ROADMAP.md (Phase 2: Candidate Core)
+Stopped at: Phase 2 context gathered — CONTEXT.md written with all UI/UX decisions. Ready for /gsd:plan-phase 2.
+Resume file: .planning/phases/02-candidate-core/02-CONTEXT.md

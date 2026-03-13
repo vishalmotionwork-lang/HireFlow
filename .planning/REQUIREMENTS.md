@@ -38,7 +38,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **PIPE-02**: User can change candidate status via dropdown on profile — change is logged immediately with who, from, to, when
 - [x] **PIPE-03**: Status history stored as insert-only event log (never overwrite) — full audit trail visible on candidate profile
 - [ ] **PIPE-04**: Activity feed on dashboard shows last 10 status changes across all roles with real-time refresh (30s)
-- [x] **PIPE-05**: Clicking any activity item opens that candidate's profile
+- [ ] **PIPE-05**: Clicking any activity item opens that candidate's profile
 - [ ] **PIPE-06**: Bulk status change — select multiple candidates via checkboxes, change status in one action
 
 ### Tiers
@@ -189,7 +189,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PIPE-02 | Phase 2 | Complete |
 | PIPE-03 | Phase 2 | Complete |
 | PIPE-04 | Phase 2 | Pending |
-| PIPE-05 | Phase 2 | Complete |
+| PIPE-05 | Phase 5 | Pending |
 | PIPE-06 | Phase 2 | Pending |
 | TIER-01 | Phase 2 | Complete |
 | TIER-02 | Phase 2 | Complete |

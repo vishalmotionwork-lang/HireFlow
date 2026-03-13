@@ -7,6 +7,7 @@ import {
   Users,
   PlusCircle,
   Settings,
+  Upload,
 } from "lucide-react";
 import {
   Sidebar,
@@ -100,6 +101,21 @@ export function AppSidebar({ roles }: AppSidebarProps) {
               >
                 <PlusCircle size={16} />
                 <span className="text-sm">+ New Role</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+        {/* Import section */}
+        <SidebarGroup>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                render={<Link href="/import" />}
+                isActive={isActive("/import")}
+                tooltip="Import"
+              >
+                <Upload size={16} />
+                <span>Import</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

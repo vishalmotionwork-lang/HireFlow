@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { db } from "@/db";
 import { roles } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -17,7 +19,9 @@ export default async function ImportPage() {
     <div className="space-y-6">
       {/* Page header */}
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Import Candidates</h1>
+        <h1 className="text-xl font-semibold text-gray-900">
+          Import Candidates
+        </h1>
         <p className="text-sm text-gray-500 mt-1">
           Upload a spreadsheet or paste data to import candidates
         </p>

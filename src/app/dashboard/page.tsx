@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { db } from "@/db";
 import { roles } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -11,19 +13,25 @@ import { getRecentActivities } from "@/lib/queries/activities";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
 
 export default async function DashboardPage() {
-  const [activeRoles, stats, roleCounts, tierBreakdown, activities, hireSummary] =
-    await Promise.all([
-      db
-        .select()
-        .from(roles)
-        .where(eq(roles.isActive, true))
-        .orderBy(roles.sortOrder),
-      getDashboardStats(),
-      getRoleCandidateCounts(),
-      getRoleTierBreakdown(),
-      getRecentActivities(10),
-      getHiredRejectedByRole(),
-    ]);
+  const [
+    activeRoles,
+    stats,
+    roleCounts,
+    tierBreakdown,
+    activities,
+    hireSummary,
+  ] = await Promise.all([
+    db
+      .select()
+      .from(roles)
+      .where(eq(roles.isActive, true))
+      .orderBy(roles.sortOrder),
+    getDashboardStats(),
+    getRoleCandidateCounts(),
+    getRoleTierBreakdown(),
+    getRecentActivities(10),
+    getHiredRejectedByRole(),
+  ]);
 
   return (
     <DashboardClient

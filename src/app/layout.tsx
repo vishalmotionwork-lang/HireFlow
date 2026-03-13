@@ -1,5 +1,7 @@
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { db } from "@/db";
 import { roles } from "@/db/schema";
@@ -7,13 +9,13 @@ import { eq } from "drizzle-orm";
 import { AppShell } from "@/components/layout/app-shell";
 import { Toaster } from "@/components/ui/sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const mono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -35,9 +37,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className="light">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${inter.variable} ${mono.variable} antialiased`}>
         <AppShell roles={activeRoles}>{children}</AppShell>
         <Toaster richColors position="bottom-right" />
       </body>

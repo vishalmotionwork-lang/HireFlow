@@ -13,6 +13,7 @@ import type { Activity, CandidateStatus } from "@/types";
 
 interface ActivityFeedProps {
   activities: Activity[];
+  onCandidateClick?: (candidateId: string) => void;
 }
 
 const ACTIVITY_ICONS: Record<string, typeof UserPlus> = {
@@ -54,7 +55,10 @@ function getActivityDescription(activity: Activity): string {
   }
 }
 
-export function ActivityFeed({ activities }: ActivityFeedProps) {
+export function ActivityFeed({
+  activities,
+  onCandidateClick,
+}: ActivityFeedProps) {
   if (activities.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-gray-200 py-8 text-center">
@@ -67,8 +71,30 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
     <div className="flex flex-col gap-0 rounded-lg border border-gray-200 bg-white divide-y divide-gray-100">
       {activities.map((activity) => {
         const Icon = ACTIVITY_ICONS[activity.type] ?? ArrowRight;
+        const isClickable = !!activity.candidateId && !!onCandidateClick;
+
         return (
-          <div key={activity.id} className="flex items-start gap-3 px-4 py-3">
+          <div
+            key={activity.id}
+            className={`flex items-start gap-3 px-4 py-3 ${isClickable ? "cursor-pointer hover:bg-gray-50" : ""}`}
+            onClick={
+              isClickable
+                ? () => onCandidateClick!(activity.candidateId!)
+                : undefined
+            }
+            role={isClickable ? "button" : undefined}
+            tabIndex={isClickable ? 0 : undefined}
+            onKeyDown={
+              isClickable
+                ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onCandidateClick!(activity.candidateId!);
+                    }
+                  }
+                : undefined
+            }
+          >
             <div className="flex-shrink-0 mt-0.5 h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center">
               <Icon size={12} className="text-gray-500" />
             </div>

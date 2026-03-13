@@ -79,3 +79,37 @@ export const TIER_COLORS: Record<Tier, string> = {
   senior: "bg-indigo-50 text-indigo-700",
   both: "bg-violet-50 text-violet-700",
 };
+
+// Rejection reason quick-select chips
+export const REJECTION_REASONS = [
+  "Quality below bar",
+  "Wrong niche",
+  "Assignment failed",
+  "Not responsive",
+  "Overqualified",
+  "Other",
+] as const;
+
+export type RejectionReason = (typeof REJECTION_REASONS)[number];
+
+// Mock team members for @mention support in comments.
+// TODO: Replace with Clerk user list when auth is added.
+export const TEAM_MEMBERS = [
+  { id: "vishal", name: "Vishal" },
+  { id: "zeel", name: "Zeel" },
+  { id: "zaid", name: "Zaid" },
+  { id: "kunal", name: "Kunal" },
+] as const;
+
+export type TeamMember = (typeof TEAM_MEMBERS)[number];
+
+// Import source labels
+export const IMPORT_SOURCES = {
+  manual: "Manual",
+  excel: "Excel",
+  csv: "CSV",
+  paste: "Paste",
+  url: "URL",
+} as const;
+
+export type ImportSource = keyof typeof IMPORT_SOURCES;

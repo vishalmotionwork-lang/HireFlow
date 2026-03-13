@@ -1,19 +1,54 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { Send, Pencil, Check, X } from "lucide-react";
 import {
   createComment,
   editComment,
   getComments,
 } from "@/lib/actions/comments";
-import { MOCK_USER } from "@/lib/constants";
+import { MOCK_USER, TEAM_MEMBERS } from "@/lib/constants";
 import { formatRelativeTime } from "@/lib/utils/format-relative-time";
 import type { CandidateComment } from "@/types";
 
 interface CommentThreadProps {
   candidateId: string;
 }
+
+// ─── Mention helpers ────────────────────────────────────────────────────────
+
+/**
+ * Parse comment body for @mention tokens and render them as blue spans.
+ * Non-mention parts are rendered as plain text.
+ */
+function renderCommentBody(body: string): React.ReactNode {
+  const parts = body.split(/(@\w+)/g);
+  return parts.map((part, idx) => {
+    if (/^@\w+$/.test(part)) {
+      return (
+        <span key={idx} className="text-blue-600 font-medium">
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
+/**
+ * Extract @mentions from a comment body.
+ * Only returns mentions that match known TEAM_MEMBERS by name.
+ */
+function extractMentions(
+  body: string,
+): Array<{ userId: string; name: string }> {
+  return TEAM_MEMBERS.filter((m) => body.includes(`@${m.name}`)).map((m) => ({
+    userId: m.id,
+    name: m.name,
+  }));
+}
+
+// ─── CommentItem ─────────────────────────────────────────────────────────────
 
 function canEdit(comment: CandidateComment): boolean {
   if (comment.createdBy !== MOCK_USER.name) return false;
@@ -107,7 +142,7 @@ function CommentItem({
           </div>
         ) : (
           <p className="text-sm text-gray-600 mt-0.5 break-words">
-            {comment.body}
+            {renderCommentBody(comment.body)}
           </p>
         )}
       </div>
@@ -115,11 +150,19 @@ function CommentItem({
   );
 }
 
+// ─── CommentThread ────────────────────────────────────────────────────────────
+
 export function CommentThread({ candidateId }: CommentThreadProps) {
   const [comments, setComments] = useState<CandidateComment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isPending, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(true);
+
+  // @mention popover state
+  const [showMentionPopover, setShowMentionPopover] = useState(false);
+  const [mentionFilter, setMentionFilter] = useState("");
+  const [mentionAnchorIdx, setMentionAnchorIdx] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const loadComments = () => {
     startTransition(async () => {
@@ -131,14 +174,70 @@ export function CommentThread({ candidateId }: CommentThreadProps) {
 
   useEffect(() => {
     loadComments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [candidateId]);
+
+  // Detect @mention trigger on each keystroke
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    setNewComment(value);
+
+    const cursor = e.target.selectionStart ?? value.length;
+
+    // Find the last @ before the cursor that hasn't been closed by a space
+    const textBeforeCursor = value.slice(0, cursor);
+    const atIdx = textBeforeCursor.lastIndexOf("@");
+
+    if (atIdx !== -1) {
+      const fragment = textBeforeCursor.slice(atIdx + 1);
+      // Only show popover if no spaces after the @
+      if (!fragment.includes(" ")) {
+        setMentionAnchorIdx(atIdx);
+        setMentionFilter(fragment.toLowerCase());
+        setShowMentionPopover(true);
+        return;
+      }
+    }
+
+    setShowMentionPopover(false);
+    setMentionFilter("");
+    setMentionAnchorIdx(-1);
+  }
+
+  function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Escape") {
+      setShowMentionPopover(false);
+    } else if (e.key === "Enter" && !showMentionPopover && !e.shiftKey) {
+      e.preventDefault();
+      handlePost();
+    }
+  }
+
+  function selectMention(name: string) {
+    // Replace the @partial text with @Name (space after)
+    const before = newComment.slice(0, mentionAnchorIdx);
+    const after = newComment.slice(mentionAnchorIdx + 1 + mentionFilter.length);
+    const updated = `${before}@${name} ${after}`;
+    setNewComment(updated);
+    setShowMentionPopover(false);
+    setMentionFilter("");
+    setMentionAnchorIdx(-1);
+    // Return focus to input
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }
+
+  const filteredMembers = TEAM_MEMBERS.filter((m) =>
+    m.name.toLowerCase().startsWith(mentionFilter),
+  );
 
   const handlePost = () => {
     if (!newComment.trim()) return;
+    const mentions = extractMentions(newComment);
     startTransition(async () => {
-      const result = await createComment(candidateId, newComment);
+      const result = await createComment(candidateId, newComment, mentions);
       if ("success" in result) {
         setNewComment("");
+        setShowMentionPopover(false);
         loadComments();
       }
     });
@@ -155,22 +254,44 @@ export function CommentThread({ candidateId }: CommentThreadProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Comment input */}
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Add a comment..."
-          className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-blue-300 focus:outline-none"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handlePost();
-            }
-          }}
-          disabled={isPending}
-        />
+      {/* Comment input with @mention popover */}
+      <div className="relative flex items-center gap-2">
+        <div className="relative flex-1">
+          <input
+            ref={inputRef}
+            type="text"
+            value={newComment}
+            onChange={handleInputChange}
+            onKeyDown={handleInputKeyDown}
+            placeholder="Add a comment... (type @ to mention)"
+            className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-blue-300 focus:outline-none"
+            disabled={isPending}
+          />
+
+          {/* @mention popover — absolute below input */}
+          {showMentionPopover && filteredMembers.length > 0 && (
+            <div className="absolute left-0 top-full z-20 mt-1 w-44 rounded-md border border-gray-200 bg-white shadow-md">
+              {filteredMembers.map((member) => (
+                <button
+                  key={member.id}
+                  type="button"
+                  onMouseDown={(e) => {
+                    // Prevent input blur before we can capture the click
+                    e.preventDefault();
+                    selectMention(member.name);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 text-left transition-colors"
+                >
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-700">
+                    {member.name.charAt(0)}
+                  </span>
+                  {member.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <button
           onClick={handlePost}
           disabled={isPending || !newComment.trim()}

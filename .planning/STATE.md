@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Team can import candidates in bulk, review portfolios by role, and move candidates through the hiring pipeline — without switching between spreadsheets, emails, and messaging apps.
-**Current focus:** Phase 4 — AI Extraction (1 of 3 plans complete).
+**Current focus:** Phase 4 — AI Extraction (2 of 3 plans complete).
 
 ## Current Position
 
 Phase: 4 of 6 (AI Extraction) — IN PROGRESS
-Plan: 1 of 3 in current phase — 04-01 done
-Status: 04-01 complete — Firecrawl scraper, zodResponseFormat OpenAI, after() async pipeline, status polling endpoint.
-Last activity: 2026-03-13 — 04-01 complete: firecrawl.ts, openai.ts upgrade, extraction.ts new actions, /api/extraction-status/[batchId]
+Plan: 2 of 3 in current phase — 04-02 done
+Status: 04-02 complete — StepUrlPaste, ExtractionProgress, ImportWizard URL tab wired.
+Last activity: 2026-03-13 — 04-02 complete: StepUrlPaste.tsx, ExtractionProgress.tsx, ImportWizard.tsx updated
 
-Progress: [█████████░] 80%
+Progress: [█████████░] 83%
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Progress: [█████████░] 80%
 | Phase 03-import-pipeline P03 | 12 | 2 tasks | 5 files |
 | Phase 03-import-pipeline P04 | 4 | 2 tasks | 4 files |
 | Phase 04-ai-extraction P01 | 5 | 2 tasks | 4 files |
+| Phase 04-ai-extraction P02 | 7 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -127,6 +128,10 @@ Recent decisions affecting current work:
 - [Phase 03-import-pipeline]: source field (excel|csv|paste) added to WizardState, propagated via Step1Upload onParsed callback signature
 - [Phase 03-04]: EnrichedRow type (ValidatedRow + DuplicateMatch + RowDecision) defined locally in Step3Validate — UI concern, not a shared domain type
 - [Phase 04-ai-extraction]: Used FirecrawlAppV1 named export (v2 default removed scrapeUrl); zodResponseFormat works with Zod v4 via chat.completions.parse; after() for fire-and-forget scrape pipeline
+- [Phase 04-02]: Top-level File Upload / URL tab in ImportWizard (not sub-tab in Step1Upload) — cleaner separation of two fundamentally different flows
+- [Phase 04-02]: Tab switcher hidden while deep in either flow (isDeepInFileWizard guard or active batchId) to prevent mid-flow abandonment
+- [Phase 04-02]: ExtractionStatusDraft type exported from ExtractionProgress.tsx — ImportWizard imports it to type completion state; no shared types file needed
+- [Phase 04-02]: Review Results state stored in ImportWizard useState — Plan 03 consumes extractionDrafts array to open review modal
 
 ### Pending Todos
 
@@ -141,5 +146,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 04-01-PLAN.md — AI extraction pipeline built. scrapeUrl(), after() async flow, confirmExtraction(), skipExtraction(), polling endpoint all done.
-Resume file: Run /gsd:execute-phase 04-ai-extraction to execute 04-02 (UI integration)
+Stopped at: Completed 04-02-PLAN.md — URL paste UI and extraction progress wired into ImportWizard. StepUrlPaste, ExtractionProgress, ImportWizard URL tab all done.
+Resume file: Run /gsd:execute-phase 04-ai-extraction to execute 04-03 (review modal)

@@ -71,8 +71,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **IMPT-05**: Encoding-safe parsing — detect BOM, handle Windows-1252, preserve Indian names and +91 numbers
 - [x] **IMPT-06**: Role assignment on import — map from sheet column or user selects target role
 - [x] **IMPT-07**: Rows with missing name or portfolio link flagged in red before proceeding
-- [ ] **IMPT-08**: Bulk URL paste — paste multiple portfolio links one per line, all queued for AI extraction
-- [ ] **IMPT-09**: Single URL entry — paste one portfolio link, AI extracts and creates one candidate card
+- [x] **IMPT-08**: Bulk URL paste — paste multiple portfolio links one per line, all queued for AI extraction
+- [x] **IMPT-09**: Single URL entry — paste one portfolio link, AI extracts and creates one candidate card
 - [x] **IMPT-10**: Manual entry form — fill in fields one by one for individual candidates
 - [x] **IMPT-11**: Import summary after completion: imported count, skipped count, duplicates found, extraction queued count
 
@@ -213,8 +213,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IMPT-05 | Phase 3 | Complete |
 | IMPT-06 | Phase 3 | Complete |
 | IMPT-07 | Phase 3 | Complete |
-| IMPT-08 | Phase 4 | Pending |
-| IMPT-09 | Phase 4 | Pending |
+| IMPT-08 | Phase 4 | Complete |
+| IMPT-09 | Phase 4 | Complete |
 | IMPT-10 | Phase 3 | Complete |
 | IMPT-11 | Phase 3 | Complete |
 | AIEX-01 | Phase 4 | Complete |

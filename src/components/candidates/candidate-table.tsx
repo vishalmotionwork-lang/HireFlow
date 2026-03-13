@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CandidateRow } from "@/components/candidates/candidate-row";
 import { CandidateAddRow } from "@/components/candidates/candidate-add-row";
+import { CandidateDrawer } from "@/components/candidates/candidate-drawer";
 import type { Candidate } from "@/types";
 
 interface CandidateTableProps {
@@ -20,8 +21,8 @@ export function CandidateTable({
   currentPage,
   totalPages,
 }: CandidateTableProps) {
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(
-    null
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(
+    null,
   );
   const [showAddRow, setShowAddRow] = useState(false);
 
@@ -30,7 +31,7 @@ export function CandidateTable({
     if (showAddRow) {
       setShowAddRow(false);
     }
-    setSelectedCandidate(candidate);
+    setSelectedCandidateId(candidate.id);
   };
 
   const handleAddRowCancel = () => {
@@ -38,8 +39,8 @@ export function CandidateTable({
   };
 
   const handleAddClick = () => {
-    // Dismiss any selected candidate when opening add row
-    setSelectedCandidate(null);
+    // Dismiss any open drawer when opening add row
+    setSelectedCandidateId(null);
     setShowAddRow(true);
   };
 
@@ -152,12 +153,11 @@ export function CandidateTable({
         </div>
       )}
 
-      {/* Selected candidate drawer placeholder — integrated in Plan 03 */}
-      {selectedCandidate && (
-        <div className="sr-only" aria-live="polite">
-          Selected: {selectedCandidate.name}
-        </div>
-      )}
+      {/* Candidate profile drawer */}
+      <CandidateDrawer
+        candidateId={selectedCandidateId}
+        onClose={() => setSelectedCandidateId(null)}
+      />
     </div>
   );
 }

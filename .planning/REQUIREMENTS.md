@@ -9,15 +9,15 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Foundation
 
-- [ ] **FOUND-01**: App bootstrapped with Next.js 16 + Supabase + Drizzle ORM + shadcn/ui + Tailwind CSS
+- [x] **FOUND-01**: App bootstrapped with Next.js 16 + Supabase + Drizzle ORM + shadcn/ui + Tailwind CSS
 - [ ] **FOUND-02**: Clerk authentication with team login — all routes protected except sign-in/sign-up
-- [ ] **FOUND-03**: Database schema with all core tables: roles, candidates, comments, status_history, import_batches, extraction_jobs, activity
+- [x] **FOUND-03**: Database schema with all core tables: roles, candidates, comments, status_history, import_batches, extraction_jobs, activity
 - [ ] **FOUND-04**: Row-level security enabled on Supabase from day 1
 - [ ] **FOUND-05**: App shell with sidebar navigation, topbar with global search, and mobile-responsive layout
 
 ### Roles
 
-- [ ] **ROLE-01**: Default roles seeded on first run: Video Editor, Writer/Scriptwriter, Designer, AI/Tech
+- [x] **ROLE-01**: Default roles seeded on first run: Video Editor, Writer/Scriptwriter, Designer, AI/Tech
 - [ ] **ROLE-02**: User can create custom roles from Settings with name, icon, and description
 - [ ] **ROLE-03**: Each role has its own dedicated candidate list view at /roles/[slug]
 - [ ] **ROLE-04**: Role switcher tab strip at top of list view for quick navigation between roles
@@ -169,12 +169,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | Phase 1 | Pending |
+| FOUND-01 | Phase 1 | Complete |
 | FOUND-02 | Phase 1 | Pending |
-| FOUND-03 | Phase 1 | Pending |
+| FOUND-03 | Phase 1 | Complete |
 | FOUND-04 | Phase 1 | Pending |
 | FOUND-05 | Phase 1 | Pending |
-| ROLE-01 | Phase 1 | Pending |
+| ROLE-01 | Phase 1 | Complete |
 | ROLE-02 | Phase 1 | Pending |
 | ROLE-03 | Phase 2 | Pending |
 | ROLE-04 | Phase 2 | Pending |

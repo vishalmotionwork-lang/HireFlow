@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-03-13)
 ## Current Position
 
 Phase: 1 of 6 (Foundation)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-03-13 — Roadmap created, requirements mapped, ready for Phase 1 planning
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-03-13 — Plan 01-01 complete (scaffold + schema + seeded roles)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 5%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 35 min
+- Total execution time: 0.6 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-foundation | 1/3 | 35 min | 35 min |
 
 **Recent Trend:**
-- No plans completed yet
-- Trend: -
+- 1 plan completed in Phase 1
+- Trend: On track
 
 *Updated after each plan completion*
 
@@ -48,6 +48,10 @@ Recent decisions affecting current work:
 - [Roadmap]: SheetJS Community + PapaParse for Excel/CSV import (Apache 2.0)
 - [Roadmap]: Immutable event log for pipeline status (candidate_events table) — must be established in Phase 1 or it's expensive to retrofit
 - [Roadmap]: Supabase RLS enabled before any data is written — not a cleanup step
+- [01-01]: Use dotenv config({ path: '.env.local' }) not 'dotenv/config' — Next.js convention uses .env.local, not .env
+- [01-01]: Table declaration order matters for FK exports: roles first, then importBatches, then candidates — Drizzle uses lazy callbacks but export variable must exist
+- [01-01]: PostgreSQL installed via Homebrew (brew install postgresql@16) — Docker not available on this machine
+- [01-01]: candidateStatusEnum has 12 statuses covering full hiring pipeline from left_to_review to hired/rejected
 
 ### Pending Todos
 
@@ -62,5 +66,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Phase 1 planned — 3 plans in 2 waves, ready to execute
-Resume file: .planning/phases/01-foundation/
+Stopped at: Completed 01-01-PLAN.md — scaffold, schema, and seeded roles done. Ready for 01-02-PLAN.md (Clerk auth)
+Resume file: .planning/phases/01-foundation/01-02-PLAN.md

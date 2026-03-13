@@ -1,4 +1,5 @@
-import "dotenv/config";
+import { config } from "dotenv";
+config({ path: ".env.local" });
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { roles } from "./schema";
@@ -41,7 +42,9 @@ async function seed() {
     .values(defaultRoles)
     .onConflictDoNothing();
 
-  console.log(`Seed complete. Inserted ${result.count ?? 0} roles (duplicates skipped).`);
+  console.log(
+    `Seed complete. Inserted ${result.count ?? 0} roles (duplicates skipped).`,
+  );
 
   await client.end();
   process.exit(0);

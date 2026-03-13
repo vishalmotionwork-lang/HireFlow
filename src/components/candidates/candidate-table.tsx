@@ -12,6 +12,8 @@ interface CandidateTableProps {
   roleId: string;
   currentPage: number;
   totalPages: number;
+  showRoleColumn?: boolean;
+  rolesMap?: Record<string, string>;
 }
 
 export function CandidateTable({
@@ -20,6 +22,8 @@ export function CandidateTable({
   roleId,
   currentPage,
   totalPages,
+  showRoleColumn = false,
+  rolesMap = {},
 }: CandidateTableProps) {
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(
     null,
@@ -73,6 +77,11 @@ export function CandidateTable({
               <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 Name
               </th>
+              {showRoleColumn && (
+                <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Role
+                </th>
+              )}
               <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 Email
               </th>
@@ -108,13 +117,18 @@ export function CandidateTable({
                 key={candidate.id}
                 candidate={candidate}
                 onSelect={handleRowSelect}
+                showRoleColumn={showRoleColumn}
+                rolesMap={rolesMap}
               />
             ))}
 
             {/* Empty state */}
             {isEmpty && (
               <tr>
-                <td colSpan={8} className="px-6 py-16 text-center">
+                <td
+                  colSpan={showRoleColumn ? 9 : 8}
+                  className="px-6 py-16 text-center"
+                >
                   <div className="flex flex-col items-center gap-3 text-gray-400">
                     <svg
                       className="h-10 w-10 text-gray-200"

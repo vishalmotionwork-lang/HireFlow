@@ -7,6 +7,8 @@ import type { Candidate } from "@/types";
 interface CandidateRowProps {
   candidate: Candidate;
   onSelect: (candidate: Candidate) => void;
+  showRoleColumn?: boolean;
+  rolesMap?: Record<string, string>;
 }
 
 /**
@@ -39,7 +41,12 @@ function stripProtocol(url: string): string {
   }
 }
 
-export function CandidateRow({ candidate, onSelect }: CandidateRowProps) {
+export function CandidateRow({
+  candidate,
+  onSelect,
+  showRoleColumn = false,
+  rolesMap = {},
+}: CandidateRowProps) {
   const handleRowClick = () => {
     onSelect(candidate);
   };
@@ -48,6 +55,10 @@ export function CandidateRow({ candidate, onSelect }: CandidateRowProps) {
     candidate.instagram && !candidate.instagram.startsWith("@")
       ? `@${candidate.instagram}`
       : candidate.instagram;
+
+  const roleName = showRoleColumn
+    ? (rolesMap[candidate.roleId] ?? "Unknown Role")
+    : null;
 
   return (
     <tr
@@ -60,6 +71,15 @@ export function CandidateRow({ candidate, onSelect }: CandidateRowProps) {
           {candidate.name}
         </span>
       </td>
+
+      {/* Role — only shown in master view */}
+      {showRoleColumn && (
+        <td className="px-3 py-2.5 max-w-[140px]">
+          <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 truncate max-w-full">
+            {roleName}
+          </span>
+        </td>
+      )}
 
       {/* Email */}
       <td className="px-3 py-2.5 max-w-[180px]">

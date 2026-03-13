@@ -1,25 +1,115 @@
-import { Inbox } from "lucide-react";
+import { db } from "@/db";
+import { roles } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { CandidateTable } from "@/components/candidates/candidate-table";
+import { CandidateFilterBar } from "@/components/candidates/candidate-filter-bar";
+import { CandidatePagination } from "@/components/candidates/candidate-pagination";
+import { getCandidates } from "@/lib/queries/candidates";
+import { CANDIDATE_STATUSES } from "@/types";
+import type { CandidateStatus } from "@/types";
 
-export default function MasterPage() {
+interface MasterPageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function MasterPage({ searchParams }: MasterPageProps) {
+  // Next.js 16: searchParams must be awaited
+  const sp = await searchParams;
+
+  // Parse filter params from URL search params
+  const page = Math.max(1, Number(sp.page) || 1);
+
+  const rawStatus = typeof sp.status === "string" ? sp.status : "";
+  const status: CandidateStatus[] = rawStatus
+    ? (rawStatus
+        .split(",")
+        .filter((s) =>
+          (CANDIDATE_STATUSES as readonly string[]).includes(s),
+        ) as CandidateStatus[])
+    : [];
+
+  const rawTier = typeof sp.tier === "string" ? sp.tier : null;
+  const tier =
+    rawTier === "junior" ||
+    rawTier === "senior" ||
+    rawTier === "both" ||
+    rawTier === "untiered"
+      ? rawTier
+      : null;
+
+  const rawSort = typeof sp.sort === "string" ? sp.sort : "newest";
+  const sort: "newest" | "oldest" | "name_asc" | "updated" =
+    rawSort === "oldest" || rawSort === "name_asc" || rawSort === "updated"
+      ? rawSort
+      : "newest";
+
+  const q = typeof sp.q === "string" ? sp.q : "";
+
+  const rawDate = typeof sp.date === "string" ? sp.date : null;
+  const dateRange: "today" | "week" | "month" | null =
+    rawDate === "today" || rawDate === "week" || rawDate === "month"
+      ? rawDate
+      : null;
+
+  const duplicatesOnly = sp.duplicates === "true";
+
+  // Fetch all active roles for role name lookup
+  const allRoles = await db
+    .select()
+    .from(roles)
+    .where(eq(roles.isActive, true))
+    .orderBy(roles.sortOrder);
+
+  // Build rolesMap: roleId -> roleName for display in Role column
+  const rolesMap: Record<string, string> = Object.fromEntries(
+    allRoles.map((r) => [r.id, r.name]),
+  );
+
+  // Fetch ALL candidates across all roles (no roleId filter)
+  const { candidates, total, totalPages } = await getCandidates({
+    // roleId omitted intentionally — master view shows all candidates
+    page,
+    status,
+    tier,
+    sort,
+    q,
+    dateRange,
+    duplicatesOnly,
+  });
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Master View</h1>
-        <p className="mt-1 text-sm text-gray-500">All Candidates</p>
-      </div>
-
-      {/* Empty state */}
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white py-20 text-center">
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-          <Inbox size={22} className="text-gray-400" />
-        </div>
-        <h3 className="text-sm font-medium text-gray-700">No candidates yet</h3>
-        <p className="mt-1 max-w-xs text-xs text-gray-400">
-          All candidates across every role will appear here once imported or
-          added manually.
+        <h1 className="text-xl font-semibold text-gray-900">
+          All Candidates{" "}
+          <span className="text-sm font-normal text-gray-400">({total})</span>
+        </h1>
+        <p className="mt-0.5 text-xs text-gray-400">
+          Cross-role master view — every candidate from every role
         </p>
       </div>
+
+      {/* Filter bar */}
+      <CandidateFilterBar showing={candidates.length} total={total} />
+
+      {/* Candidates table — Role column enabled */}
+      <CandidateTable
+        candidates={candidates}
+        total={total}
+        roleId=""
+        currentPage={page}
+        totalPages={totalPages}
+        showRoleColumn={true}
+        rolesMap={rolesMap}
+      />
+
+      {/* Pagination */}
+      <CandidatePagination
+        currentPage={page}
+        totalPages={totalPages}
+        total={total}
+      />
     </div>
   );
 }

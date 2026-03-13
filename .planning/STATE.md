@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Team can import candidates in bulk, review portfolios by role, and move candidates through the hiring pipeline — without switching between spreadsheets, emails, and messaging apps.
-**Current focus:** Phase 6 — Settings/Admin (next phase).
+**Current focus:** Phase 6 — Responsive Polish (final phase)
 
 ## Current Position
 
-Phase: 5 of 6 (Collaboration Dashboard) — COMPLETE
-Plan: 2 of 2 in current phase — all plans complete, human verify approved 2026-03-13
-Status: Phase 5 complete — interactive dashboard with DashboardClient auto-refresh, clickable stats, role tier mini-bar, hired/rejected table, clickable activity feed with candidate drawer. All 8 requirements met.
-Last activity: 2026-03-13 — 05-02 human verify approved. Phase 5 Collaboration Dashboard complete.
+Phase: 6 of 6 (Responsive Polish) — ready for planning
+Plan: 0 of TBD
+Status: Phases 1-5 complete. Phase 6 (Responsive Polish) is the last phase.
+Last activity: 2026-03-13 — Phase 5 complete. All core features built.
 
 Progress: [██████████] 92%
 

@@ -27,9 +27,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **CAND-01**: User can manually add a candidate with name, email, phone/WhatsApp, Instagram, social handles, portfolio links, and role assignment
 - [x] **CAND-02**: Candidate list view shows: name, contact snippet, portfolio link (clickable), status badge, tier badge, date added, last updated
-- [ ] **CAND-03**: Clicking a candidate row opens profile as right-side drawer (desktop) or full screen (mobile)
-- [ ] **CAND-04**: Candidate profile shows: editable header (name, role, tier, status), contact block with copy buttons, portfolio link chips, status history timeline, comment thread, metadata footer
-- [ ] **CAND-05**: User can edit any candidate field inline from the profile view
+- [x] **CAND-03**: Clicking a candidate row opens profile as right-side drawer (desktop) or full screen (mobile)
+- [x] **CAND-04**: Candidate profile shows: editable header (name, role, tier, status), contact block with copy buttons, portfolio link chips, status history timeline, comment thread, metadata footer
+- [x] **CAND-05**: User can edit any candidate field inline from the profile view
 - [ ] **CAND-06**: Master View at /master shows all candidates across all roles with an additional Role column and Role filter
 
 ### Pipeline
@@ -38,29 +38,29 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **PIPE-02**: User can change candidate status via dropdown on profile — change is logged immediately with who, from, to, when
 - [x] **PIPE-03**: Status history stored as insert-only event log (never overwrite) — full audit trail visible on candidate profile
 - [ ] **PIPE-04**: Activity feed on dashboard shows last 10 status changes across all roles with real-time refresh (30s)
-- [ ] **PIPE-05**: Clicking any activity item opens that candidate's profile
+- [x] **PIPE-05**: Clicking any activity item opens that candidate's profile
 - [ ] **PIPE-06**: Bulk status change — select multiple candidates via checkboxes, change status in one action
 
 ### Tiers
 
 - [x] **TIER-01**: All candidates start as Untiered on import or manual entry
-- [ ] **TIER-02**: Reviewer assigns tier (Junior/Senior/Both) from candidate profile after reviewing portfolio
-- [ ] **TIER-03**: Tier filter pills on every role list: All, Untiered, Junior, Senior, Both
+- [x] **TIER-02**: Reviewer assigns tier (Junior/Senior/Both) from candidate profile after reviewing portfolio
+- [x] **TIER-03**: Tier filter pills on every role list: All, Untiered, Junior, Senior, Both
 - [x] **TIER-04**: Tier is changeable at any time — not locked after assignment
 - [x] **TIER-05**: Tier changes logged in activity/audit trail
 
 ### Search & Filter
 
-- [ ] **SRCH-01**: In-role search bar — searches name, email, WhatsApp number in real time (300ms debounce)
+- [x] **SRCH-01**: In-role search bar — searches name, email, WhatsApp number in real time (300ms debounce)
 - [ ] **SRCH-02**: Global search in topbar — searches across all roles simultaneously
-- [ ] **SRCH-03**: Filter by status (multi-select dropdown)
-- [ ] **SRCH-04**: Filter by tier (pill buttons)
-- [ ] **SRCH-05**: Filter by date added (Today/This Week/This Month/Custom Range)
+- [x] **SRCH-03**: Filter by status (multi-select dropdown)
+- [x] **SRCH-04**: Filter by tier (pill buttons)
+- [x] **SRCH-05**: Filter by date added (Today/This Week/This Month/Custom Range)
 - [ ] **SRCH-06**: Filter by import source (Excel/CSV/Manual/Paste/URL/Form)
-- [ ] **SRCH-07**: Show duplicates only toggle
-- [ ] **SRCH-08**: Sort by: Last Updated (default), Date Added, Name A-Z, Status grouped
-- [ ] **SRCH-09**: Active filter count badge + reset all filters button
-- [ ] **SRCH-10**: Pagination — 50 per page with page selector and total count
+- [x] **SRCH-07**: Show duplicates only toggle
+- [x] **SRCH-08**: Sort by: Last Updated (default), Date Added, Name A-Z, Status grouped
+- [x] **SRCH-09**: Active filter count badge + reset all filters button
+- [x] **SRCH-10**: Pagination — 50 per page with page selector and total count
 
 ### Import
 
@@ -181,31 +181,31 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ROLE-05 | Phase 1 | Complete |
 | CAND-01 | Phase 2 | Complete |
 | CAND-02 | Phase 2 | Complete |
-| CAND-03 | Phase 2 | Pending |
-| CAND-04 | Phase 2 | Pending |
-| CAND-05 | Phase 2 | Pending |
+| CAND-03 | Phase 2 | Complete |
+| CAND-04 | Phase 2 | Complete |
+| CAND-05 | Phase 2 | Complete |
 | CAND-06 | Phase 2 | Pending |
 | PIPE-01 | Phase 2 | Complete |
 | PIPE-02 | Phase 2 | Complete |
 | PIPE-03 | Phase 2 | Complete |
 | PIPE-04 | Phase 2 | Pending |
-| PIPE-05 | Phase 2 | Pending |
+| PIPE-05 | Phase 2 | Complete |
 | PIPE-06 | Phase 2 | Pending |
 | TIER-01 | Phase 2 | Complete |
-| TIER-02 | Phase 2 | Pending |
-| TIER-03 | Phase 2 | Pending |
+| TIER-02 | Phase 2 | Complete |
+| TIER-03 | Phase 2 | Complete |
 | TIER-04 | Phase 2 | Complete |
 | TIER-05 | Phase 2 | Complete |
-| SRCH-01 | Phase 2 | Pending |
+| SRCH-01 | Phase 2 | Complete |
 | SRCH-02 | Phase 2 | Pending |
-| SRCH-03 | Phase 2 | Pending |
-| SRCH-04 | Phase 2 | Pending |
-| SRCH-05 | Phase 2 | Pending |
+| SRCH-03 | Phase 2 | Complete |
+| SRCH-04 | Phase 2 | Complete |
+| SRCH-05 | Phase 2 | Complete |
 | SRCH-06 | Phase 2 | Pending |
-| SRCH-07 | Phase 2 | Pending |
-| SRCH-08 | Phase 2 | Pending |
-| SRCH-09 | Phase 2 | Pending |
-| SRCH-10 | Phase 2 | Pending |
+| SRCH-07 | Phase 2 | Complete |
+| SRCH-08 | Phase 2 | Complete |
+| SRCH-09 | Phase 2 | Complete |
+| SRCH-10 | Phase 2 | Complete |
 | IMPT-01 | Phase 3 | Pending |
 | IMPT-02 | Phase 3 | Pending |
 | IMPT-03 | Phase 3 | Pending |

@@ -5,38 +5,40 @@
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Team can import candidates in bulk, review portfolios by role, and move candidates through the hiring pipeline — without switching between spreadsheets, emails, and messaging apps.
-**Current focus:** Phase 2 — Candidate Core (plan 1 complete)
+**Current focus:** Phase 2 — Candidate Core (plan 4 complete)
 
 ## Current Position
 
 Phase: 2 of 6 (Candidate Core)
-Plan: 1 of 5 in current phase
-Status: Executing — 02-01 complete, 02-02 through 02-05 remaining
-Last activity: 2026-03-13 — 02-01 complete: candidate data layer (server actions, queries, vitest)
+Plan: 4 of 5 in current phase
+Status: Executing — 02-01 through 02-04 complete, 02-05 remaining
+Last activity: 2026-03-13 — 02-04 complete: filter bar, pagination, role page wiring
 
-Progress: [███░░░░░░░] 20%
+Progress: [████████░░] 53%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 20 min
-- Total execution time: 1.2 hours
+- Total plans completed: 7
+- Average duration: 17 min
+- Total execution time: ~2 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation | 3/3 | 69 min | 23 min |
-| 02-candidate-core | 1/5 | 4 min | 4 min |
+| 02-candidate-core | 4/5 | ~50 min | ~12 min |
 
 **Recent Trend:**
 - Phase 1 complete — all 3 plans executed, 17/17 must-haves verified
-- Phase 2 underway — 02-01 done (data layer), UI plans next
+- Phase 2 underway — 02-01 through 02-04 done, 02-05 (drawer) remaining
 - Trend: On track
 
 *Updated after each plan completion*
 | Phase 02 P02 | 4 | 2 tasks | 6 files |
+| Phase 02 P04 | 3 | 2 tasks | 3 files |
+| Phase 02-candidate-core P03 | 3 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -85,6 +87,15 @@ Recent decisions affecting current work:
 - [Phase 02]: useActionState requires concrete state type (not union) for correct TypeScript inference in candidate-add-row
 - [Phase 02]: StatusBadge uses onClick on DropdownMenuTrigger (base-ui pattern), not onSelect prop
 
+**Phase 2 implementation (02-04):**
+- CANDIDATE_STATUSES is exported from @/types, not @/lib/constants — fix applied during execution
+- Filter state lives entirely in URL search params — no useState for filter values
+- CandidateFilterBar receives showing/total as props from the server component (no client-side refetch)
+- DropdownMenuCheckboxItem from base-ui used for status multi-select (consistent with existing patterns)
+- Next.js 16: both params AND searchParams must be awaited in server components
+- [Phase 02]: Drawer owns its data fetch (candidateId only) — keeps table lean and avoids stale object state
+- [Phase 02]: selectedCandidateId (string | null) in table state — drawer is self-contained
+
 ### Pending Todos
 
 None yet.
@@ -98,5 +109,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: 02-01 complete — candidate data layer built and tested. Proceed with 02-02 (candidate table UI).
-Resume file: .planning/phases/02-candidate-core/02-01-SUMMARY.md
+Stopped at: 02-04 complete — filter bar, pagination, and role page wiring. Proceed with 02-05 (candidate profile drawer).
+Resume file: .planning/phases/02-candidate-core/02-04-SUMMARY.md

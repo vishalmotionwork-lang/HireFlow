@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Team can import candidates in bulk, review portfolios by role, and move candidates through the hiring pipeline — without switching between spreadsheets, emails, and messaging apps.
-**Current focus:** Phase 2 — Candidate Core (plan 4 complete)
+**Current focus:** Phase 2 — Candidate Core (all 5 plans complete, awaiting human verify on 02-05)
 
 ## Current Position
 
 Phase: 2 of 6 (Candidate Core)
-Plan: 4 of 5 in current phase
-Status: Executing — 02-01 through 02-04 complete, 02-05 remaining
-Last activity: 2026-03-13 — 02-04 complete: filter bar, pagination, role page wiring
+Plan: 5 of 5 in current phase
+Status: Checkpoint — 02-05 auto tasks complete, awaiting human-verify checkpoint
+Last activity: 2026-03-13 — 02-05 auto tasks complete: master view, global search
 
-Progress: [████████░░] 53%
+Progress: [█████████░] 57%
 
 ## Performance Metrics
 
@@ -87,6 +87,13 @@ Recent decisions affecting current work:
 - [Phase 02]: useActionState requires concrete state type (not union) for correct TypeScript inference in candidate-add-row
 - [Phase 02]: StatusBadge uses onClick on DropdownMenuTrigger (base-ui pattern), not onSelect prop
 
+**Phase 2 implementation (02-05):**
+- Master view omits roleId from getCandidates — cross-role query returns all candidates
+- rolesMap pattern: Record<string, string> of roleId->roleName built server-side, passed to CandidateTable
+- showRoleColumn prop on CandidateTable/CandidateRow enables optional Role column with indigo badge
+- Global search in topbar: useDebounce 300ms + useRouter.push to /master?q=searchterm
+- SRCH-06 (import source filter) deferred to Phase 3; PIPE-06 (bulk status) deferred per user decision
+
 **Phase 2 implementation (02-04):**
 - CANDIDATE_STATUSES is exported from @/types, not @/lib/constants — fix applied during execution
 - Filter state lives entirely in URL search params — no useState for filter values
@@ -109,5 +116,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: 02-04 complete — filter bar, pagination, and role page wiring. Proceed with 02-05 (candidate profile drawer).
-Resume file: .planning/phases/02-candidate-core/02-04-SUMMARY.md
+Stopped at: 02-05 checkpoint — master view and global search built. Awaiting human-verify of complete Phase 2 candidate workflow.
+Resume file: .planning/phases/02-candidate-core/02-05-SUMMARY.md

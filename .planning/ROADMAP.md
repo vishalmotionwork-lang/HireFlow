@@ -7,7 +7,7 @@ Six phases that build from foundation to a fully usable hiring CRM. Phase 1 esta
 ## Phases
 
 - [x] **Phase 1: Foundation** - Next.js + Supabase + schema + auth + app shell
-- [ ] **Phase 2: Candidate Core** - Role views, candidate CRUD, pipeline status, tiers, search, filter
+- [x] **Phase 2: Candidate Core** - Role views, candidate CRUD, pipeline status, tiers, search, filter (completed 2026-03-13)
 - [ ] **Phase 3: Import Pipeline** - Spreadsheet import, column mapping, duplicate detection, manual entry
 - [ ] **Phase 4: AI Extraction** - Portfolio URL scraping, structured extraction, review queue
 - [ ] **Phase 5: Collaboration and Dashboard** - Rejection flow, team comments, dashboard stats
@@ -40,7 +40,7 @@ Six phases that build from foundation to a fully usable hiring CRM. Phase 1 esta
   3. A reviewer can change a candidate's pipeline status via dropdown, and the change is immediately logged in the status history with who made it and when — the previous status is never overwritten
   4. A reviewer can assign Junior, Senior, or Both tier to a candidate from the profile, and the tier filter pills on the role list immediately reflect the assignment
   5. A user can search by name or email within a role view, filter by status (multi-select), tier, date added, and import source — all filters combine and show a count badge with a reset button
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans complete
 Plans:
 - [x] 02-01-PLAN.md — Server actions + query layer (create, status, tier, field update, getCandidates with filters) — DONE 2026-03-13
 - [x] 02-02-PLAN.md — Candidate UI components (table, row, status/tier badges, inline add, edit-field) — DONE 2026-03-13
@@ -100,7 +100,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-03-13 |
-| 2. Candidate Core | 4/5 | In Progress|  |
+| 2. Candidate Core | 5/5 | Complete   | 2026-03-13 |
 | 3. Import Pipeline | 0/TBD | Not started | - |
 | 4. AI Extraction | 0/TBD | Not started | - |
 | 5. Collaboration and Dashboard | 0/TBD | Not started | - |

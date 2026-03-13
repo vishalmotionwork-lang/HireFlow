@@ -30,7 +30,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **CAND-03**: Clicking a candidate row opens profile as right-side drawer (desktop) or full screen (mobile)
 - [x] **CAND-04**: Candidate profile shows: editable header (name, role, tier, status), contact block with copy buttons, portfolio link chips, status history timeline, comment thread, metadata footer
 - [x] **CAND-05**: User can edit any candidate field inline from the profile view
-- [ ] **CAND-06**: Master View at /master shows all candidates across all roles with an additional Role column and Role filter
+- [x] **CAND-06**: Master View at /master shows all candidates across all roles with an additional Role column and Role filter
 
 ### Pipeline
 
@@ -52,7 +52,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Search & Filter
 
 - [x] **SRCH-01**: In-role search bar — searches name, email, WhatsApp number in real time (300ms debounce)
-- [ ] **SRCH-02**: Global search in topbar — searches across all roles simultaneously
+- [x] **SRCH-02**: Global search in topbar — searches across all roles simultaneously
 - [x] **SRCH-03**: Filter by status (multi-select dropdown)
 - [x] **SRCH-04**: Filter by tier (pill buttons)
 - [x] **SRCH-05**: Filter by date added (Today/This Week/This Month/Custom Range)
@@ -184,7 +184,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CAND-03 | Phase 2 | Complete |
 | CAND-04 | Phase 2 | Complete |
 | CAND-05 | Phase 2 | Complete |
-| CAND-06 | Phase 2 | Pending |
+| CAND-06 | Phase 2 | Complete |
 | PIPE-01 | Phase 2 | Complete |
 | PIPE-02 | Phase 2 | Complete |
 | PIPE-03 | Phase 2 | Complete |
@@ -197,7 +197,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TIER-04 | Phase 2 | Complete |
 | TIER-05 | Phase 2 | Complete |
 | SRCH-01 | Phase 2 | Complete |
-| SRCH-02 | Phase 2 | Pending |
+| SRCH-02 | Phase 2 | Complete |
 | SRCH-03 | Phase 2 | Complete |
 | SRCH-04 | Phase 2 | Complete |
 | SRCH-05 | Phase 2 | Complete |

@@ -82,6 +82,8 @@ Recent decisions affecting current work:
 - Shared conditions array for count + data queries prevents total mismatch (pitfall 6)
 - fetchCandidateProfile server action wraps getCandidateWithEvents — Drizzle cannot run in client components
 - updateCandidateField uses explicit whitelist to prevent mass assignment
+- [Phase 02]: useActionState requires concrete state type (not union) for correct TypeScript inference in candidate-add-row
+- [Phase 02]: StatusBadge uses onClick on DropdownMenuTrigger (base-ui pattern), not onSelect prop
 
 ### Pending Todos
 

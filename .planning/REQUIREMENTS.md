@@ -19,14 +19,14 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **ROLE-01**: Default roles seeded on first run: Video Editor, Writer/Scriptwriter, Designer, AI/Tech
 - [x] **ROLE-02**: User can create custom roles from Settings with name, icon, and description
-- [ ] **ROLE-03**: Each role has its own dedicated candidate list view at /roles/[slug]
-- [ ] **ROLE-04**: Role switcher tab strip at top of list view for quick navigation between roles
+- [x] **ROLE-03**: Each role has its own dedicated candidate list view at /roles/[slug]
+- [x] **ROLE-04**: Role switcher tab strip at top of list view for quick navigation between roles
 - [x] **ROLE-05**: User can edit or deactivate custom roles (cannot delete roles with candidates)
 
 ### Candidates
 
 - [x] **CAND-01**: User can manually add a candidate with name, email, phone/WhatsApp, Instagram, social handles, portfolio links, and role assignment
-- [ ] **CAND-02**: Candidate list view shows: name, contact snippet, portfolio link (clickable), status badge, tier badge, date added, last updated
+- [x] **CAND-02**: Candidate list view shows: name, contact snippet, portfolio link (clickable), status badge, tier badge, date added, last updated
 - [ ] **CAND-03**: Clicking a candidate row opens profile as right-side drawer (desktop) or full screen (mobile)
 - [ ] **CAND-04**: Candidate profile shows: editable header (name, role, tier, status), contact block with copy buttons, portfolio link chips, status history timeline, comment thread, metadata footer
 - [ ] **CAND-05**: User can edit any candidate field inline from the profile view
@@ -176,11 +176,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FOUND-05 | Phase 1 | Pending |
 | ROLE-01 | Phase 1 | Complete |
 | ROLE-02 | Phase 1 | Complete |
-| ROLE-03 | Phase 2 | Pending |
-| ROLE-04 | Phase 2 | Pending |
+| ROLE-03 | Phase 2 | Complete |
+| ROLE-04 | Phase 2 | Complete |
 | ROLE-05 | Phase 1 | Complete |
 | CAND-01 | Phase 2 | Complete |
-| CAND-02 | Phase 2 | Pending |
+| CAND-02 | Phase 2 | Complete |
 | CAND-03 | Phase 2 | Pending |
 | CAND-04 | Phase 2 | Pending |
 | CAND-05 | Phase 2 | Pending |

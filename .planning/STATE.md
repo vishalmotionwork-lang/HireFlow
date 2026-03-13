@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Team can import candidates in bulk, review portfolios by role, and move candidates through the hiring pipeline — without switching between spreadsheets, emails, and messaging apps.
-**Current focus:** Phase 5 — Pipeline Board (next phase).
+**Current focus:** Phase 6 — Settings/Admin (next phase).
 
 ## Current Position
 
-Phase: 4 of 6 (AI Extraction) — COMPLETE
-Plan: 3 of 3 in current phase — all plans complete, human verify approved 2026-03-13
-Status: Phase 4 complete — full AI extraction pipeline: Firecrawl scrape + OpenAI extraction + async polling + review modal with confidence badges + ImportWizard end-to-end flow verified by user.
-Last activity: 2026-03-13 — 04-03 human verify approved. Phase 4 AI Extraction complete.
+Phase: 5 of 6 (Collaboration Dashboard) — COMPLETE
+Plan: 2 of 2 in current phase — all plans complete, human verify approved 2026-03-13
+Status: Phase 5 complete — interactive dashboard with DashboardClient auto-refresh, clickable stats, role tier mini-bar, hired/rejected table, clickable activity feed with candidate drawer. All 8 requirements met.
+Last activity: 2026-03-13 — 05-02 human verify approved. Phase 5 Collaboration Dashboard complete.
 
 Progress: [██████████] 92%
 
@@ -48,7 +48,8 @@ Progress: [██████████] 92%
 | Phase 04 P03 | 6 | 2 tasks | 6 files |
 | Phase 04 Complete (human verify) | - | checkpoint approved | - |
 | Phase 05-collaboration-dashboard P01 | 5 | 2 tasks | 9 files |
-| Phase 05-collaboration-dashboard P02 | 8 | 1 tasks | 5 files |
+| Phase 05-collaboration-dashboard P02 | 8 | 2 tasks | 5 files |
+| Phase 05 Complete (human verify) | - | checkpoint approved | - |
 
 ## Accumulated Context
 
@@ -156,5 +157,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 04-03-PLAN.md — ExtractionReviewList, ExtractionReviewModal, ContactParseField, ImportWizard review step wired. Human verify approved. Phase 4 complete.
-Resume file: Run /gsd:execute-phase 05-pipeline-board to begin Phase 5
+Stopped at: Completed 05-02-PLAN.md — DashboardClient, RoleCard, HiredRejectedTable, clickable ActivityFeed, CandidateDrawer on dashboard. Human verify approved. Phase 5 complete.
+Resume file: Run /gsd:execute-phase 06 to begin Phase 6 (Settings/Admin)

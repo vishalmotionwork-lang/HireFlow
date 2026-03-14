@@ -22,8 +22,13 @@ import {
   disconnectSheet,
   syncConnectedSheet,
   updateConnectedSheet,
+  detectRoleColumn,
 } from "@/lib/actions/sheets";
-import type { ConnectedSheet, SyncFrequency } from "@/lib/actions/sheets";
+import type {
+  ConnectedSheet,
+  SyncFrequency,
+  DetectRoleColumnResult,
+} from "@/lib/actions/sheets";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -74,6 +79,8 @@ const FREQUENCY_LABELS: Record<SyncFrequency, string> = {
 // Connect Sheet Modal
 // ---------------------------------------------------------------------------
 
+const AUTO_DETECT_VALUE = "__auto_detect__";
+
 function ConnectSheetForm({
   roles,
   onClose,
@@ -87,6 +94,39 @@ function ConnectSheetForm({
   const [roleId, setRoleId] = useState(roles[0]?.id ?? "");
   const [syncFrequency, setSyncFrequency] = useState<SyncFrequency>("daily");
 
+  // Role column detection state
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [detection, setDetection] = useState<DetectRoleColumnResult | null>(
+    null,
+  );
+  const [detectionError, setDetectionError] = useState<string | null>(null);
+
+  const isAutoDetect = roleId === AUTO_DETECT_VALUE;
+
+  // Detect role column when URL changes (debounced)
+  const handleUrlChange = (newUrl: string) => {
+    setSheetUrl(newUrl);
+    setDetection(null);
+    setDetectionError(null);
+
+    // Only check if it looks like a valid Google Sheets URL
+    if (!newUrl.includes("docs.google.com/spreadsheets/d/")) return;
+
+    setIsDetecting(true);
+    detectRoleColumn(newUrl.trim()).then((result) => {
+      setIsDetecting(false);
+      if ("error" in result) {
+        setDetectionError(result.error);
+      } else {
+        setDetection(result);
+        // Auto-select "Auto-detect" when a role column is found
+        if (result.hasRoleColumn) {
+          setRoleId(AUTO_DETECT_VALUE);
+        }
+      }
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -98,7 +138,7 @@ function ConnectSheetForm({
       toast.error("Please enter a name for this sheet.");
       return;
     }
-    if (!roleId) {
+    if (!isAutoDetect && !roleId) {
       toast.error("Please select a target role.");
       return;
     }
@@ -107,8 +147,12 @@ function ConnectSheetForm({
       const result = await connectSheet({
         name: name.trim(),
         sheetUrl: sheetUrl.trim(),
-        roleId,
+        roleId: isAutoDetect ? null : roleId,
         syncFrequency,
+        autoDetectRole: isAutoDetect,
+        roleColumnIndex: isAutoDetect
+          ? (detection?.roleColumnIndex ?? null)
+          : null,
       });
 
       if ("error" in result) {
@@ -144,14 +188,37 @@ function ConnectSheetForm({
             <input
               type="url"
               value={sheetUrl}
-              onChange={(e) => setSheetUrl(e.target.value)}
+              onChange={(e) => handleUrlChange(e.target.value)}
               placeholder="https://docs.google.com/spreadsheets/d/..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
             <p className="text-xs text-gray-500 mt-1">
-              Sheet must be shared as "Anyone with the link can view"
+              Sheet must be shared as &quot;Anyone with the link can view&quot;
             </p>
+
+            {/* Detection status */}
+            {isDetecting && (
+              <div className="flex items-center gap-1.5 mt-2 text-xs text-blue-600">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Checking sheet headers...</span>
+              </div>
+            )}
+            {detectionError && (
+              <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600">
+                <AlertCircle className="h-3 w-3" />
+                <span>{detectionError}</span>
+              </div>
+            )}
+            {detection?.hasRoleColumn && (
+              <div className="flex items-center gap-1.5 mt-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded-md px-2 py-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                <span>
+                  Role column detected ({`"${detection.roleColumnHeader}"`}) —
+                  candidates will be auto-routed by role
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Display Name */}
@@ -179,12 +246,23 @@ function ConnectSheetForm({
               onChange={(e) => setRoleId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
             >
+              {detection?.hasRoleColumn && (
+                <option value={AUTO_DETECT_VALUE}>
+                  Auto-detect from sheet
+                </option>
+              )}
               {roles.map((role) => (
                 <option key={role.id} value={role.id}>
                   {role.name}
                 </option>
               ))}
             </select>
+            {isAutoDetect && (
+              <p className="text-xs text-green-600 mt-1">
+                Each row&apos;s role value will be matched to existing roles or
+                create new ones automatically.
+              </p>
+            )}
           </div>
 
           {/* Sync Frequency */}
@@ -226,7 +304,7 @@ function ConnectSheetForm({
             </button>
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || isDetecting}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
             >
               {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -243,13 +321,7 @@ function ConnectSheetForm({
 // Single Sheet Row
 // ---------------------------------------------------------------------------
 
-function SheetRow({
-  sheet,
-  roles,
-}: {
-  sheet: SheetWithRole;
-  roles: Role[];
-}) {
+function SheetRow({ sheet, roles }: { sheet: SheetWithRole; roles: Role[] }) {
   const [isPending, startTransition] = useTransition();
   const [isSyncing, setIsSyncing] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
@@ -282,9 +354,7 @@ function SheetRow({
       if ("error" in result) {
         toast.error(result.error);
       } else {
-        toast.success(
-          sheet.isActive ? "Sheet paused" : "Sheet reactivated",
-        );
+        toast.success(sheet.isActive ? "Sheet paused" : "Sheet reactivated");
       }
     });
   };
@@ -331,18 +401,18 @@ function SheetRow({
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 mt-1">
             <span className="inline-flex items-center gap-1">
               <Link2 className="h-3 w-3" />
-              {sheet.roleName}
+              {sheet.autoDetectRole ? (
+                <span className="text-green-600 font-medium">Auto-detect</span>
+              ) : (
+                sheet.roleName
+              )}
             </span>
             <span className="inline-flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {FREQUENCY_LABELS[sheet.syncFrequency as SyncFrequency]}
             </span>
-            <span>
-              Last synced: {timeAgo(sheet.lastSyncAt)}
-            </span>
-            {sheet.lastRowCount > 0 && (
-              <span>{sheet.lastRowCount} rows</span>
-            )}
+            <span>Last synced: {timeAgo(sheet.lastSyncAt)}</span>
+            {sheet.lastRowCount > 0 && <span>{sheet.lastRowCount} rows</span>}
           </div>
 
           {/* Error message */}

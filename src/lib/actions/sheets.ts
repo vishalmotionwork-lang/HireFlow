@@ -10,9 +10,10 @@ import {
   importBatches,
   roles,
 } from "@/db/schema";
-import { detectMapping } from "@/lib/import/columnHeuristics";
+import { detectMapping, ROLE_KEYWORDS } from "@/lib/import/columnHeuristics";
 import { normalizeRows } from "@/lib/import/normalizeRows";
 import { cleanRows } from "@/lib/import/cleanRows";
+import { createRoleFromData } from "@/lib/actions/roles";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -24,9 +25,18 @@ export type SyncFrequency = "manual" | "hourly" | "daily";
 export interface ConnectSheetInput {
   name: string;
   sheetUrl: string;
-  roleId: string;
+  roleId: string | null; // null when auto-detecting roles
   syncFrequency: SyncFrequency;
+  autoDetectRole?: boolean;
+  roleColumnIndex?: number | null;
   gid?: string | null;
+}
+
+export interface DetectRoleColumnResult {
+  hasRoleColumn: boolean;
+  roleColumnIndex: number | null;
+  roleColumnHeader: string | null;
+  headers: string[];
 }
 
 export interface SyncResult {
@@ -188,6 +198,114 @@ function parseServerCsv(csvText: string): {
 }
 
 // ---------------------------------------------------------------------------
+// Role Column Detection
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch a Google Sheet's headers and detect if a role/position column exists.
+ * Used by the Connect Sheet modal to enable auto-role-detect UI.
+ */
+export async function detectRoleColumn(
+  sheetUrl: string,
+): Promise<DetectRoleColumnResult | { error: string }> {
+  try {
+    const googleSheetId = extractSheetId(sheetUrl);
+    if (!googleSheetId) {
+      return { error: "Invalid Google Sheet URL." };
+    }
+
+    const gid = extractGid(sheetUrl) || null;
+    const csvText = await fetchSheetCsv(googleSheetId, gid);
+    const { headers } = parseServerCsv(csvText);
+
+    if (headers.length === 0) {
+      return {
+        hasRoleColumn: false,
+        roleColumnIndex: null,
+        roleColumnHeader: null,
+        headers: [],
+      };
+    }
+
+    // Check each header against role keywords
+    for (let i = 0; i < headers.length; i++) {
+      const normalized = headers[i].toLowerCase().trim();
+      if (ROLE_KEYWORDS.some((kw) => normalized.includes(kw))) {
+        return {
+          hasRoleColumn: true,
+          roleColumnIndex: i,
+          roleColumnHeader: headers[i],
+          headers,
+        };
+      }
+    }
+
+    return {
+      hasRoleColumn: false,
+      roleColumnIndex: null,
+      roleColumnHeader: null,
+      headers,
+    };
+  } catch (err) {
+    return {
+      error:
+        err instanceof Error ? err.message : "Failed to check sheet headers.",
+    };
+  }
+}
+
+/**
+ * Normalize a role name for fuzzy matching: lowercase, trim, collapse whitespace.
+ */
+function normalizeRoleName(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/^(senior|junior|lead|sr\.?|jr\.?|intern)\s+/i, (m) =>
+      m.toLowerCase(),
+    );
+}
+
+/**
+ * Find or create a role by name using fuzzy matching.
+ * Returns the role ID. Uses a cache map to avoid repeated DB lookups within a sync.
+ */
+async function findOrCreateRole(
+  roleName: string,
+  roleCache: Map<string, string>,
+): Promise<string> {
+  const normalizedInput = normalizeRoleName(roleName);
+
+  // Check cache first
+  const cached = roleCache.get(normalizedInput);
+  if (cached) return cached;
+
+  // Fetch all active roles and try fuzzy match
+  const allRoles = await db
+    .select({ id: roles.id, name: roles.name })
+    .from(roles)
+    .where(eq(roles.isActive, true));
+
+  for (const role of allRoles) {
+    const normalizedExisting = normalizeRoleName(role.name);
+    if (normalizedExisting === normalizedInput) {
+      roleCache.set(normalizedInput, role.id);
+      return role.id;
+    }
+  }
+
+  // No match — create a new role
+  const created = await createRoleFromData(roleName.trim(), "Briefcase");
+  if (!created) {
+    throw new Error(`Failed to create role "${roleName}"`);
+  }
+
+  roleCache.set(normalizedInput, created.id);
+  return created.id;
+}
+
+// ---------------------------------------------------------------------------
 // CRUD — Connected Sheets
 // ---------------------------------------------------------------------------
 
@@ -203,6 +321,8 @@ export async function getConnectedSheets(): Promise<
       sheetId: connectedSheets.sheetId,
       gid: connectedSheets.gid,
       roleId: connectedSheets.roleId,
+      autoDetectRole: connectedSheets.autoDetectRole,
+      roleColumnIndex: connectedSheets.roleColumnIndex,
       lastSyncAt: connectedSheets.lastSyncAt,
       lastRowCount: connectedSheets.lastRowCount,
       syncFrequency: connectedSheets.syncFrequency,
@@ -212,10 +332,13 @@ export async function getConnectedSheets(): Promise<
       roleName: roles.name,
     })
     .from(connectedSheets)
-    .innerJoin(roles, eq(connectedSheets.roleId, roles.id))
+    .leftJoin(roles, eq(connectedSheets.roleId, roles.id))
     .orderBy(connectedSheets.createdAt);
 
-  return results;
+  return results.map((r) => ({
+    ...r,
+    roleName: r.roleName ?? "Auto-detect",
+  }));
 }
 
 /** Connect a new Google Sheet. Validates the URL and does a test fetch. */
@@ -223,15 +346,23 @@ export async function connectSheet(
   input: ConnectSheetInput,
 ): Promise<{ id: string } | { error: string }> {
   try {
-    // Validate role exists
-    const [role] = await db
-      .select({ id: roles.id })
-      .from(roles)
-      .where(and(eq(roles.id, input.roleId), eq(roles.isActive, true)))
-      .limit(1);
+    const isAutoDetect = input.autoDetectRole === true;
 
-    if (!role) {
-      return { error: "Selected role not found or is inactive." };
+    // Validate role exists (only required when not auto-detecting)
+    if (!isAutoDetect) {
+      if (!input.roleId) {
+        return { error: "Please select a target role." };
+      }
+
+      const [role] = await db
+        .select({ id: roles.id })
+        .from(roles)
+        .where(and(eq(roles.id, input.roleId), eq(roles.isActive, true)))
+        .limit(1);
+
+      if (!role) {
+        return { error: "Selected role not found or is inactive." };
+      }
     }
 
     // Extract sheet ID from URL
@@ -270,7 +401,9 @@ export async function connectSheet(
         sheetUrl: input.sheetUrl.trim(),
         sheetId: googleSheetId,
         gid,
-        roleId: input.roleId,
+        roleId: isAutoDetect ? null : input.roleId,
+        autoDetectRole: isAutoDetect,
+        roleColumnIndex: isAutoDetect ? (input.roleColumnIndex ?? null) : null,
         syncFrequency: input.syncFrequency,
       })
       .returning({ id: connectedSheets.id });
@@ -480,62 +613,142 @@ export async function syncConnectedSheet(
       return result;
     }
 
-    // 8. Create import batch + insert candidates in a transaction
-    await db.transaction(async (tx) => {
-      const [batch] = await tx
-        .insert(importBatches)
-        .values({
-          roleId: sheet.roleId,
-          source: "csv", // Google Sheet sync uses CSV export
-          totalRows: toImport.length,
-          importedCount: 0,
-          skippedCount: result.skippedDuplicates,
-          createdBy: "sheet-sync",
+    // 8. Resolve role IDs for each row
+    //    When auto-detecting: read role value per row, fuzzy-match or create
+    //    When fixed role: use sheet.roleId for all rows
+    const isAutoDetect = sheet.autoDetectRole;
+    const roleColIdx = isAutoDetect
+      ? (sheet.roleColumnIndex ?? mapping.role)
+      : undefined;
+
+    // Cache for role name → role ID (avoids repeated DB lookups within a single sync)
+    const roleCache = new Map<string, string>();
+
+    // Pre-populate cache if we have a fixed role
+    if (!isAutoDetect && sheet.roleId) {
+      roleCache.set("__fixed__", sheet.roleId);
+    }
+
+    // Resolve role ID for each row
+    const rowRoleIds: string[] = [];
+    for (const row of toImport) {
+      if (isAutoDetect && roleColIdx !== undefined) {
+        // Read the role value from the original new data row
+        const originalRow = newDataRows[row._rowIndex];
+        const rawRoleValue = originalRow
+          ? String(originalRow[roleColIdx] ?? "").trim()
+          : "";
+
+        if (rawRoleValue) {
+          const resolvedRoleId = await findOrCreateRole(
+            rawRoleValue,
+            roleCache,
+          );
+          rowRoleIds.push(resolvedRoleId);
+        } else {
+          // No role value in this row — skip or use a fallback
+          // If the sheet also has a fallback roleId, use it; otherwise skip
+          if (sheet.roleId) {
+            rowRoleIds.push(sheet.roleId);
+          } else {
+            rowRoleIds.push(""); // will be filtered out below
+          }
+        }
+      } else {
+        // Fixed role mode
+        rowRoleIds.push(sheet.roleId ?? "");
+      }
+    }
+
+    // Filter out rows where we couldn't determine a role
+    const importable = toImport.filter((_, i) => rowRoleIds[i] !== "");
+    const importableRoleIds = rowRoleIds.filter((id) => id !== "");
+    const skippedNoRole = toImport.length - importable.length;
+    result.skippedDuplicates += skippedNoRole;
+
+    if (importable.length === 0) {
+      await db
+        .update(connectedSheets)
+        .set({
+          lastSyncAt: new Date(),
+          lastRowCount: totalCurrentRows,
+          lastError: null,
         })
-        .returning({ id: importBatches.id });
+        .where(eq(connectedSheets.id, sheet.id));
+      return result;
+    }
 
-      const insertValues = toImport.map((row) => ({
-        roleId: sheet.roleId,
-        name: row.name!,
-        email: row.email ?? null,
-        phone: row.phone ?? null,
-        instagram: row.instagram ?? null,
-        portfolioUrl: row.portfolioUrl ?? null,
-        linkedinUrl: row.linkedinUrl ?? null,
-        location: row.location ?? null,
-        experience: row.experience ?? null,
-        resumeUrl: row.resumeUrl ?? null,
-        isDuplicate: false,
-        source: "csv" as const,
-        importBatchId: batch.id,
-        createdBy: "sheet-sync",
-      }));
+    // 9. Create import batch + insert candidates in a transaction
+    //    Group by roleId for import batches
+    const roleGroups = new Map<string, typeof importable>();
+    for (let i = 0; i < importable.length; i++) {
+      const rId = importableRoleIds[i];
+      const group = roleGroups.get(rId) ?? [];
+      group.push(importable[i]);
+      roleGroups.set(rId, group);
+    }
 
-      const inserted = await tx
-        .insert(candidates)
-        .values(insertValues)
-        .returning({ id: candidates.id });
+    await db.transaction(async (tx) => {
+      let totalInserted = 0;
 
-      // Insert import events
-      if (inserted.length > 0) {
-        await tx.insert(candidateEvents).values(
-          inserted.map((c) => ({
-            candidateId: c.id,
-            eventType: "imported",
-            fromValue: null,
-            toValue: "left_to_review",
+      for (const [roleId, groupRows] of roleGroups) {
+        const [batch] = await tx
+          .insert(importBatches)
+          .values({
+            roleId,
+            source: "csv", // Google Sheet sync uses CSV export
+            totalRows: groupRows.length,
+            importedCount: 0,
+            skippedCount: 0,
             createdBy: "sheet-sync",
-          })),
-        );
+          })
+          .returning({ id: importBatches.id });
+
+        const insertValues = groupRows.map((row) => ({
+          roleId,
+          name: row.name!,
+          email: row.email ?? null,
+          phone: row.phone ?? null,
+          instagram: row.instagram ?? null,
+          portfolioUrl: row.portfolioUrl ?? null,
+          linkedinUrl: row.linkedinUrl ?? null,
+          location: row.location ?? null,
+          experience: row.experience ?? null,
+          resumeUrl: row.resumeUrl ?? null,
+          isDuplicate: false,
+          source: "csv" as const,
+          importBatchId: batch.id,
+          createdBy: "sheet-sync",
+        }));
+
+        const inserted = await tx
+          .insert(candidates)
+          .values(insertValues)
+          .returning({ id: candidates.id });
+
+        // Insert import events
+        if (inserted.length > 0) {
+          await tx.insert(candidateEvents).values(
+            inserted.map((c) => ({
+              candidateId: c.id,
+              eventType: "imported",
+              fromValue: null,
+              toValue: "left_to_review",
+              createdBy: "sheet-sync",
+            })),
+          );
+        }
+
+        // Update batch counts
+        await tx
+          .update(importBatches)
+          .set({ importedCount: inserted.length })
+          .where(eq(importBatches.id, batch.id));
+
+        totalInserted += inserted.length;
       }
 
-      // Update batch counts
-      await tx
-        .update(importBatches)
-        .set({ importedCount: inserted.length })
-        .where(eq(importBatches.id, batch.id));
-
-      result.importedCount = inserted.length;
+      result.importedCount = totalInserted;
     });
 
     // 9. Update sheet sync metadata

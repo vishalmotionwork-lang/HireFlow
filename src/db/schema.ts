@@ -189,9 +189,9 @@ export const connectedSheets = pgTable("connected_sheets", {
   sheetUrl: text("sheet_url").notNull(),
   sheetId: text("sheet_id").notNull(),
   gid: text("gid"), // specific tab GID — null means first tab
-  roleId: uuid("role_id")
-    .notNull()
-    .references(() => roles.id),
+  roleId: uuid("role_id").references(() => roles.id), // nullable when auto-detecting roles
+  autoDetectRole: boolean("auto_detect_role").default(false).notNull(),
+  roleColumnIndex: integer("role_column_index"), // which column has the role data (nullable)
   lastSyncAt: timestamp("last_sync_at"),
   lastRowCount: integer("last_row_count").default(0).notNull(),
   syncFrequency: syncFrequencyEnum("sync_frequency").default("daily").notNull(),

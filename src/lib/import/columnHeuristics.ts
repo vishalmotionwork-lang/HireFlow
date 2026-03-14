@@ -34,7 +34,7 @@ const FIELD_KEYWORDS: Record<
 };
 
 /** Keywords that identify a role/position column */
-const ROLE_KEYWORDS = [
+export const ROLE_KEYWORDS = [
   "role",
   "position",
   "applied for",

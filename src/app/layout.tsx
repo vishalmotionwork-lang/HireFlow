@@ -32,17 +32,36 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const activeRoles = await db
-    .select()
-    .from(roles)
-    .where(eq(roles.isActive, true))
-    .orderBy(roles.sortOrder);
+  // Check if this is a public page that doesn't need DB queries
+  const { headers } = await import("next/headers");
+  const headersList = await headers();
+  const url =
+    headersList.get("x-url") ?? headersList.get("x-invoke-path") ?? "";
+  const isPublicPage =
+    url.startsWith("/login") ||
+    url.startsWith("/pending") ||
+    url.startsWith("/auth/");
 
+  let activeRoles: Role[] = [];
   let user: Awaited<ReturnType<typeof getAuthUser>> = null;
-  try {
-    user = await getAuthUser();
-  } catch {
-    // Auth error — continue without user
+
+  if (!isPublicPage) {
+    // Only query DB for authenticated pages
+    const [rolesResult] = await Promise.all([
+      db
+        .select()
+        .from(roles)
+        .where(eq(roles.isActive, true))
+        .orderBy(roles.sortOrder),
+      getAuthUser()
+        .then((u) => {
+          user = u;
+        })
+        .catch(() => {
+          // Auth error — continue without user
+        }),
+    ]);
+    activeRoles = rolesResult;
   }
 
   return (

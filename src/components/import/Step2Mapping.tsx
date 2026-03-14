@@ -587,7 +587,7 @@ function RoleMappingRow({
             if (action === "map") {
               onChange({
                 action: "map",
-                targetRoleId: existingRoles[0]?.id ?? "",
+                targetRoleId: undefined,
               });
             } else if (action === "add") {
               onChange({
@@ -611,10 +611,11 @@ function RoleMappingRow({
           <select
             value={entry.targetRoleId ?? ""}
             onChange={(e) =>
-              onChange({ ...entry, targetRoleId: e.target.value })
+              onChange({ ...entry, targetRoleId: e.target.value || undefined })
             }
             className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-100"
           >
+            <option value="">Select a role...</option>
             {existingRoles.map((role) => (
               <option key={role.id} value={role.id}>
                 {role.name}

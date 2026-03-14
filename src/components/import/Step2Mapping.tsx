@@ -567,10 +567,11 @@ function RoleMappingRow({
     : null;
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
-      <div className="flex items-center gap-3">
+    <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+      {/* Header row — role name + action dropdown */}
+      <div className="flex items-center gap-3 px-4 py-3 bg-gray-50/50 border-b border-gray-100">
         <div className="flex-1 min-w-0">
-          <span className="text-sm font-medium text-gray-900 truncate block">
+          <span className="text-sm font-semibold text-gray-900 truncate block">
             &ldquo;{rawValue}&rdquo;
           </span>
         </div>
@@ -599,21 +600,26 @@ function RoleMappingRow({
               onChange({ action: "skip" });
             }
           }}
-          className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-100"
+          className="rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-100"
         >
           <option value="map">Map to existing</option>
           <option value="add">Add as new role</option>
           <option value="skip">Skip these rows</option>
         </select>
       </div>
+
+      {/* Content — mapping details inside the card */}
       {entry.action === "map" && (
-        <div className="pl-2">
+        <div className="px-4 py-3">
+          <label className="text-xs text-gray-500 block mb-1.5">
+            Map to role
+          </label>
           <select
             value={entry.targetRoleId ?? ""}
             onChange={(e) =>
               onChange({ ...entry, targetRoleId: e.target.value || undefined })
             }
-            className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-100"
+            className="w-full rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-100"
           >
             <option value="">Select a role...</option>
             {existingRoles.map((role) => (
@@ -625,21 +631,21 @@ function RoleMappingRow({
         </div>
       )}
       {entry.action === "add" && (
-        <div className="pl-2 space-y-2">
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500 w-12 shrink-0">Name</label>
+        <div className="px-4 py-3 space-y-3">
+          <div>
+            <label className="text-xs text-gray-500 block mb-1.5">Name</label>
             <input
               type="text"
               value={entry.newRoleName ?? ""}
               onChange={(e) =>
                 onChange({ ...entry, newRoleName: e.target.value })
               }
-              className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-100 flex-1"
+              className="w-full rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-100"
               placeholder="Role name"
             />
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Icon</label>
+            <label className="text-xs text-gray-500 block mb-1.5">Icon</label>
             <InlineIconPicker
               value={entry.newRoleIcon ?? "Briefcase"}
               onChange={(icon) => onChange({ ...entry, newRoleIcon: icon })}
@@ -648,9 +654,11 @@ function RoleMappingRow({
         </div>
       )}
       {entry.action === "skip" && (
-        <p className="pl-2 text-xs text-gray-400 italic">
-          Rows with this role value will not be imported.
-        </p>
+        <div className="px-4 py-3">
+          <p className="text-xs text-gray-400 italic">
+            Rows with this role value will not be imported.
+          </p>
+        </div>
       )}
     </div>
   );

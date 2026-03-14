@@ -134,10 +134,17 @@ export async function detectDuplicates(
  * IMPORTANT: This action executes the decisions already made by the user in the
  * wizard Step 3. It does NOT auto-decide merges — that is the user's job.
  */
+export interface ImportSourceInfo {
+  sourceName?: string;
+  sourceUrl?: string;
+  sourceHash?: string;
+}
+
 export async function importCandidates(
   rows: ImportRow[],
   targetRoleId: string,
   source: "excel" | "csv" | "paste",
+  sourceInfo?: ImportSourceInfo,
 ): Promise<ImportResult | { error: string }> {
   try {
     // ------------------------------------------------------------------
@@ -174,6 +181,9 @@ export async function importCandidates(
       .values({
         roleId: targetRoleId,
         source,
+        sourceName: sourceInfo?.sourceName ?? null,
+        sourceUrl: sourceInfo?.sourceUrl ?? null,
+        sourceHash: sourceInfo?.sourceHash ?? null,
         totalRows: rows.length,
         importedCount: 0,
         skippedCount: 0,

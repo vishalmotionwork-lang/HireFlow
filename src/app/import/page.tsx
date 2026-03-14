@@ -4,6 +4,8 @@ import { db } from "@/db";
 import { roles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { ImportWizard } from "@/components/import/ImportWizard";
+import { ImportHistory } from "@/components/import/ImportHistory";
+import { ImportPageTabs } from "@/components/import/ImportPageTabs";
 import Link from "next/link";
 
 export default async function ImportPage() {
@@ -27,8 +29,11 @@ export default async function ImportPage() {
         </p>
       </div>
 
-      {/* Import wizard */}
-      <ImportWizard roles={activeRoles} />
+      {/* Import page tabs: Import wizard + History */}
+      <ImportPageTabs
+        importWizard={<ImportWizard roles={activeRoles} />}
+        importHistory={<ImportHistory />}
+      />
 
       {/* Manual entry fallback (IMPT-10) */}
       {firstRoleSlug && (

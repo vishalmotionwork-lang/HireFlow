@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, FileText, Link2 } from "lucide-react";
+import { Upload, FileText, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { parseExcelFile } from "@/lib/import/parseExcel";
 import { parseCsvFile, parseCsvString } from "@/lib/import/parseCsv";
@@ -10,16 +10,25 @@ import {
   parseExcelMultiSheet,
   isMultiSheetExcel,
 } from "@/lib/import/parseExcelMultiSheet";
-import { importFromUrl } from "@/lib/actions/importFromUrl";
+import { hashFile, hashContent } from "@/lib/import/hashSource";
+import {
+  checkDuplicateSheet,
+  type DuplicateSheetMatch,
+} from "@/lib/actions/importHistory";
+import type { ImportSourceInfo } from "@/lib/actions/import";
 import type { SheetData } from "@/lib/import/parseExcelMultiSheet";
 import type { ParseResult } from "@/lib/import/types";
 
 interface Step1UploadProps {
-  onParsed: (result: ParseResult, source: "excel" | "csv" | "paste") => void;
+  onParsed: (
+    result: ParseResult,
+    source: "excel" | "csv" | "paste",
+    sourceInfo?: ImportSourceInfo,
+  ) => void;
   onMultiSheetParsed?: (sheets: SheetData[]) => void;
 }
 
-type ActiveTab = "file" | "paste" | "link";
+type ActiveTab = "file" | "paste";
 
 export function Step1Upload({
   onParsed,
@@ -32,8 +41,15 @@ export function Step1Upload({
     rowCount: number;
   } | null>(null);
   const [pasteText, setPasteText] = useState("");
-  const [linkUrl, setLinkUrl] = useState("");
-  const [isLinkLoading, setIsLinkLoading] = useState(false);
+
+  // Duplicate sheet detection
+  const [duplicateWarning, setDuplicateWarning] =
+    useState<DuplicateSheetMatch | null>(null);
+  const [pendingParse, setPendingParse] = useState<{
+    result: ParseResult;
+    source: "excel" | "csv" | "paste";
+    sourceInfo: ImportSourceInfo;
+  } | null>(null);
 
   // ---------------------------------------------------------------------------
   // File drop handler
@@ -46,6 +62,8 @@ export function Step1Upload({
 
       setIsLoading(true);
       setParsedFile(null);
+      setDuplicateWarning(null);
+      setPendingParse(null);
 
       try {
         let result: ParseResult;
@@ -89,8 +107,27 @@ export function Step1Upload({
 
         const source: "excel" | "csv" =
           ext === "xlsx" || ext === "xls" ? "excel" : "csv";
+
+        // Compute hash for duplicate detection
+        const fileHash = await hashFile(file);
+        const sourceInfo: ImportSourceInfo = {
+          sourceName: file.name,
+          sourceUrl: file.name,
+          sourceHash: fileHash,
+        };
+
+        // Check for duplicate sheet
+        const duplicate = await checkDuplicateSheet(fileHash);
+
         setParsedFile({ name: file.name, rowCount: result.rows.length });
-        onParsed(result, source);
+
+        if (duplicate) {
+          // Show warning, stash the parsed result
+          setDuplicateWarning(duplicate);
+          setPendingParse({ result, source, sourceInfo });
+        } else {
+          onParsed(result, source, sourceInfo);
+        }
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Failed to parse file";
@@ -99,7 +136,7 @@ export function Step1Upload({
         setIsLoading(false);
       }
     },
-    [onParsed],
+    [onParsed, onMultiSheetParsed],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -120,11 +157,14 @@ export function Step1Upload({
   // Paste handler
   // ---------------------------------------------------------------------------
 
-  const handlePaste = () => {
+  const handlePaste = async () => {
     if (!pasteText.trim()) {
       toast.error("Please paste some data first.");
       return;
     }
+
+    setDuplicateWarning(null);
+    setPendingParse(null);
 
     try {
       const result = parseCsvString(pasteText);
@@ -136,7 +176,21 @@ export function Step1Upload({
         return;
       }
 
-      onParsed(result, "paste");
+      // Compute hash of pasted content for dedup
+      const pasteHash = await hashContent(pasteText.trim());
+      const sourceInfo: ImportSourceInfo = {
+        sourceName: "Pasted data",
+        sourceHash: pasteHash,
+      };
+
+      const duplicate = await checkDuplicateSheet(pasteHash);
+
+      if (duplicate) {
+        setDuplicateWarning(duplicate);
+        setPendingParse({ result, source: "paste", sourceInfo });
+      } else {
+        onParsed(result, "paste", sourceInfo);
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to parse pasted data";
@@ -144,35 +198,18 @@ export function Step1Upload({
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // Link import handler
-  // ---------------------------------------------------------------------------
+  const handleDuplicateProceed = () => {
+    if (!pendingParse) return;
+    const { result, source, sourceInfo } = pendingParse;
+    setDuplicateWarning(null);
+    setPendingParse(null);
+    onParsed(result, source, sourceInfo);
+  };
 
-  const handleLinkImport = async () => {
-    const url = linkUrl.trim();
-    if (!url) {
-      toast.error("Please enter a spreadsheet URL.");
-      return;
-    }
-
-    setIsLinkLoading(true);
-
-    try {
-      const result = await importFromUrl(url);
-
-      if (!result.success) {
-        toast.error(result.error);
-        return;
-      }
-
-      onParsed(result.data, result.source);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to import from URL";
-      toast.error(message);
-    } finally {
-      setIsLinkLoading(false);
-    }
+  const handleDuplicateCancel = () => {
+    setDuplicateWarning(null);
+    setPendingParse(null);
+    setParsedFile(null);
   };
 
   // ---------------------------------------------------------------------------
@@ -181,6 +218,47 @@ export function Step1Upload({
 
   return (
     <div className="space-y-4">
+      {/* Duplicate sheet warning banner */}
+      {duplicateWarning && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle
+              size={20}
+              className="text-amber-500 mt-0.5 flex-shrink-0"
+            />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-800">
+                This sheet was already imported
+              </p>
+              <p className="text-sm text-amber-700 mt-1">
+                Imported on{" "}
+                {new Date(duplicateWarning.createdAt).toLocaleDateString(
+                  "en-US",
+                  { month: "short", day: "numeric", year: "numeric" },
+                )}
+                {" — "}
+                {duplicateWarning.importedCount} candidate
+                {duplicateWarning.importedCount !== 1 ? "s" : ""} were added.
+              </p>
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={handleDuplicateProceed}
+                  className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 transition-colors"
+                >
+                  Import Anyway
+                </button>
+                <button
+                  onClick={handleDuplicateCancel}
+                  className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tab switcher */}
       <div className="flex gap-1 border-b border-gray-200">
         <button
@@ -202,16 +280,6 @@ export function Step1Upload({
           }`}
         >
           Paste Data
-        </button>
-        <button
-          onClick={() => setActiveTab("link")}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
-            activeTab === "link"
-              ? "border-blue-500 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-          }`}
-        >
-          Paste Link
         </button>
       </div>
 
@@ -295,64 +363,6 @@ export function Step1Upload({
             >
               Parse Data
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Link tab */}
-      {activeTab === "link" && (
-        <div className="space-y-4">
-          <p className="text-xs text-gray-500">
-            Paste a Google Sheets link (must be public) or a direct .csv / .xlsx
-            file URL. The data will be imported into the same mapping flow.
-          </p>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Spreadsheet URL
-            </label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                  <Link2 size={14} className="text-gray-400" />
-                </div>
-                <input
-                  type="url"
-                  value={linkUrl}
-                  onChange={(e) => setLinkUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && linkUrl.trim() && !isLinkLoading) {
-                      handleLinkImport();
-                    }
-                  }}
-                  placeholder="https://docs.google.com/spreadsheets/d/..."
-                  disabled={isLinkLoading}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50/50 pl-9 pr-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              </div>
-              <button
-                onClick={handleLinkImport}
-                disabled={isLinkLoading || !linkUrl.trim()}
-                className="rounded-lg bg-blue-500 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
-              >
-                {isLinkLoading && (
-                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                )}
-                {isLinkLoading ? "Fetching..." : "Import"}
-              </button>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-3 space-y-1.5">
-            <p className="text-xs font-medium text-gray-600">Supported URLs</p>
-            <ul className="text-xs text-gray-500 space-y-0.5 list-disc pl-4">
-              <li>Google Sheets (public): paste the share link directly</li>
-              <li>Direct links to .csv or .xlsx files</li>
-            </ul>
-            <p className="text-xs text-gray-400 mt-1">
-              For Google Sheets, make sure sharing is set to &quot;Anyone with
-              the link&quot; &gt; Viewer.
-            </p>
           </div>
         </div>
       )}

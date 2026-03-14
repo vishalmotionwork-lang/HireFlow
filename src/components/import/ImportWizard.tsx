@@ -23,6 +23,7 @@ import type {
   ImportResult,
   RoleMapping,
 } from "@/lib/import/types";
+import type { ImportSourceInfo } from "@/lib/actions/import";
 import type { Role, ExtractionDraft } from "@/types";
 
 // ---------------------------------------------------------------------------
@@ -45,6 +46,7 @@ interface WizardState {
   targetRoleId: string;
   roleMapping: RoleMapping | null;
   source: "excel" | "csv" | "paste";
+  sourceInfo: ImportSourceInfo | null;
   validatedRows: ValidatedRow[];
   duplicateInfo: Record<number, DuplicateInfo>;
   result: ImportResult | null;
@@ -59,6 +61,7 @@ const INITIAL_STATE: WizardState = {
   targetRoleId: "",
   roleMapping: null,
   source: "csv",
+  sourceInfo: null,
   validatedRows: [],
   duplicateInfo: {},
   result: null,
@@ -72,7 +75,10 @@ const INITIAL_STATE: WizardState = {
 type WizardAction =
   | {
       type: "FILE_PARSED";
-      payload: ParseResult & { source: "excel" | "csv" | "paste" };
+      payload: ParseResult & {
+        source: "excel" | "csv" | "paste";
+        sourceInfo?: ImportSourceInfo;
+      };
     }
   | { type: "AI_COMPLETE"; payload: AIProcessingResult }
   | { type: "AI_SKIPPED" }
@@ -104,6 +110,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
         headers: action.payload.headers,
         rawRows: action.payload.rows,
         source: action.payload.source,
+        sourceInfo: action.payload.sourceInfo ?? null,
         mapping: {},
         aiResult: null,
       };
@@ -338,8 +345,12 @@ export function ImportWizard({ roles }: ImportWizardProps) {
   const handleParsed = (
     result: ParseResult,
     source: "excel" | "csv" | "paste",
+    sourceInfo?: ImportSourceInfo,
   ) => {
-    dispatch({ type: "FILE_PARSED", payload: { ...result, source } });
+    dispatch({
+      type: "FILE_PARSED",
+      payload: { ...result, source, sourceInfo },
+    });
   };
 
   const handleAIComplete = useCallback((result: AIProcessingResult) => {
@@ -549,6 +560,7 @@ export function ImportWizard({ roles }: ImportWizardProps) {
                   roleMapping={state.roleMapping}
                   roles={roles}
                   source={state.source}
+                  sourceInfo={state.sourceInfo ?? undefined}
                   onImportComplete={handleImportComplete}
                   onBack={handleBack}
                 />

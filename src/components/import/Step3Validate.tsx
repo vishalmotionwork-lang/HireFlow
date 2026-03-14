@@ -15,10 +15,10 @@ import { toast } from "sonner";
 import { normalizeRows } from "@/lib/import/normalizeRows";
 import { validateRows } from "@/lib/import/validateRows";
 import { detectDuplicates, importCandidates } from "@/lib/actions/import";
+import type { ImportRow, ImportSourceInfo } from "@/lib/actions/import";
 import { createRoleFromData } from "@/lib/actions/roles";
 import { validateImportWithAI } from "@/lib/ai/importValidator";
 import type { ImportSuggestion } from "@/lib/ai/importValidator";
-import type { ImportRow } from "@/lib/actions/import";
 import type {
   RawRow,
   ColumnMapping,
@@ -143,6 +143,7 @@ interface Step3ValidateProps {
   roleMapping?: RoleMapping | null;
   roles: Role[];
   source: "excel" | "csv" | "paste";
+  sourceInfo?: ImportSourceInfo;
   onImportComplete: (result: ImportResult) => void;
   onBack: () => void;
 }
@@ -154,6 +155,7 @@ export function Step3Validate({
   roleMapping = null,
   roles,
   source,
+  sourceInfo,
   onImportComplete,
   onBack,
 }: Step3ValidateProps) {
@@ -538,7 +540,12 @@ export function Step3Validate({
         enrichedRows.find((r) => r.resolvedRoleId)?.resolvedRoleId ||
         "";
 
-      const result = await importCandidates(importRows, batchRoleId, source);
+      const result = await importCandidates(
+        importRows,
+        batchRoleId,
+        source,
+        sourceInfo,
+      );
 
       if ("error" in result) {
         toast.error(result.error);

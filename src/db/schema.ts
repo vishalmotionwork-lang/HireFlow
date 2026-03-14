@@ -56,6 +56,9 @@ export const importBatches = pgTable("import_batches", {
   totalRows: integer("total_rows").default(0).notNull(),
   importedCount: integer("imported_count").default(0).notNull(),
   skippedCount: integer("skipped_count").default(0).notNull(),
+  sourceName: text("source_name"), // original filename or URL for display
+  sourceUrl: text("source_url"), // the URL/filename of the imported sheet
+  sourceHash: text("source_hash"), // SHA-256 hash of file content or URL for dedup
   createdBy: text("created_by").default("mock-user").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

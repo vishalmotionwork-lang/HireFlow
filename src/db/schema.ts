@@ -146,6 +146,8 @@ export const teamMembers = pgTable("team_members", {
   email: text("email").notNull(),
   name: text("name"),
   avatar: text("avatar"),
+  phone: text("phone"), // international format, no + or spaces: "919876543210"
+  whatsappEnabled: boolean("whatsapp_enabled").default(false).notNull(),
   role: text("role").default("viewer").notNull(), // 'admin' | 'editor' | 'viewer'
   isActive: boolean("is_active").default(true).notNull(),
   invitedBy: text("invited_by"),

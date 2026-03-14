@@ -141,6 +141,29 @@ export async function removeMember(memberId: string) {
   return { success: true };
 }
 
+export async function savePhoneNumber(userId: string, phone: string) {
+  // Clean phone: remove spaces, dashes, parens, +
+  const cleaned = phone.replace(/[\s\-\(\)\+]/g, "");
+
+  await db
+    .update(teamMembers)
+    .set({ phone: cleaned, whatsappEnabled: true })
+    .where(eq(teamMembers.userId, userId));
+
+  revalidatePath("/settings");
+  return { success: true };
+}
+
+export async function getUserHasPhone(userId: string): Promise<boolean> {
+  const [member] = await db
+    .select({ phone: teamMembers.phone })
+    .from(teamMembers)
+    .where(eq(teamMembers.userId, userId))
+    .limit(1);
+
+  return !!member?.phone;
+}
+
 export async function revokeInvitation(invitationId: string) {
   await requireAuth("admin");
 

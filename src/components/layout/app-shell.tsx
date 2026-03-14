@@ -3,6 +3,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { NotificationBellServer } from "@/components/layout/notification-bell-server";
+import { PhonePromptServer } from "@/components/layout/phone-prompt-server";
 import type { Role } from "@/types";
 import type { AuthUser } from "@/lib/auth";
 
@@ -28,6 +29,9 @@ export function AppShell({ roles, user, children }: AppShellProps) {
         <main className="flex-1 bg-background p-6 md:p-8 lg:p-10">
           {children}
         </main>
+        <Suspense fallback={null}>
+          <PhonePromptServer />
+        </Suspense>
       </SidebarInset>
     </SidebarProvider>
   );

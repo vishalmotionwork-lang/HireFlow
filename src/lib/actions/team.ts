@@ -164,6 +164,41 @@ export async function getUserHasPhone(userId: string): Promise<boolean> {
   return !!member?.phone;
 }
 
+export async function updateMemberPhone(memberId: string, phone: string) {
+  const cleaned = phone.replace(/[\s\-\(\)\+]/g, "");
+
+  await db
+    .update(teamMembers)
+    .set({ phone: cleaned })
+    .where(eq(teamMembers.id, memberId));
+
+  revalidatePath("/settings");
+  return { success: true };
+}
+
+export async function updateMemberWhatsApp(memberId: string, enabled: boolean) {
+  // Can't enable WhatsApp without a phone number
+  if (enabled) {
+    const [member] = await db
+      .select({ phone: teamMembers.phone })
+      .from(teamMembers)
+      .where(eq(teamMembers.id, memberId))
+      .limit(1);
+
+    if (!member?.phone) {
+      return { error: "Add a phone number first" };
+    }
+  }
+
+  await db
+    .update(teamMembers)
+    .set({ whatsappEnabled: enabled })
+    .where(eq(teamMembers.id, memberId));
+
+  revalidatePath("/settings");
+  return { success: true };
+}
+
 export async function revokeInvitation(invitationId: string) {
   await requireAuth("admin");
 

@@ -11,6 +11,8 @@ import {
   Loader2,
   Mail,
   Clock,
+  Phone,
+  MessageCircle,
 } from "lucide-react";
 import {
   inviteTeamMember,
@@ -19,6 +21,8 @@ import {
   revokeInvitation,
   approveMember,
   rejectPendingMember,
+  updateMemberPhone,
+  updateMemberWhatsApp,
 } from "@/lib/actions/team";
 import type { TeamMember, Invitation } from "@/types";
 import type { TeamRole } from "@/lib/auth";
@@ -175,74 +179,17 @@ export function TeamSection({
             No team members yet
           </div>
         )}
-        {members.map((member) => {
-          const roleConfig =
-            ROLE_CONFIG[member.role as TeamRole] ?? ROLE_CONFIG.viewer;
-          const isCurrentUser = member.userId === currentUserId;
-
-          return (
-            <div key={member.id} className="flex items-center gap-3 px-4 py-3">
-              {/* Avatar */}
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600 overflow-hidden">
-                {member.avatar ? (
-                  <img
-                    src={member.avatar}
-                    alt={member.name ?? ""}
-                    className="h-8 w-8 rounded-full object-cover"
-                  />
-                ) : (
-                  (member.name ?? member.email).charAt(0).toUpperCase()
-                )}
-              </div>
-
-              {/* Name + email */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {member.name ?? member.email}
-                  {isCurrentUser && (
-                    <span className="ml-1.5 text-xs text-gray-400">(you)</span>
-                  )}
-                </p>
-                <p className="text-xs text-gray-500 truncate">{member.email}</p>
-              </div>
-
-              {/* Role badge / selector */}
-              {isAdmin && !isCurrentUser ? (
-                <select
-                  value={member.role}
-                  onChange={(e) =>
-                    handleRoleChange(member.id, e.target.value as TeamRole)
-                  }
-                  disabled={isPending}
-                  className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium outline-none focus:border-blue-400 disabled:opacity-50"
-                >
-                  <option value="viewer">Viewer</option>
-                  <option value="editor">Editor</option>
-                  <option value="admin">Admin</option>
-                </select>
-              ) : (
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${roleConfig.color}`}
-                >
-                  <roleConfig.icon size={10} />
-                  {roleConfig.label}
-                </span>
-              )}
-
-              {/* Remove button — admin only, not self */}
-              {isAdmin && !isCurrentUser && (
-                <button
-                  onClick={() => handleRemove(member.id, member.name)}
-                  disabled={isPending}
-                  className="rounded-md p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                  title="Remove member"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-          );
-        })}
+        {members.map((member) => (
+          <MemberRow
+            key={member.id}
+            member={member}
+            isAdmin={isAdmin}
+            isCurrentUser={member.userId === currentUserId}
+            isPending={isPending}
+            onRoleChange={handleRoleChange}
+            onRemove={handleRemove}
+          />
+        ))}
       </div>
 
       {/* Pending approval — users who signed in without invitation */}
@@ -379,5 +326,194 @@ export function TeamSection({
         </div>
       )}
     </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// MemberRow — individual team member with expandable WhatsApp settings
+// ---------------------------------------------------------------------------
+
+interface MemberRowProps {
+  member: TeamMember;
+  isAdmin: boolean;
+  isCurrentUser: boolean;
+  isPending: boolean;
+  onRoleChange: (memberId: string, newRole: TeamRole) => void;
+  onRemove: (memberId: string, name: string | null) => void;
+}
+
+function MemberRow({
+  member,
+  isAdmin,
+  isCurrentUser,
+  isPending,
+  onRoleChange,
+  onRemove,
+}: MemberRowProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [phoneInput, setPhoneInput] = useState(member.phone ?? "");
+  const [waEnabled, setWaEnabled] = useState(member.whatsappEnabled);
+  const [saving, startSaving] = useTransition();
+
+  const roleConfig = ROLE_CONFIG[member.role as TeamRole] ?? ROLE_CONFIG.viewer;
+
+  const canEdit = isAdmin || isCurrentUser;
+
+  const handleSavePhone = () => {
+    startSaving(async () => {
+      const result = await updateMemberPhone(member.id, phoneInput ?? "");
+      if ("error" in result && result.error) {
+        toast.error(String(result.error));
+      } else {
+        toast.success("Phone number updated");
+        // If phone was cleared, disable WhatsApp too
+        if (!phoneInput && waEnabled) {
+          setWaEnabled(false);
+        }
+      }
+    });
+  };
+
+  const handleToggleWhatsApp = (enabled: boolean) => {
+    startSaving(async () => {
+      const result = await updateMemberWhatsApp(member.id, enabled);
+      if ("error" in result && result.error) {
+        toast.error(String(result.error));
+      } else {
+        setWaEnabled(enabled);
+        toast.success(
+          enabled
+            ? "WhatsApp notifications enabled"
+            : "WhatsApp notifications disabled",
+        );
+      }
+    });
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-3 px-4 py-3">
+        {/* Avatar */}
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600 overflow-hidden">
+          {member.avatar ? (
+            <img
+              src={member.avatar}
+              alt={member.name ?? ""}
+              className="h-8 w-8 rounded-full object-cover"
+            />
+          ) : (
+            (member.name ?? member.email).charAt(0).toUpperCase()
+          )}
+        </div>
+
+        {/* Name + email */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-gray-900 truncate">
+            {member.name ?? member.email}
+            {isCurrentUser && (
+              <span className="ml-1.5 text-xs text-gray-400">(you)</span>
+            )}
+          </p>
+          <p className="text-xs text-gray-500 truncate">{member.email}</p>
+        </div>
+
+        {/* WhatsApp indicator */}
+        {member.phone && waEnabled && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700"
+            title="WhatsApp notifications enabled"
+          >
+            <MessageCircle size={10} />
+            WA
+          </span>
+        )}
+
+        {/* Expand phone/WhatsApp settings */}
+        {canEdit && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className={`rounded-md p-1 transition-colors ${
+              expanded
+                ? "text-blue-600 bg-blue-50"
+                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+            }`}
+            title="Phone & WhatsApp settings"
+          >
+            <Phone size={14} />
+          </button>
+        )}
+
+        {/* Role badge / selector */}
+        {isAdmin && !isCurrentUser ? (
+          <select
+            value={member.role}
+            onChange={(e) =>
+              onRoleChange(member.id, e.target.value as TeamRole)
+            }
+            disabled={isPending}
+            className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium outline-none focus:border-blue-400 disabled:opacity-50"
+          >
+            <option value="viewer">Viewer</option>
+            <option value="editor">Editor</option>
+            <option value="admin">Admin</option>
+          </select>
+        ) : (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${roleConfig.color}`}
+          >
+            <roleConfig.icon size={10} />
+            {roleConfig.label}
+          </span>
+        )}
+
+        {/* Remove button — admin only, not self */}
+        {isAdmin && !isCurrentUser && (
+          <button
+            onClick={() => onRemove(member.id, member.name)}
+            disabled={isPending}
+            className="rounded-md p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+            title="Remove member"
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
+
+      {/* Expanded phone / WhatsApp settings */}
+      {expanded && canEdit && (
+        <div className="px-4 pb-3 pl-[52px] flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
+            <Phone size={12} className="text-gray-400 shrink-0" />
+            <input
+              type="tel"
+              value={phoneInput}
+              onChange={(e) => setPhoneInput(e.target.value)}
+              placeholder="919876543210"
+              disabled={saving}
+              className="w-full sm:w-48 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:opacity-50"
+            />
+            <button
+              onClick={handleSavePhone}
+              disabled={saving || phoneInput === (member.phone ?? "")}
+              className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50 whitespace-nowrap"
+            >
+              {saving ? "..." : "Save"}
+            </button>
+          </div>
+
+          <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={waEnabled}
+              onChange={(e) => handleToggleWhatsApp(e.target.checked)}
+              disabled={saving || !member.phone}
+              className="rounded border-gray-300 text-green-600 focus:ring-green-500 disabled:opacity-50"
+            />
+            <MessageCircle size={12} className="text-green-600" />
+            <span className="text-gray-600">WhatsApp notifications</span>
+          </label>
+        </div>
+      )}
+    </div>
   );
 }

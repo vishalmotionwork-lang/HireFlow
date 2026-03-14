@@ -8,6 +8,7 @@ import { MOCK_USER } from "@/lib/constants";
 import { createActivity } from "@/lib/actions/activities";
 import { createNotification } from "@/lib/actions/notifications";
 import { sendMentionNotificationEmail } from "@/lib/email";
+import { sendWhatsAppText, isWhatsAppConfigured } from "@/lib/whatsapp";
 
 type ActionError = { error: string };
 type ActionSuccess = { success: true };
@@ -109,6 +110,8 @@ async function notifyMentionedMembers(params: {
       userId: teamMembers.userId,
       name: teamMembers.name,
       email: teamMembers.email,
+      phone: teamMembers.phone,
+      whatsappEnabled: teamMembers.whatsappEnabled,
     })
     .from(teamMembers)
     .where(eq(teamMembers.isActive, true));
@@ -125,27 +128,49 @@ async function notifyMentionedMembers(params: {
   const truncatedBody =
     commentBody.length > 120 ? `${commentBody.slice(0, 120)}...` : commentBody;
 
-  // Send emails + create in-app notifications in parallel
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3099");
+  const candidateUrl = `${baseUrl}${notificationLink}`;
+  const whatsappConfigured = isWhatsAppConfigured();
+
+  // Send emails + in-app notifications + WhatsApp in parallel
   await Promise.allSettled(
-    recipients.flatMap((recipient) => [
-      // Email notification
-      sendMentionNotificationEmail({
-        recipientEmail: recipient.email,
-        recipientName: recipient.name ?? "Team Member",
-        commenterName,
-        candidateName,
-        candidateId,
-        commentBody,
-      }),
-      // In-app notification
-      createNotification({
-        userId: recipient.userId,
-        type: "mention",
-        title: `${commenterName} mentioned you`,
-        body: `in a comment on ${candidateName}: "${truncatedBody}"`,
-        link: notificationLink,
-      }),
-    ]),
+    recipients.flatMap((recipient) => {
+      const tasks: Promise<unknown>[] = [
+        // Email notification
+        sendMentionNotificationEmail({
+          recipientEmail: recipient.email,
+          recipientName: recipient.name ?? "Team Member",
+          commenterName,
+          candidateName,
+          candidateId,
+          commentBody,
+        }),
+        // In-app notification
+        createNotification({
+          userId: recipient.userId,
+          type: "mention",
+          title: `${commenterName} mentioned you`,
+          body: `in a comment on ${candidateName}: "${truncatedBody}"`,
+          link: notificationLink,
+        }),
+      ];
+
+      // WhatsApp — one simple message with link
+      if (whatsappConfigured && recipient.whatsappEnabled && recipient.phone) {
+        tasks.push(
+          sendWhatsAppText(
+            recipient.phone,
+            `[HireFlow] ${commenterName} mentioned you on ${candidateName} — ${candidateUrl}`,
+          ),
+        );
+      }
+
+      return tasks;
+    }),
   );
 }
 

@@ -40,41 +40,63 @@ export async function sendApprovalRequestEmail(
 
     const adminEmails = activeAdmins.map((a) => a.email).filter(Boolean);
 
+    const initials = pendingName.charAt(0).toUpperCase();
+
     await resend.emails.send({
       from: FROM_EMAIL,
       to: adminEmails,
-      subject: `🔔 New access request: ${pendingName}`,
+      subject: `New access request: ${pendingName}`,
       html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
-          <div style="text-align: center; margin-bottom: 24px;">
-            <div style="display: inline-block; background: #2563eb; color: white; font-weight: bold; font-size: 18px; width: 40px; height: 40px; line-height: 40px; border-radius: 10px;">H</div>
-            <p style="margin: 8px 0 0; font-size: 14px; color: #6b7280;">HireFlow Direct</p>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 20px; background: #ffffff;">
+          <!-- Logo -->
+          <div style="text-align: center; margin-bottom: 32px;">
+            <div style="display: inline-block; background: #111827; color: white; font-weight: 700; font-size: 14px; width: 36px; height: 36px; line-height: 36px; border-radius: 8px; letter-spacing: -0.5px;">H</div>
           </div>
 
-          <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 20px; text-align: center;">
-            ${pendingAvatar ? `<img src="${pendingAvatar}" alt="" style="width: 48px; height: 48px; border-radius: 50%; margin-bottom: 12px;" />` : ""}
-            <h2 style="margin: 0 0 4px; font-size: 16px; color: #111827;">${pendingName}</h2>
-            <p style="margin: 0 0 16px; font-size: 13px; color: #6b7280;">${pendingEmail}</p>
-            <p style="margin: 0 0 20px; font-size: 14px; color: #92400e;">wants to join your HireFlow team</p>
-
-            <div style="display: flex; gap: 8px; justify-content: center;">
-              <a href="${approveUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600;">
-                ✅ Approve as Viewer
-              </a>
-              <a href="${approveEditorUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600;">
-                ✏️ Approve as Editor
-              </a>
+          <!-- Card -->
+          <div style="border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+            <!-- Header -->
+            <div style="padding: 24px 24px 20px; text-align: center;">
+              ${
+                pendingAvatar
+                  ? `<img src="${pendingAvatar}" alt="" style="width: 56px; height: 56px; border-radius: 50%; margin-bottom: 16px; border: 2px solid #f3f4f6;" />`
+                  : `<div style="display: inline-block; width: 56px; height: 56px; line-height: 56px; border-radius: 50%; background: #f3f4f6; color: #374151; font-weight: 600; font-size: 20px; margin-bottom: 16px;">${initials}</div>`
+              }
+              <h2 style="margin: 0 0 2px; font-size: 18px; font-weight: 600; color: #111827;">${pendingName}</h2>
+              <p style="margin: 0 0 16px; font-size: 13px; color: #9ca3af;">${pendingEmail}</p>
+              <p style="margin: 0; font-size: 14px; color: #6b7280;">is requesting access to <strong style="color: #111827;">HireFlow</strong></p>
             </div>
 
-            <div style="margin-top: 12px;">
-              <a href="${rejectUrl}" style="display: inline-block; color: #dc2626; padding: 8px 16px; font-size: 12px; text-decoration: none;">
-                Reject request
-              </a>
+            <!-- Divider -->
+            <div style="height: 1px; background: #f3f4f6; margin: 0 24px;"></div>
+
+            <!-- Actions -->
+            <div style="padding: 20px 24px 24px; text-align: center;">
+              <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto;">
+                <tr>
+                  <td style="padding-right: 8px;">
+                    <a href="${approveUrl}" style="display: inline-block; background: #111827; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600;">
+                      Approve as Viewer
+                    </a>
+                  </td>
+                  <td>
+                    <a href="${approveEditorUrl}" style="display: inline-block; background: #ffffff; color: #111827; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600; border: 1px solid #d1d5db;">
+                      Approve as Editor
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <div style="margin-top: 16px;">
+                <a href="${rejectUrl}" style="font-size: 12px; color: #9ca3af; text-decoration: none;">
+                  Decline request
+                </a>
+              </div>
             </div>
           </div>
 
-          <p style="margin-top: 16px; font-size: 11px; color: #9ca3af; text-align: center;">
-            Or manage all requests at <a href="${baseUrl}/settings" style="color: #2563eb;">Settings → Team</a>
+          <!-- Footer -->
+          <p style="margin-top: 24px; font-size: 11px; color: #d1d5db; text-align: center;">
+            <a href="${baseUrl}/settings" style="color: #9ca3af; text-decoration: none;">Manage team in Settings</a>
           </p>
         </div>
       `,

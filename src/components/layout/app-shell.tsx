@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { NotificationBellServer } from "@/components/layout/notification-bell-server";
 import type { Role } from "@/types";
 import type { AuthUser } from "@/lib/auth";
 
@@ -15,7 +17,14 @@ export function AppShell({ roles, user, children }: AppShellProps) {
     <SidebarProvider>
       <AppSidebar roles={roles} />
       <SidebarInset>
-        <Topbar user={user} />
+        <Topbar
+          user={user}
+          notificationSlot={
+            <Suspense fallback={null}>
+              <NotificationBellServer />
+            </Suspense>
+          }
+        />
         <main className="flex-1 bg-background p-6 md:p-8 lg:p-10">
           {children}
         </main>

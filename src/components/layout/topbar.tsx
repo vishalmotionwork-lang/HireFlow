@@ -16,9 +16,10 @@ import type { AuthUser } from "@/lib/auth";
 
 interface TopbarProps {
   user: AuthUser | null;
+  notificationSlot?: React.ReactNode;
 }
 
-export function Topbar({ user }: TopbarProps) {
+export function Topbar({ user, notificationSlot }: TopbarProps) {
   const displayName = user?.name ?? "User";
   const initials = displayName.charAt(0).toUpperCase();
   const router = useRouter();
@@ -66,6 +67,9 @@ export function Topbar({ user }: TopbarProps) {
 
       {/* Mobile spacer */}
       <div className="flex-1 sm:hidden" />
+
+      {/* Notification bell (server-rendered, passed as slot) */}
+      {notificationSlot}
 
       {/* User avatar */}
       <DropdownMenu>

@@ -7,6 +7,7 @@ import { DynamicIcon } from "@/components/layout/dynamic-icon";
 import { CandidateTable } from "@/components/candidates/candidate-table";
 import { CandidateFilterBar } from "@/components/candidates/candidate-filter-bar";
 import { CandidatePagination } from "@/components/candidates/candidate-pagination";
+import { RealtimeRefresh } from "@/components/realtime/realtime-refresh";
 import { getCandidates } from "@/lib/queries/candidates";
 import { CANDIDATE_STATUSES } from "@/types";
 import type { CandidateStatus } from "@/types";
@@ -40,7 +41,7 @@ export default async function RolePage({
   const tier =
     rawTier === "junior" ||
     rawTier === "senior" ||
-    rawTier === "both" ||
+    rawTier === "intern" ||
     rawTier === "untiered"
       ? rawTier
       : null;
@@ -84,7 +85,9 @@ export default async function RolePage({
     .where(eq(roles.isActive, true))
     .orderBy(roles.sortOrder);
 
-  // Fetch filtered, paginated candidates for this role
+  const loadAll = sp.loadAll === "true" || page > 1;
+
+  // Fetch filtered candidates for this role
   const { candidates, total, totalPages } = await getCandidates({
     roleId: role.id,
     page,
@@ -95,10 +98,20 @@ export default async function RolePage({
     dateRange,
     duplicatesOnly,
     importSource,
+    loadAll,
   });
 
   return (
     <div className="space-y-4">
+      {/* Real-time: refresh when candidates or activities change for this role */}
+      <RealtimeRefresh
+        subscriptions={[
+          { table: "candidates", filter: `role_id=eq.${role.id}` },
+          { table: "candidate_comments" },
+          { table: "activities", filter: `role_id=eq.${role.id}` },
+        ]}
+      />
+
       {/* Role header */}
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50">
@@ -144,11 +157,12 @@ export default async function RolePage({
         totalPages={totalPages}
       />
 
-      {/* Pagination — below the table */}
+      {/* Load More / Load All */}
       <CandidatePagination
         currentPage={page}
         totalPages={totalPages}
         total={total}
+        showing={candidates.length}
       />
     </div>
   );

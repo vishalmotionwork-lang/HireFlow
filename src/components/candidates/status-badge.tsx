@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -19,9 +20,42 @@ interface StatusBadgeProps {
   candidateName?: string;
 }
 
-export function StatusBadge({ candidateId, status, candidateName }: StatusBadgeProps) {
+/**
+ * If the URL has an active status filter that would exclude the new status,
+ * clear it so the candidate remains visible after the status change.
+ */
+function clearStatusFilterIfNeeded(
+  newStatus: CandidateStatus,
+  searchParams: URLSearchParams,
+  pathname: string,
+  router: ReturnType<typeof useRouter>,
+) {
+  const rawStatus = searchParams.get("status");
+  if (!rawStatus) return; // no active filter — all statuses shown
+
+  const activeStatuses = rawStatus.split(",").filter(Boolean);
+  if (activeStatuses.length === 0) return;
+
+  // If the new status is already in the filter, the candidate stays visible
+  if (activeStatuses.includes(newStatus)) return;
+
+  // The new status would be filtered out — clear the status filter
+  const params = new URLSearchParams(searchParams.toString());
+  params.delete("status");
+  params.delete("page");
+  router.replace(`${pathname}?${params.toString()}`);
+}
+
+export function StatusBadge({
+  candidateId,
+  status,
+  candidateName,
+}: StatusBadgeProps) {
   const [isPending, startTransition] = useTransition();
   const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const handleSelect = (newStatus: CandidateStatus) => {
     if (newStatus === status) return;
@@ -34,6 +68,8 @@ export function StatusBadge({ candidateId, status, candidateName }: StatusBadgeP
 
     startTransition(async () => {
       await changeStatus(candidateId, status, newStatus);
+      // Prevent candidate from disappearing when a status filter is active
+      clearStatusFilterIfNeeded(newStatus, searchParams, pathname, router);
     });
   };
 
@@ -41,6 +77,8 @@ export function StatusBadge({ candidateId, status, candidateName }: StatusBadgeP
     setShowRejectionModal(false);
     startTransition(async () => {
       await changeStatus(candidateId, status, "rejected", { reason, message });
+      // Prevent candidate from disappearing when a status filter is active
+      clearStatusFilterIfNeeded("rejected", searchParams, pathname, router);
     });
   };
 

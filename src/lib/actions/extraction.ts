@@ -1,8 +1,11 @@
 "use server";
-
-import { after } from "next/server";
 import { db } from "@/db";
-import { extractionDrafts, candidates, importBatches, roles } from "@/db/schema";
+import {
+  extractionDrafts,
+  candidates,
+  importBatches,
+  roles,
+} from "@/db/schema";
 import { eq, inArray, and, or, count } from "drizzle-orm";
 import { runExtraction, runRegexOnly } from "@/lib/ai/extract";
 import { scrapeUrl } from "@/lib/extraction/firecrawl";
@@ -63,17 +66,18 @@ export async function startExtractions(
     )
     .returning();
 
-  // Background processing — one URL at a time, failures are isolated
-  after(async () => {
-    for (const draft of draftRows) {
+  // Background processing — parallel with concurrency limit of 3
+  // Fire-and-forget background processing
+  void (async () => {
+    const CONCURRENCY = 3;
+
+    async function processDraft(draft: (typeof draftRows)[number]) {
       try {
-        // Mark processing
         await db
           .update(extractionDrafts)
           .set({ status: "processing" })
           .where(eq(extractionDrafts.id, draft.id));
 
-        // Scrape the URL
         const scraped = await scrapeUrl(draft.sourceUrl!);
 
         if (!scraped.success) {
@@ -81,10 +85,9 @@ export async function startExtractions(
             .update(extractionDrafts)
             .set({ status: "failed", error: scraped.error })
             .where(eq(extractionDrafts.id, draft.id));
-          continue;
+          return;
         }
 
-        // Run AI extraction
         const result = await runExtraction({
           rawText: scraped.markdown,
           sourceUrl: draft.sourceUrl ?? undefined,
@@ -110,7 +113,13 @@ export async function startExtractions(
           .where(eq(extractionDrafts.id, draft.id));
       }
     }
-  });
+
+    // Process in batches of CONCURRENCY
+    for (let i = 0; i < draftRows.length; i += CONCURRENCY) {
+      const batch = draftRows.slice(i, i + CONCURRENCY);
+      await Promise.all(batch.map(processDraft));
+    }
+  })();
 
   return { batchId: batch.id };
 }
@@ -124,95 +133,60 @@ export async function startExtractions(
 export async function startSingleExtraction(
   url: string,
   roleId: string,
-): Promise<{ batchId: string; candidateId: string }> {
-  // Verify role exists
-  const [role] = await db.select().from(roles).where(eq(roles.id, roleId));
-  if (!role) {
-    throw new Error(`Role ${roleId} not found`);
-  }
+): Promise<{ batchId: string; candidateId: string; error?: string }> {
+  try {
+    if (!roleId || roleId.trim() === "") {
+      return {
+        batchId: "",
+        candidateId: "",
+        error: "Please select a role first",
+      };
+    }
+    const [role] = await db.select().from(roles).where(eq(roles.id, roleId));
+    if (!role) {
+      return { batchId: "", candidateId: "", error: "Role not found" };
+    }
 
-  // Create importBatch
-  const [batch] = await db
-    .insert(importBatches)
-    .values({
-      roleId,
-      source: "url",
-      totalRows: 1,
-      createdBy: MOCK_USER.name,
-    })
-    .returning();
+    // Create records only — actual scraping happens via API route
+    const [batch] = await db
+      .insert(importBatches)
+      .values({
+        roleId,
+        source: "url",
+        totalRows: 1,
+        createdBy: MOCK_USER.name,
+      })
+      .returning();
 
-  // Create the candidate placeholder
-  const [candidate] = await db
-    .insert(candidates)
-    .values({
-      roleId,
-      name: "Pending extraction...",
-      source: "url",
-      portfolioUrl: url,
-      importBatchId: batch.id,
-      createdBy: MOCK_USER.name,
-    })
-    .returning();
+    const [candidate] = await db
+      .insert(candidates)
+      .values({
+        roleId,
+        name: "Pending extraction...",
+        source: "url",
+        portfolioUrl: url,
+        importBatchId: batch.id,
+        createdBy: MOCK_USER.name,
+      })
+      .returning();
 
-  // Create the draft linked to both batch and candidate
-  const [draft] = await db
-    .insert(extractionDrafts)
-    .values({
+    await db.insert(extractionDrafts).values({
       candidateId: candidate.id,
       importBatchId: batch.id,
       sourceUrl: url,
       status: "pending",
       createdBy: MOCK_USER.name,
-    })
-    .returning();
+    });
 
-  // Background processing
-  after(async () => {
-    try {
-      await db
-        .update(extractionDrafts)
-        .set({ status: "processing" })
-        .where(eq(extractionDrafts.id, draft.id));
-
-      const scraped = await scrapeUrl(url);
-
-      if (!scraped.success) {
-        await db
-          .update(extractionDrafts)
-          .set({ status: "failed", error: scraped.error })
-          .where(eq(extractionDrafts.id, draft.id));
-        return;
-      }
-
-      const result = await runExtraction({
-        rawText: scraped.markdown,
-        sourceUrl: url,
-        candidateId: candidate.id,
-      });
-
-      await db
-        .update(extractionDrafts)
-        .set({
-          status: "completed",
-          extractedData: result.data,
-          platform: result.platform,
-          overallConfidence: Math.round(result.overallConfidence * 100),
-          fieldConfidence: result.fieldConfidence,
-          error: result.error,
-        })
-        .where(eq(extractionDrafts.id, draft.id));
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Unknown processing error";
-      await db
-        .update(extractionDrafts)
-        .set({ status: "failed", error: message })
-        .where(eq(extractionDrafts.id, draft.id));
-    }
-  });
-
-  return { batchId: batch.id, candidateId: candidate.id };
+    return { batchId: batch.id, candidateId: candidate.id };
+  } catch (err) {
+    console.error("[startSingleExtraction] Error:", err);
+    return {
+      batchId: "",
+      candidateId: "",
+      error: err instanceof Error ? err.message : "Extraction failed",
+    };
+  }
 }
 
 /**

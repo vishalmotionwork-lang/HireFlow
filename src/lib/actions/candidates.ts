@@ -41,6 +41,10 @@ const UPDATABLE_FIELDS = [
   "phone",
   "instagram",
   "portfolioUrl",
+  "linkedinUrl",
+  "location",
+  "experience",
+  "resumeUrl",
   "rejectionReason",
   "rejectionMessage",
   "lastModifiedBy",
@@ -246,6 +250,10 @@ export async function updateCandidateField(
       phone: "phone",
       instagram: "instagram",
       portfolioUrl: "portfolioUrl",
+      linkedinUrl: "linkedinUrl",
+      location: "location",
+      experience: "experience",
+      resumeUrl: "resumeUrl",
       rejectionReason: "rejectionReason",
       rejectionMessage: "rejectionMessage",
       lastModifiedBy: "lastModifiedBy",
@@ -384,5 +392,31 @@ export async function mergeCandidates(
   } catch (err) {
     console.error("[mergeCandidates] Error:", err);
     return { error: "Failed to merge candidates. Please try again." };
+  }
+}
+
+/**
+ * Soft-delete one or more candidates by setting isDeleted = true.
+ */
+export async function deleteCandidates(
+  candidateIds: string[],
+): Promise<ActionResult> {
+  if (candidateIds.length === 0) {
+    return { error: "No candidates to delete" };
+  }
+
+  try {
+    const { inArray } = await import("drizzle-orm");
+
+    await db
+      .update(candidates)
+      .set({ isDeleted: true, updatedAt: new Date() })
+      .where(inArray(candidates.id, candidateIds));
+
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch (err) {
+    console.error("[deleteCandidates] Error:", err);
+    return { error: "Failed to delete candidates. Please try again." };
   }
 }

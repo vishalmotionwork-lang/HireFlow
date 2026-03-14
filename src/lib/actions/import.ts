@@ -16,10 +16,16 @@ export interface ImportRow {
   phone: string | null;
   instagram: string | null;
   portfolioUrl: string | null;
+  linkedinUrl: string | null;
+  location: string | null;
+  experience: string | null;
+  resumeUrl: string | null;
   /** User's decision set in Step 3 of the import wizard. */
   decision: "import" | "merge" | "skip";
   /** Candidate ID to fill gaps on (only when decision='merge'). */
   mergeTargetId?: string;
+  /** Per-row role ID override (used when importing with a role column). */
+  roleId?: string;
 }
 
 export interface ImportResult {
@@ -49,7 +55,7 @@ export interface DuplicateMatch {
  */
 export async function detectDuplicates(
   emails: string[],
-  phones: string[]
+  phones: string[],
 ): Promise<Record<string, DuplicateMatch>> {
   // Normalise inputs — filter out empty strings
   const cleanEmails = emails.map((e) => e.trim().toLowerCase()).filter(Boolean);
@@ -131,7 +137,7 @@ export async function detectDuplicates(
 export async function importCandidates(
   rows: ImportRow[],
   targetRoleId: string,
-  source: "excel" | "csv" | "paste"
+  source: "excel" | "csv" | "paste",
 ): Promise<ImportResult | { error: string }> {
   try {
     // ------------------------------------------------------------------
@@ -156,7 +162,7 @@ export async function importCandidates(
     // ------------------------------------------------------------------
     const toInsert = rows.filter((r) => r.decision === "import");
     const toMerge = rows.filter(
-      (r) => r.decision === "merge" && r.mergeTargetId
+      (r) => r.decision === "merge" && r.mergeTargetId,
     );
     const toSkip = rows.filter((r) => r.decision === "skip");
 
@@ -191,12 +197,16 @@ export async function importCandidates(
       // --- Insert new candidates ---
       if (toInsert.length > 0) {
         const insertValues = toInsert.map((row) => ({
-          roleId: targetRoleId,
+          roleId: row.roleId ?? targetRoleId,
           name: row.name,
           email: row.email ?? null,
           phone: row.phone ?? null,
           instagram: row.instagram ?? null,
           portfolioUrl: row.portfolioUrl ?? null,
+          linkedinUrl: row.linkedinUrl ?? null,
+          location: row.location ?? null,
+          experience: row.experience ?? null,
+          resumeUrl: row.resumeUrl ?? null,
           isDuplicate: false,
           importBatchId: batchId,
           createdBy: MOCK_USER.name,
@@ -220,7 +230,7 @@ export async function importCandidates(
               fromValue: null,
               toValue: "left_to_review",
               createdBy: MOCK_USER.name,
-            }))
+            })),
           );
         }
       }
@@ -249,8 +259,17 @@ export async function importCandidates(
 
         if (!existing.email && row.email) updates.email = row.email;
         if (!existing.phone && row.phone) updates.phone = row.phone;
-        if (!existing.instagram && row.instagram) updates.instagram = row.instagram;
-        if (!existing.portfolioUrl && row.portfolioUrl) updates.portfolioUrl = row.portfolioUrl;
+        if (!existing.instagram && row.instagram)
+          updates.instagram = row.instagram;
+        if (!existing.portfolioUrl && row.portfolioUrl)
+          updates.portfolioUrl = row.portfolioUrl;
+        if (!existing.linkedinUrl && row.linkedinUrl)
+          updates.linkedinUrl = row.linkedinUrl;
+        if (!existing.location && row.location) updates.location = row.location;
+        if (!existing.experience && row.experience)
+          updates.experience = row.experience;
+        if (!existing.resumeUrl && row.resumeUrl)
+          updates.resumeUrl = row.resumeUrl;
 
         await tx
           .update(candidates)

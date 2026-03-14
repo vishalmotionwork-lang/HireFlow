@@ -1,15 +1,19 @@
 "use client";
 
-import { useState, useTransition, useEffect, useRef } from "react";
+import { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import { Send, Pencil, Check, X } from "lucide-react";
+import { useRealtimeSubscription } from "@/hooks/use-realtime";
 import {
   createComment,
   editComment,
   getComments,
+  getMentionableMembers,
 } from "@/lib/actions/comments";
 import { MOCK_USER, TEAM_MEMBERS } from "@/lib/constants";
 import { formatRelativeTime } from "@/lib/utils/format-relative-time";
 import type { CandidateComment } from "@/types";
+
+type MentionableMember = { id: string; name: string };
 
 interface CommentThreadProps {
   candidateId: string;
@@ -37,15 +41,15 @@ function renderCommentBody(body: string): React.ReactNode {
 
 /**
  * Extract @mentions from a comment body.
- * Only returns mentions that match known TEAM_MEMBERS by name.
+ * Matches against the provided members list (DB team members or fallback constants).
  */
 function extractMentions(
   body: string,
+  members: ReadonlyArray<MentionableMember>,
 ): Array<{ userId: string; name: string }> {
-  return TEAM_MEMBERS.filter((m) => body.includes(`@${m.name}`)).map((m) => ({
-    userId: m.id,
-    name: m.name,
-  }));
+  return members
+    .filter((m) => body.includes(`@${m.name}`))
+    .map((m) => ({ userId: m.id, name: m.name }));
 }
 
 // ─── CommentItem ─────────────────────────────────────────────────────────────
@@ -158,24 +162,49 @@ export function CommentThread({ candidateId }: CommentThreadProps) {
   const [isPending, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(true);
 
+  // Team members for @mention (loaded from DB, falls back to constants)
+  const [mentionMembers, setMentionMembers] =
+    useState<ReadonlyArray<MentionableMember>>(TEAM_MEMBERS);
+
   // @mention popover state
   const [showMentionPopover, setShowMentionPopover] = useState(false);
   const [mentionFilter, setMentionFilter] = useState("");
   const [mentionAnchorIdx, setMentionAnchorIdx] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const loadComments = () => {
+  const loadComments = useCallback(() => {
     startTransition(async () => {
       const data = await getComments(candidateId);
       setComments(data);
       setIsLoading(false);
     });
-  };
+  }, [candidateId]);
+
+  // Load DB team members for @mention autocomplete (once on mount)
+  useEffect(() => {
+    getMentionableMembers()
+      .then((members) => {
+        if (members.length > 0) {
+          setMentionMembers(members);
+        }
+        // If DB returns nothing, keep the hardcoded TEAM_MEMBERS fallback
+      })
+      .catch(() => {
+        // Fallback already set — no action needed
+      });
+  }, []);
 
   useEffect(() => {
     loadComments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [candidateId]);
+  }, [loadComments]);
+
+  // Real-time: reload comments when new ones are added/edited
+  useRealtimeSubscription({
+    table: "candidate_comments",
+    filter: `candidate_id=eq.${candidateId}`,
+    onChanged: loadComments,
+    enabled: Boolean(candidateId),
+  });
 
   // Detect @mention trigger on each keystroke
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -226,13 +255,13 @@ export function CommentThread({ candidateId }: CommentThreadProps) {
     requestAnimationFrame(() => inputRef.current?.focus());
   }
 
-  const filteredMembers = TEAM_MEMBERS.filter((m) =>
+  const filteredMembers = mentionMembers.filter((m) =>
     m.name.toLowerCase().startsWith(mentionFilter),
   );
 
   const handlePost = () => {
     if (!newComment.trim()) return;
-    const mentions = extractMentions(newComment);
+    const mentions = extractMentions(newComment, mentionMembers);
     startTransition(async () => {
       const result = await createComment(candidateId, newComment, mentions);
       if ("success" in result) {

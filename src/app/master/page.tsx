@@ -32,7 +32,7 @@ export default async function MasterPage({ searchParams }: MasterPageProps) {
   const tier =
     rawTier === "junior" ||
     rawTier === "senior" ||
-    rawTier === "both" ||
+    rawTier === "intern" ||
     rawTier === "untiered"
       ? rawTier
       : null;
@@ -58,6 +58,9 @@ export default async function MasterPage({ searchParams }: MasterPageProps) {
     ? rawSource.split(",").filter(Boolean)
     : [];
 
+  const rawRoles = typeof sp.roles === "string" ? sp.roles : "";
+  const roleIds: string[] = rawRoles ? rawRoles.split(",").filter(Boolean) : [];
+
   // Fetch all active roles for role name lookup
   const allRoles = await db
     .select()
@@ -70,6 +73,8 @@ export default async function MasterPage({ searchParams }: MasterPageProps) {
     allRoles.map((r) => [r.id, r.name]),
   );
 
+  const loadAll = sp.loadAll === "true" || page > 1;
+
   // Fetch ALL candidates across all roles (no roleId filter)
   const { candidates, total, totalPages } = await getCandidates({
     // roleId omitted intentionally — master view shows all candidates
@@ -81,6 +86,8 @@ export default async function MasterPage({ searchParams }: MasterPageProps) {
     dateRange,
     duplicatesOnly,
     importSource,
+    roleIds: roleIds.length > 0 ? roleIds : undefined,
+    loadAll,
   });
 
   return (
@@ -97,7 +104,11 @@ export default async function MasterPage({ searchParams }: MasterPageProps) {
       </div>
 
       {/* Filter bar */}
-      <CandidateFilterBar showing={candidates.length} total={total} />
+      <CandidateFilterBar
+        showing={candidates.length}
+        total={total}
+        roles={allRoles.map((r) => ({ id: r.id, name: r.name }))}
+      />
 
       {/* Candidates table — Role column enabled */}
       <CandidateTable
@@ -110,11 +121,12 @@ export default async function MasterPage({ searchParams }: MasterPageProps) {
         rolesMap={rolesMap}
       />
 
-      {/* Pagination */}
+      {/* Load More / Load All */}
       <CandidatePagination
         currentPage={page}
         totalPages={totalPages}
         total={total}
+        showing={candidates.length}
       />
     </div>
   );

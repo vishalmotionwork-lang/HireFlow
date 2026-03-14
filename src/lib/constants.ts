@@ -1,36 +1,43 @@
 import type { CandidateStatus, Tier } from "@/types";
 
-// Mock user for Phase 1 (auth deferred)
+/**
+ * @deprecated Use getAuthUser() from @/lib/auth instead.
+ * Kept as fallback for server actions when auth context is unavailable.
+ */
 export const MOCK_USER = {
   name: "Vishal",
   avatar: null as string | null,
 };
 
-// Lucide icon names for the role icon picker (~20 creative-role-relevant icons)
-export const LUCIDE_ROLE_ICONS = [
-  "Film",
-  "PenLine",
-  "Palette",
-  "Cpu",
-  "Camera",
-  "Music",
-  "Mic",
-  "Video",
-  "Brush",
-  "Scissors",
-  "Code",
-  "BookOpen",
-  "Image",
-  "Sparkles",
-  "Megaphone",
-  "PenTool",
-  "Monitor",
-  "Clapperboard",
-  "Pencil",
-  "Briefcase",
+// Emoji icons for the role icon picker
+export const ROLE_EMOJI_ICONS = [
+  "🎬", // Video Editor
+  "✍️", // Writer/Scriptwriter
+  "🎨", // Designer
+  "🤖", // AI/Tech
+  "📱", // Social Media
+  "📝", // Content
+  "🎯", // Strategy
+  "🎥", // Director
+  "📊", // Manager
+  "💼", // Business
+  "💰", // Sales
+  "📸", // Photography
+  "🎵", // Music
+  "🎙️", // Podcast/Voice
+  "💻", // Developer
+  "🔍", // Research
+  "📣", // Marketing
+  "🎪", // Creative
+  "🧠", // Innovation
+  "⚡", // Operations
 ] as const;
 
-export type LucideRoleIcon = (typeof LUCIDE_ROLE_ICONS)[number];
+export type RoleEmojiIcon = (typeof ROLE_EMOJI_ICONS)[number];
+
+// Legacy: keep LUCIDE_ROLE_ICONS for backward compatibility
+export const LUCIDE_ROLE_ICONS = ROLE_EMOJI_ICONS;
+export type LucideRoleIcon = RoleEmojiIcon;
 
 // Display labels for each candidate status
 export const STATUS_LABELS: Record<CandidateStatus, string> = {
@@ -67,17 +74,17 @@ export const STATUS_COLORS: Record<CandidateStatus, string> = {
 // Display labels for tiers
 export const TIER_LABELS: Record<Tier, string> = {
   untiered: "Untiered",
+  intern: "Intern",
   junior: "Junior",
   senior: "Senior",
-  both: "Junior + Senior",
 };
 
 // Pastel/muted Tailwind color classes for each tier
 export const TIER_COLORS: Record<Tier, string> = {
   untiered: "bg-gray-100 text-gray-600",
+  intern: "bg-emerald-50 text-emerald-700",
   junior: "bg-sky-50 text-sky-700",
   senior: "bg-indigo-50 text-indigo-700",
-  both: "bg-violet-50 text-violet-700",
 };
 
 // Rejection reason quick-select chips

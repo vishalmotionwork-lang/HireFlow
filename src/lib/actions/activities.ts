@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { activities } from "@/db/schema";
-import { MOCK_USER } from "@/lib/constants";
+import { getCurrentUserForAudit } from "@/lib/actions/get-current-user";
 import type { NewActivity } from "@/types";
 
 /**
@@ -12,10 +12,11 @@ import type { NewActivity } from "@/types";
 export async function createActivity(
   params: Omit<NewActivity, "id" | "createdAt" | "actorId" | "actorName">,
 ) {
+  const actor = await getCurrentUserForAudit();
   await db.insert(activities).values({
     ...params,
-    actorId: MOCK_USER.name, // replace with Clerk userId when auth is added
-    actorName: MOCK_USER.name,
-    actorAvatar: MOCK_USER.avatar,
+    actorId: actor.id,
+    actorName: actor.name,
+    actorAvatar: actor.avatar,
   });
 }

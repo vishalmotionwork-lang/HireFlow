@@ -1,4 +1,4 @@
-import type { ColumnMapping, NormalizedRow, RawRow } from './types';
+import type { ColumnMapping, NormalizedRow, RawRow } from "./types";
 
 /**
  * Normalize an Indian or international phone number to a canonical form.
@@ -12,17 +12,17 @@ import type { ColumnMapping, NormalizedRow, RawRow } from './types';
  * - Anything shorter → null (not a valid phone number)
  */
 function normalizePhone(raw: string): string | null {
-  const digits = raw.replace(/\D/g, '');
+  const digits = raw.replace(/\D/g, "");
 
   if (digits.length === 10) {
     return digits;
   }
 
-  if (digits.length === 12 && digits.startsWith('91')) {
+  if (digits.length === 12 && digits.startsWith("91")) {
     return digits.slice(2);
   }
 
-  if (digits.length === 13 && digits.startsWith('091')) {
+  if (digits.length === 13 && digits.startsWith("091")) {
     return digits.slice(3);
   }
 
@@ -50,22 +50,26 @@ export function normalizeRows(
   return rows.map((row, idx) => {
     const get = (colIndex: number | undefined): string | null => {
       if (colIndex === undefined || colIndex === null) return null;
-      const value = String(row[colIndex] ?? '').trim();
-      return value === '' ? null : value;
+      const value = String(row[colIndex] ?? "").trim();
+      return value === "" ? null : value;
     };
 
-    const rawPhone =
-      mapping.phone !== undefined ? get(mapping.phone) : null;
+    const rawPhone = mapping.phone !== undefined ? get(mapping.phone) : null;
 
     return {
       name: get(mapping.name),
       email:
         mapping.email !== undefined
-          ? get(mapping.email)?.toLowerCase() ?? null
+          ? (get(mapping.email)?.toLowerCase() ?? null)
           : null,
       phone: rawPhone !== null ? normalizePhone(rawPhone) : null,
       instagram: get(mapping.instagram),
       portfolioUrl: get(mapping.portfolioUrl),
+      linkedinUrl: get(mapping.linkedinUrl),
+      location: get(mapping.location),
+      experience: get(mapping.experience),
+      resumeUrl: get(mapping.resumeUrl),
+      role: get(mapping.role),
       _rowIndex: idx,
     };
   });

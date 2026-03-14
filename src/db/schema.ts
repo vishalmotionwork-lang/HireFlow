@@ -27,9 +27,9 @@ export const candidateStatusEnum = pgEnum("candidate_status", [
 
 export const tierEnum = pgEnum("tier", [
   "untiered",
+  "intern",
   "junior",
   "senior",
-  "both",
 ]);
 
 // Tables — ordered to avoid forward references:
@@ -70,6 +70,10 @@ export const candidates = pgTable("candidates", {
   phone: text("phone"),
   instagram: text("instagram"),
   portfolioUrl: text("portfolio_url"),
+  linkedinUrl: text("linkedin_url"),
+  location: text("location"),
+  experience: text("experience"),
+  resumeUrl: text("resume_url"),
   portfolioLinks: jsonb("portfolio_links").default([]).notNull(), // [{url, sourceType, label}]
   socialHandles: jsonb("social_handles").default([]).notNull(), // [{platform, handle, url}]
   status: candidateStatusEnum("status").default("left_to_review").notNull(),
@@ -130,6 +134,41 @@ export const extractionDrafts = pgTable("extraction_drafts", {
   reviewedAt: timestamp("reviewed_at"),
   appliedAt: timestamp("applied_at"),
   createdBy: text("created_by").default("mock-user").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const teamMembers = pgTable("team_members", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(), // Supabase auth user ID
+  email: text("email").notNull(),
+  name: text("name"),
+  avatar: text("avatar"),
+  role: text("role").default("viewer").notNull(), // 'admin' | 'editor' | 'viewer'
+  isActive: boolean("is_active").default(true).notNull(),
+  invitedBy: text("invited_by"),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const invitations = pgTable("invitations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull(),
+  role: text("role").default("viewer").notNull(), // 'admin' | 'editor' | 'viewer'
+  invitedBy: text("invited_by").notNull(),
+  status: text("status").default("pending").notNull(), // 'pending' | 'accepted' | 'expired'
+  token: text("token").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(), // Supabase auth user ID of the recipient
+  type: text("type").notNull(), // 'mention' | 'status_change' — extensible
+  title: text("title").notNull(), // e.g. "Harshit mentioned you"
+  body: text("body").notNull(), // e.g. "in a comment on John Doe: 'Great portfolio...'"
+  link: text("link").notNull(), // e.g. "/roles/editor?candidate=uuid"
+  isRead: boolean("is_read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

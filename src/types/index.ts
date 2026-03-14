@@ -6,6 +6,8 @@ import {
   importBatches,
   extractionDrafts,
   activities,
+  teamMembers,
+  invitations,
 } from "@/db/schema";
 
 // Inferred types from Drizzle schema
@@ -29,6 +31,12 @@ export type NewExtractionDraft = typeof extractionDrafts.$inferInsert;
 
 export type Activity = typeof activities.$inferSelect;
 export type NewActivity = typeof activities.$inferInsert;
+
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type NewTeamMember = typeof teamMembers.$inferInsert;
+
+export type Invitation = typeof invitations.$inferSelect;
+export type NewInvitation = typeof invitations.$inferInsert;
 
 // Typed shapes for jsonb fields
 export interface PortfolioLink {
@@ -61,7 +69,7 @@ export const CANDIDATE_STATUSES = [
 
 export type CandidateStatus = (typeof CANDIDATE_STATUSES)[number];
 
-export const TIERS = ["untiered", "junior", "senior", "both"] as const;
+export const TIERS = ["untiered", "intern", "junior", "senior"] as const;
 
 export type Tier = (typeof TIERS)[number];
 

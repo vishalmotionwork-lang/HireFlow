@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useRealtimeSubscription } from "@/hooks/use-realtime";
 import Link from "next/link";
 import {
   Users,
@@ -89,14 +90,12 @@ export function DashboardClient({
     null,
   );
 
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      router.refresh();
-    }, 30_000);
+  const refresh = () => router.refresh();
 
-    return () => clearInterval(interval);
-  }, [router]);
+  // Real-time: refresh dashboard when candidates, roles, or activities change
+  useRealtimeSubscription({ table: "candidates", onChanged: refresh });
+  useRealtimeSubscription({ table: "roles", onChanged: refresh });
+  useRealtimeSubscription({ table: "activities", onChanged: refresh });
 
   return (
     <div className="space-y-8">

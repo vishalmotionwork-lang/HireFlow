@@ -17,7 +17,11 @@ const rowSchema = z.object({
   email: z.string().email("Invalid email address").nullable().optional(),
   phone: z.string().nullable().optional(),
   instagram: z.string().nullable().optional(),
-  portfolioUrl: z.string().url("Invalid URL").nullable().optional(),
+  portfolioUrl: z.string().url("Invalid portfolio URL").nullable().optional(),
+  linkedinUrl: z.string().url("Invalid LinkedIn URL").nullable().optional(),
+  location: z.string().nullable().optional(),
+  experience: z.string().nullable().optional(),
+  resumeUrl: z.string().url("Invalid resume URL").nullable().optional(),
 });
 
 /**

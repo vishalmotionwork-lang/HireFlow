@@ -287,7 +287,126 @@ export function CandidateDrawer({
                     )}
                   </div>
                 </div>
+
+                {/* LinkedIn URL */}
+                <div className="flex items-center gap-1 text-sm">
+                  <span className="w-20 shrink-0 text-xs text-gray-400">
+                    LinkedIn
+                  </span>
+                  <div className="flex flex-1 items-center min-w-0">
+                    {candidate.linkedinUrl ? (
+                      <a
+                        href={candidate.linkedinUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 truncate text-blue-600 hover:underline text-sm"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {candidate.linkedinUrl}
+                      </a>
+                    ) : (
+                      <EditField
+                        value={candidate.linkedinUrl ?? ""}
+                        onSave={(v) => handleFieldSave("linkedinUrl", v)}
+                        placeholder="Add LinkedIn URL"
+                      />
+                    )}
+                    {candidate.linkedinUrl && (
+                      <>
+                        <a
+                          href={candidate.linkedinUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-1 shrink-0 rounded p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
+                          title="Open LinkedIn profile"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                        <CopyButton value={candidate.linkedinUrl} />
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Resume/CV Link */}
+                <div className="flex items-center gap-1 text-sm">
+                  <span className="w-20 shrink-0 text-xs text-gray-400">
+                    Resume
+                  </span>
+                  <div className="flex flex-1 items-center min-w-0">
+                    {candidate.resumeUrl ? (
+                      <a
+                        href={candidate.resumeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 truncate text-blue-600 hover:underline text-sm"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {candidate.resumeUrl}
+                      </a>
+                    ) : (
+                      <EditField
+                        value={candidate.resumeUrl ?? ""}
+                        onSave={(v) => handleFieldSave("resumeUrl", v)}
+                        placeholder="Add resume/CV link"
+                      />
+                    )}
+                    {candidate.resumeUrl && (
+                      <>
+                        <a
+                          href={candidate.resumeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-1 shrink-0 rounded p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
+                          title="Open resume"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                        <CopyButton value={candidate.resumeUrl} />
+                      </>
+                    )}
+                  </div>
+                </div>
               </section>
+
+              {/* Details block */}
+              {(candidate.location || candidate.experience) && (
+                <section className="px-4 py-4 flex flex-col gap-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Details
+                  </h3>
+
+                  {/* Location */}
+                  <div className="flex items-center gap-1 text-sm">
+                    <span className="w-20 shrink-0 text-xs text-gray-400">
+                      Location
+                    </span>
+                    <div className="flex flex-1 items-center min-w-0">
+                      <EditField
+                        value={candidate.location ?? ""}
+                        onSave={(v) => handleFieldSave("location", v)}
+                        placeholder="Add location"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Experience */}
+                  <div className="flex items-center gap-1 text-sm">
+                    <span className="w-20 shrink-0 text-xs text-gray-400">
+                      Experience
+                    </span>
+                    <div className="flex flex-1 items-center min-w-0">
+                      <EditField
+                        value={candidate.experience ?? ""}
+                        onSave={(v) => handleFieldSave("experience", v)}
+                        placeholder="Add experience"
+                      />
+                    </div>
+                  </div>
+                </section>
+              )}
 
               {/* Comments */}
               <section className="px-4 py-4 flex flex-col gap-3">

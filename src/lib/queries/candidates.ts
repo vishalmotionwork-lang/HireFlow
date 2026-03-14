@@ -16,6 +16,8 @@ import type { CandidateStatus, Tier } from "@/types";
 
 interface GetCandidatesParams {
   roleId?: string;
+  /** Filter by multiple role IDs (master view) */
+  roleIds?: string[];
   page?: number;
   status?: CandidateStatus[];
   tier?: Tier | null;
@@ -24,6 +26,8 @@ interface GetCandidatesParams {
   dateRange?: "today" | "week" | "month" | null;
   duplicatesOnly?: boolean;
   importSource?: string[];
+  /** When true, load all rows up to page * PAGE_SIZE (accumulating mode) */
+  loadAll?: boolean;
 }
 
 /**
@@ -69,9 +73,13 @@ export async function getCandidates({
   dateRange = null,
   duplicatesOnly = false,
   importSource = [],
+  roleIds,
+  loadAll = false,
 }: GetCandidatesParams) {
   const PAGE_SIZE = 50;
-  const offset = (page - 1) * PAGE_SIZE;
+  // In accumulating mode, fetch from 0 to page * PAGE_SIZE
+  const limit = loadAll ? page * PAGE_SIZE : PAGE_SIZE;
+  const offset = loadAll ? 0 : (page - 1) * PAGE_SIZE;
 
   // Build conditions — guard every condition to avoid Drizzle undefined pitfall
   const conditions = [];
@@ -81,6 +89,10 @@ export async function getCandidates({
 
   if (roleId) {
     conditions.push(eq(candidates.roleId, roleId));
+  }
+
+  if (roleIds && roleIds.length > 0) {
+    conditions.push(inArray(candidates.roleId, roleIds));
   }
 
   if (status.length > 0) {
@@ -142,7 +154,7 @@ export async function getCandidates({
     .from(candidates)
     .where(whereClause)
     .orderBy(orderByClause)
-    .limit(PAGE_SIZE)
+    .limit(limit)
     .offset(offset);
 
   return {

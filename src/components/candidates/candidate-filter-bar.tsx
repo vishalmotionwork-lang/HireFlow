@@ -19,9 +19,9 @@ import type { CandidateStatus } from "@/types";
 const TIER_OPTIONS = [
   { value: "all", label: "All" },
   { value: "untiered", label: "Untiered" },
+  { value: "intern", label: "Intern" },
   { value: "junior", label: "Junior" },
   { value: "senior", label: "Senior" },
-  { value: "both", label: "Both" },
 ] as const;
 
 const DATE_OPTIONS = [
@@ -45,14 +45,22 @@ const SOURCE_OPTIONS = [
   { value: "url", label: "URL" },
 ] as const;
 
+interface RoleOption {
+  id: string;
+  name: string;
+}
+
 interface CandidateFilterBarProps {
   showing: number;
   total: number;
+  /** Pass roles to show a Role filter (master view only) */
+  roles?: RoleOption[];
 }
 
 export function CandidateFilterBar({
   showing,
   total,
+  roles,
 }: CandidateFilterBarProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -72,6 +80,12 @@ export function CandidateFilterBar({
   const selectedDate = searchParams.get("date") ?? "";
   const selectedSort = searchParams.get("sort") ?? "newest";
   const duplicatesOnly = searchParams.get("duplicates") === "true";
+
+  // Role multi-select (comma-separated role IDs, master view only)
+  const rawRole = searchParams.get("roles") ?? "";
+  const selectedRoles: string[] = rawRole
+    ? rawRole.split(",").filter(Boolean)
+    : [];
 
   // Import source multi-select (comma-separated, same pattern as status)
   const rawSource = searchParams.get("source") ?? "";
@@ -137,6 +151,18 @@ export function CandidateFilterBar({
     setFilter("source", newValue);
   }
 
+  /** Toggle a role in the comma-separated roles list */
+  function toggleRole(roleId: string) {
+    const current = new Set(selectedRoles);
+    if (current.has(roleId)) {
+      current.delete(roleId);
+    } else {
+      current.add(roleId);
+    }
+    const newValue = Array.from(current).join(",") || null;
+    setFilter("roles", newValue);
+  }
+
   /** Clear all active filters */
   function clearAll() {
     setSearchInput("");
@@ -151,6 +177,7 @@ export function CandidateFilterBar({
     duplicatesOnly,
     !!searchParams.get("q"),
     selectedSources.length > 0,
+    selectedRoles.length > 0,
   ].filter(Boolean).length;
 
   const hasActiveFilters = activeFilterCount > 0;
@@ -237,15 +264,54 @@ export function CandidateFilterBar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* 2. Tier pill buttons */}
-        <div className="flex flex-wrap items-center gap-1">
-          {TIER_OPTIONS.map((option) => {
-            const isActive =
-              option.value === "all"
-                ? selectedTier === "all" || selectedTier === ""
-                : selectedTier === option.value;
-            return (
-              <button
+        {/* 1b. Role multi-select (master view only) */}
+        {roles && roles.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+              Role
+              {selectedRoles.length > 0 && (
+                <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-100 px-1 text-xs font-semibold text-blue-700">
+                  {selectedRoles.length}
+                </span>
+              )}
+              <ChevronDown size={14} className="text-gray-400" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="w-52 max-h-72 overflow-y-auto max-w-[calc(100vw-32px)]"
+            >
+              {roles.map((role) => (
+                <DropdownMenuCheckboxItem
+                  key={role.id}
+                  checked={selectedRoles.includes(role.id)}
+                  onCheckedChange={() => toggleRole(role.id)}
+                >
+                  {role.name}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
+        {/* 2. Tier dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            {selectedTier && selectedTier !== "all" ? (
+              <>
+                Tier:{" "}
+                <span className="text-blue-700">
+                  {TIER_OPTIONS.find((o) => o.value === selectedTier)?.label ??
+                    selectedTier}
+                </span>
+              </>
+            ) : (
+              "Tier"
+            )}
+            <ChevronDown size={14} className="text-gray-400" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-40">
+            {TIER_OPTIONS.map((option) => (
+              <DropdownMenuItem
                 key={option.value}
                 onClick={() =>
                   setFilter(
@@ -253,17 +319,19 @@ export function CandidateFilterBar({
                     option.value === "all" ? null : option.value,
                   )
                 }
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  isActive
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                className={
+                  (option.value === "all" &&
+                    (selectedTier === "all" || selectedTier === "")) ||
+                  selectedTier === option.value
+                    ? "bg-blue-50 text-blue-700"
+                    : ""
+                }
               >
                 {option.label}
-              </button>
-            );
-          })}
-        </div>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* 3. Date Added dropdown */}
         <DropdownMenu>

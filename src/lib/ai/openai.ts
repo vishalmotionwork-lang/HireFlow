@@ -94,7 +94,7 @@ export async function extractProfileData(
   const completion = await openai.chat.completions.create({
     model,
     temperature: 0.1,
-    max_tokens: 1500,
+    max_tokens: 800,
     messages: [
       {
         role: "system",

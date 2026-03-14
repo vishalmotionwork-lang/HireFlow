@@ -65,11 +65,24 @@ export function CandidateRow({
     ? (rolesMap[candidate.roleId] ?? "Unknown Role")
     : null;
 
+  const isPositive =
+    candidate.status === "shortlisted" ||
+    candidate.status === "assignment_passed" ||
+    candidate.status === "hired";
+
+  const isNegative =
+    candidate.status === "rejected" ||
+    candidate.status === "not_good" ||
+    candidate.status === "assignment_failed";
+
+  const rowClass = isPositive
+    ? "border-b border-gray-100 bg-emerald-50/60 hover:bg-emerald-100/70 cursor-pointer transition-colors border-l-4 border-l-emerald-500 [&_td:first-child]:pl-1.5"
+    : isNegative
+      ? "border-b border-gray-100 bg-red-50 hover:bg-red-100/70 cursor-pointer transition-colors border-l-4 border-l-red-400"
+      : "border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors";
+
   return (
-    <tr
-      onClick={handleRowClick}
-      className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
-    >
+    <tr onClick={handleRowClick} className={rowClass}>
       {/* Checkbox */}
       <td className="w-8 px-2 py-2.5">
         <input
@@ -150,12 +163,15 @@ export function CandidateRow({
       </td>
 
       {/* Status Badge */}
-      <td className="px-3 py-2.5">
+      <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
         <StatusBadge candidateId={candidate.id} status={candidate.status} />
       </td>
 
       {/* Tier Badge */}
-      <td className="hidden sm:table-cell px-3 py-2.5">
+      <td
+        className="hidden sm:table-cell px-3 py-2.5"
+        onClick={(e) => e.stopPropagation()}
+      >
         <TierBadge candidateId={candidate.id} tier={candidate.tier} />
       </td>
 

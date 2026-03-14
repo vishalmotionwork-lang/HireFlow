@@ -2,6 +2,8 @@
 
 import { useReducer, useEffect, useState, useCallback } from "react";
 import { Step1Upload } from "@/components/import/Step1Upload";
+import { StepAIProcessing } from "@/components/import/StepAIProcessing";
+import type { AIProcessingResult } from "@/components/import/StepAIProcessing";
 import { Step2Mapping } from "@/components/import/Step2Mapping";
 import { Step3Validate } from "@/components/import/Step3Validate";
 import { Step4Summary } from "@/components/import/Step4Summary";
@@ -19,6 +21,7 @@ import type {
   ValidatedRow,
   DuplicateInfo,
   ImportResult,
+  RoleMapping,
 } from "@/lib/import/types";
 import type { Role, ExtractionDraft } from "@/types";
 
@@ -32,7 +35,7 @@ type ImportTab = "file" | "url";
 // Wizard state
 // ---------------------------------------------------------------------------
 
-type WizardStep = "upload" | "map" | "validate" | "summary";
+type WizardStep = "upload" | "ai_processing" | "map" | "validate" | "summary";
 
 interface WizardState {
   step: WizardStep;
@@ -40,10 +43,12 @@ interface WizardState {
   headers: string[];
   mapping: ColumnMapping;
   targetRoleId: string;
+  roleMapping: RoleMapping | null;
   source: "excel" | "csv" | "paste";
   validatedRows: ValidatedRow[];
   duplicateInfo: Record<number, DuplicateInfo>;
   result: ImportResult | null;
+  aiResult: AIProcessingResult | null;
 }
 
 const INITIAL_STATE: WizardState = {
@@ -52,10 +57,12 @@ const INITIAL_STATE: WizardState = {
   headers: [],
   mapping: {},
   targetRoleId: "",
+  roleMapping: null,
   source: "csv",
   validatedRows: [],
   duplicateInfo: {},
   result: null,
+  aiResult: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -67,9 +74,15 @@ type WizardAction =
       type: "FILE_PARSED";
       payload: ParseResult & { source: "excel" | "csv" | "paste" };
     }
+  | { type: "AI_COMPLETE"; payload: AIProcessingResult }
+  | { type: "AI_SKIPPED" }
   | {
       type: "MAPPING_CONFIRMED";
-      payload: { mapping: ColumnMapping; targetRoleId: string };
+      payload: {
+        mapping: ColumnMapping;
+        targetRoleId: string;
+        roleMapping: RoleMapping | null;
+      };
     }
   | {
       type: "VALIDATION_COMPLETE";
@@ -87,11 +100,24 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
     case "FILE_PARSED":
       return {
         ...state,
-        step: "map",
+        step: "ai_processing",
         headers: action.payload.headers,
         rawRows: action.payload.rows,
         source: action.payload.source,
         mapping: {},
+        aiResult: null,
+      };
+    case "AI_COMPLETE":
+      return {
+        ...state,
+        step: "map",
+        aiResult: action.payload,
+      };
+    case "AI_SKIPPED":
+      return {
+        ...state,
+        step: "map",
+        aiResult: null,
       };
     case "MAPPING_CONFIRMED":
       return {
@@ -99,6 +125,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
         step: "validate",
         mapping: action.payload.mapping,
         targetRoleId: action.payload.targetRoleId,
+        roleMapping: action.payload.roleMapping,
       };
     case "VALIDATION_COMPLETE":
       return {
@@ -115,6 +142,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
       };
     case "BACK": {
       const prevStepMap: Partial<Record<WizardStep, WizardStep>> = {
+        ai_processing: "upload",
         map: "upload",
         validate: "map",
         summary: "validate",
@@ -169,12 +197,19 @@ function clearSessionState(): void {
 
 const STEPS: { key: WizardStep; label: string }[] = [
   { key: "upload", label: "Upload" },
-  { key: "map", label: "Map" },
+  { key: "ai_processing", label: "AI Analyze" },
+  { key: "map", label: "Review" },
   { key: "validate", label: "Validate" },
   { key: "summary", label: "Summary" },
 ];
 
-const STEP_ORDER: WizardStep[] = ["upload", "map", "validate", "summary"];
+const STEP_ORDER: WizardStep[] = [
+  "upload",
+  "ai_processing",
+  "map",
+  "validate",
+  "summary",
+];
 
 function StepIndicator({ currentStep }: { currentStep: WizardStep }) {
   const currentIndex = STEP_ORDER.indexOf(currentStep);
@@ -307,6 +342,14 @@ export function ImportWizard({ roles }: ImportWizardProps) {
     dispatch({ type: "FILE_PARSED", payload: { ...result, source } });
   };
 
+  const handleAIComplete = useCallback((result: AIProcessingResult) => {
+    dispatch({ type: "AI_COMPLETE", payload: result });
+  }, []);
+
+  const handleAISkip = () => {
+    dispatch({ type: "AI_SKIPPED" });
+  };
+
   const handleImportComplete = (result: ImportResult) => {
     dispatch({ type: "IMPORT_COMPLETE", payload: result });
   };
@@ -314,8 +357,12 @@ export function ImportWizard({ roles }: ImportWizardProps) {
   const handleMappingConfirmed = (
     mapping: ColumnMapping,
     targetRoleId: string,
+    roleMapping?: RoleMapping,
   ) => {
-    dispatch({ type: "MAPPING_CONFIRMED", payload: { mapping, targetRoleId } });
+    dispatch({
+      type: "MAPPING_CONFIRMED",
+      payload: { mapping, targetRoleId, roleMapping: roleMapping ?? null },
+    });
   };
 
   const handleBack = () => {
@@ -473,11 +520,21 @@ export function ImportWizard({ roles }: ImportWizardProps) {
                 />
               )}
 
+              {state.step === "ai_processing" && (
+                <StepAIProcessing
+                  headers={state.headers}
+                  rows={state.rawRows}
+                  onComplete={handleAIComplete}
+                  onSkip={handleAISkip}
+                />
+              )}
+
               {state.step === "map" && (
                 <Step2Mapping
                   headers={state.headers}
                   rows={state.rawRows}
                   roles={roles}
+                  aiMapping={state.aiResult?.mapping ?? null}
                   onConfirm={handleMappingConfirmed}
                   onBack={handleBack}
                 />
@@ -489,6 +546,7 @@ export function ImportWizard({ roles }: ImportWizardProps) {
                   headers={state.headers}
                   mapping={state.mapping}
                   targetRoleId={state.targetRoleId}
+                  roleMapping={state.roleMapping}
                   roles={roles}
                   source={state.source}
                   onImportComplete={handleImportComplete}

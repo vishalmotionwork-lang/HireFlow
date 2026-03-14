@@ -8,15 +8,19 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useDebounce } from "@/hooks/use-debounce";
-import { MOCK_USER } from "@/lib/constants";
+import { signOut } from "@/lib/actions/auth";
+import type { AuthUser } from "@/lib/auth";
 
-export function Topbar() {
-  const initials = MOCK_USER.name.charAt(0).toUpperCase();
+interface TopbarProps {
+  user: AuthUser | null;
+}
+
+export function Topbar({ user }: TopbarProps) {
+  const displayName = user?.name ?? "User";
+  const initials = displayName.charAt(0).toUpperCase();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -41,7 +45,7 @@ export function Topbar() {
 
       {/* Logo */}
       <span className="text-base font-bold tracking-tight text-foreground select-none">
-        HireFlow
+        HireFlow Direct
       </span>
 
       {/* Global search — navigates to /master?q=... on debounced input */}
@@ -66,26 +70,29 @@ export function Topbar() {
       {/* User avatar */}
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={
-            <button
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring"
-              aria-label="User menu"
-            />
-          }
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring overflow-hidden"
+          aria-label="User menu"
         >
-          {initials}
+          {user?.avatar ? (
+            <img
+              src={user.avatar}
+              alt={displayName}
+              className="h-9 w-9 rounded-full object-cover"
+            />
+          ) : (
+            initials
+          )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44">
-          <DropdownMenuLabel className="font-normal">
-            <span className="block text-sm font-medium">{MOCK_USER.name}</span>
-            <span className="block text-xs text-muted-foreground">
-              Mock user
-            </span>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
+        <DropdownMenuContent align="end" className="w-48">
+          <div className="px-3 py-2 border-b border-gray-100">
+            <p className="text-sm font-medium text-gray-900">{displayName}</p>
+            <p className="text-xs text-gray-500">
+              {user?.email ?? "Not signed in"}
+            </p>
+          </div>
           <DropdownMenuItem
-            disabled
-            className="text-muted-foreground cursor-not-allowed"
+            onClick={() => signOut()}
+            className="cursor-pointer"
           >
             Sign out
           </DropdownMenuItem>

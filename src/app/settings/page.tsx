@@ -1,14 +1,28 @@
 export const dynamic = "force-dynamic";
 
-import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { roles } from "@/db/schema";
 import { RoleList } from "@/components/roles/role-list";
 import { AddRoleDialog } from "@/components/roles/add-role-dialog";
+import { getAuthUser } from "@/lib/auth";
+import {
+  getTeamMembers,
+  getPendingInvitations,
+  getPendingMembers,
+} from "@/lib/actions/team";
+import { TeamSection } from "@/components/settings/team-section";
 
 export default async function SettingsPage() {
-  // Fetch all roles (including inactive) ordered by sortOrder
-  const allRoles = await db.select().from(roles).orderBy(roles.sortOrder);
+  const [allRoles, user, members, pendingInvites, pendingMembers] =
+    await Promise.all([
+      db.select().from(roles).orderBy(roles.sortOrder),
+      getAuthUser(),
+      getTeamMembers(),
+      getPendingInvitations(),
+      getPendingMembers(),
+    ]);
+
+  const isAdmin = user?.role === "admin";
 
   return (
     <div className="space-y-8 max-w-2xl">
@@ -16,7 +30,7 @@ export default async function SettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Manage your hiring roles and preferences
+          Manage your hiring roles, team, and preferences
         </p>
       </div>
 
@@ -35,10 +49,14 @@ export default async function SettingsPage() {
         <RoleList roles={allRoles} />
       </section>
 
-      {/* Placeholder for future settings */}
-      <section className="rounded-xl border border-dashed border-gray-200 p-6 text-center">
-        <p className="text-sm text-gray-400">More settings coming soon</p>
-      </section>
+      {/* Team section */}
+      <TeamSection
+        members={members}
+        pendingInvitations={pendingInvites}
+        pendingMembers={pendingMembers}
+        isAdmin={isAdmin}
+        currentUserId={user?.id ?? null}
+      />
     </div>
   );
 }

@@ -2,21 +2,25 @@
 
 import { useState, useMemo } from "react";
 import {
-  CheckCircle,
   AlertCircle,
   Loader2,
   Users,
   ArrowRight,
+  Plus,
+  CheckCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { detectMapping } from "@/lib/import/columnHeuristics";
 import { normalizeRows } from "@/lib/import/normalizeRows";
 import { validateRows } from "@/lib/import/validateRows";
 import { importCandidates } from "@/lib/actions/import";
+import { createRoleFromData } from "@/lib/actions/roles";
 import type { ImportRow } from "@/lib/actions/import";
 import type { SheetData } from "@/lib/import/parseExcelMultiSheet";
 import type { Role } from "@/types";
 import type { ImportResult } from "@/lib/import/types";
+
+const CREATE_NEW_PREFIX = "__create__";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -131,14 +135,41 @@ export function StepMultiRoleImport({
     setPhase("importing");
     setProgress(0);
 
+    // First pass: create any new roles
+    const roleIdMap = new Map<string, { id: string; name: string }>();
+    for (const m of sheetsToImport) {
+      if (m.roleId?.startsWith(CREATE_NEW_PREFIX)) {
+        const roleName = m.roleId.slice(CREATE_NEW_PREFIX.length);
+        try {
+          const created = await createRoleFromData(roleName, "Briefcase");
+          if (created) {
+            roleIdMap.set(m.roleId, { id: created.id, name: roleName });
+          }
+        } catch {
+          toast.error(`Failed to create role "${roleName}"`);
+        }
+      }
+    }
+
     const importResults: SheetImportResult[] = [];
 
     for (let i = 0; i < sheetsToImport.length; i++) {
       const mapping = sheetsToImport[i];
       const sheet = sheets.find((s) => s.sheetName === mapping.sheetName);
-      const role = roles.find((r) => r.id === mapping.roleId);
 
-      if (!sheet || !role || !mapping.roleId) continue;
+      if (!sheet || !mapping.roleId) continue;
+
+      // Resolve actual role ID (may be a newly created role)
+      let actualRoleId = mapping.roleId;
+      let roleName =
+        roles.find((r) => r.id === mapping.roleId)?.name ?? mapping.sheetName;
+
+      if (mapping.roleId.startsWith(CREATE_NEW_PREFIX)) {
+        const created = roleIdMap.get(mapping.roleId);
+        if (!created) continue;
+        actualRoleId = created.id;
+        roleName = created.name;
+      }
 
       setCurrentSheet(mapping.sheetName);
 
@@ -159,24 +190,28 @@ export function StepMultiRoleImport({
           phone: row.phone ?? null,
           instagram: row.instagram ?? null,
           portfolioUrl: row.portfolioUrl ?? null,
+          linkedinUrl: row.linkedinUrl ?? null,
+          location: row.location ?? null,
+          experience: row.experience ?? null,
+          resumeUrl: row.resumeUrl ?? null,
           decision: row.isValid ? "import" : "skip",
         }));
 
         const result = await importCandidates(
           importRows,
-          mapping.roleId,
+          actualRoleId,
           "excel",
         );
 
         importResults.push({
           sheetName: mapping.sheetName,
-          roleName: role.name,
+          roleName,
           result,
         });
       } catch (err) {
         importResults.push({
           sheetName: mapping.sheetName,
-          roleName: role.name,
+          roleName,
           result: {
             error: err instanceof Error ? err.message : "Unknown import error",
           },
@@ -223,14 +258,14 @@ export function StepMultiRoleImport({
                   <ArrowRight size={12} className="inline mr-1" />
                   Assign to Role
                 </th>
-                <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide w-16">
-                  Status
-                </th>
               </tr>
             </thead>
             <tbody>
               {mappings.map((mapping) => {
-                const isMatched = mapping.roleId !== null;
+                const isMatched =
+                  mapping.roleId !== null && mapping.roleId !== "";
+                const isNewRole =
+                  mapping.roleId?.startsWith(CREATE_NEW_PREFIX) ?? false;
                 return (
                   <tr
                     key={mapping.sheetName}
@@ -250,34 +285,50 @@ export function StepMultiRoleImport({
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <select
-                        value={mapping.roleId ?? ""}
-                        onChange={(e) =>
-                          handleRoleChange(mapping.sheetName, e.target.value)
-                        }
-                        className={`w-full rounded-md border px-2.5 py-1.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-100 ${
-                          isMatched
-                            ? "border-green-200 bg-green-50/50 text-gray-900"
-                            : "border-gray-200 bg-white text-gray-500"
-                        }`}
-                      >
-                        <option value="">Skip this sheet</option>
-                        {roles.map((role) => (
-                          <option key={role.id} value={role.id}>
-                            {role.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {isMatched ? (
-                        <CheckCircle
-                          size={16}
-                          className="text-green-500 mx-auto"
-                        />
-                      ) : (
-                        <span className="text-xs text-gray-400">—</span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={mapping.roleId ?? ""}
+                          onChange={(e) =>
+                            handleRoleChange(mapping.sheetName, e.target.value)
+                          }
+                          className={`flex-1 rounded-md border px-2.5 py-1.5 text-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-100 ${
+                            isNewRole
+                              ? "border-blue-200 bg-blue-50/50 text-blue-700 font-medium"
+                              : isMatched
+                                ? "border-green-200 bg-green-50/50 text-gray-900"
+                                : "border-gray-200 bg-white text-gray-500"
+                          }`}
+                        >
+                          <option value="">Skip this sheet</option>
+                          {roles.map((role) => (
+                            <option key={role.id} value={role.id}>
+                              {role.name}
+                            </option>
+                          ))}
+                        </select>
+                        {!isNewRole && !isMatched && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleRoleChange(
+                                mapping.sheetName,
+                                `${CREATE_NEW_PREFIX}${mapping.sheetName}`,
+                              )
+                            }
+                            className="shrink-0 inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+                            title={`Create "${mapping.sheetName}" as a new role`}
+                          >
+                            <Plus size={12} />
+                            Add Role
+                          </button>
+                        )}
+                        {isNewRole && (
+                          <span className="shrink-0 inline-flex items-center gap-1 rounded-md border border-blue-300 bg-blue-100 px-2.5 py-1.5 text-xs font-semibold text-blue-700">
+                            <CheckCircle size={12} />
+                            New role
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

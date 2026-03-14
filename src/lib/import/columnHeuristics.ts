@@ -5,7 +5,10 @@ import type { CandidateField, ColumnMapping } from "./types";
  * Normalized header strings are checked with `includes(keyword)`.
  * First match wins per field.
  */
-const FIELD_KEYWORDS: Record<Exclude<CandidateField, "ignore">, string[]> = {
+const FIELD_KEYWORDS: Record<
+  Exclude<CandidateField, "ignore" | "role">,
+  string[]
+> = {
   name: ["full name", "name", "candidate", "applicant", "person"],
   email: ["email", "e-mail", "mail address"],
   phone: ["phone", "mobile", "whatsapp", "contact number", "ph no"],
@@ -18,40 +21,58 @@ const FIELD_KEYWORDS: Record<Exclude<CandidateField, "ignore">, string[]> = {
     "dribbble",
     "youtube",
   ],
+  linkedinUrl: ["linkedin", "linked in", "linkedin url", "linkedin profile"],
+  location: ["location", "city", "country", "address", "state", "region"],
+  experience: [
+    "experience",
+    "years",
+    "years of experience",
+    "work experience",
+    "exp",
+  ],
+  resumeUrl: ["resume", "cv", "resume link", "cv link", "resume url", "cv url"],
 };
+
+/** Keywords that identify a role/position column */
+const ROLE_KEYWORDS = [
+  "role",
+  "position",
+  "applied for",
+  "applying for",
+  "interested in",
+  "which role",
+  "what role",
+  "which position",
+  "what position",
+  "job",
+  "vacancy",
+  "department",
+  "designation",
+  "job title",
+  "role you",
+  "position you",
+];
 
 /**
  * Headers to always ignore — timestamps, file uploads, free-text responses,
- * role/position columns (handled separately), location, experience, salary, etc.
+ * role/position columns (handled separately), salary, etc.
+ * Note: linkedin, location, experience, resume/cv are now mapped fields.
  */
 const IGNORE_KEYWORDS = [
   "timestamp",
   "submitted",
   "date",
-  "resume",
-  "cv",
   "upload",
   "file",
   "statement",
   "why are you",
   "cover letter",
   "brief",
-  "role",
-  "position",
-  "applied for",
-  "job",
-  "vacancy",
-  "location",
-  "city",
-  "country",
-  "experience",
-  "years",
   "compensation",
   "ctc",
   "salary",
   "expected",
   "notice period",
-  "linkedin",
 ];
 
 /**
@@ -74,8 +95,19 @@ export function detectMapping(headers: string[]): ColumnMapping {
       continue;
     }
 
+    // Check for role column first
+    if (
+      mapping.role === undefined &&
+      !assignedIndices.has(index) &&
+      ROLE_KEYWORDS.some((kw) => normalized.includes(kw))
+    ) {
+      mapping.role = index;
+      assignedIndices.add(index);
+      continue;
+    }
+
     const entries = Object.entries(FIELD_KEYWORDS) as [
-      Exclude<CandidateField, "ignore">,
+      Exclude<CandidateField, "ignore" | "role">,
       string[],
     ][];
     for (const [field, keywords] of entries) {

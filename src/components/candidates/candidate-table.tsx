@@ -79,14 +79,8 @@ export function CandidateTable({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Table header row with action button */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          Showing{" "}
-          <span className="font-medium text-gray-700">{candidates.length}</span>{" "}
-          of <span className="font-medium text-gray-700">{total}</span>{" "}
-          {total === 1 ? "candidate" : "candidates"}
-        </p>
+      {/* Action button */}
+      <div className="flex items-center justify-end">
         <button
           onClick={handleAddClick}
           className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"

@@ -1,48 +1,32 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { DynamicIcon } from "@/components/layout/dynamic-icon";
-import { LUCIDE_ROLE_ICONS, type LucideRoleIcon } from "@/lib/constants";
+import { ROLE_EMOJI_ICONS } from "@/lib/constants";
 
 interface IconPickerProps {
   value: string;
-  onChange: (iconName: string) => void;
+  onChange: (icon: string) => void;
 }
 
 export function IconPicker({ value, onChange }: IconPickerProps) {
   return (
-    <div className="grid grid-cols-5 gap-1.5">
-      {LUCIDE_ROLE_ICONS.map((iconName) => {
-        const isSelected = value === iconName;
+    <div className="grid grid-cols-10 gap-1.5">
+      {ROLE_EMOJI_ICONS.map((emoji) => {
+        const isSelected = value === emoji;
         return (
           <button
-            key={iconName}
+            key={emoji}
             type="button"
-            onClick={() => onChange(iconName)}
+            onClick={() => onChange(emoji)}
             className={cn(
-              "flex flex-col items-center gap-1 rounded-lg border p-2 transition-all",
-              "hover:border-blue-300 hover:bg-blue-50",
+              "flex items-center justify-center rounded-lg border p-2 text-xl transition-all",
+              "hover:border-blue-300 hover:bg-blue-50 hover:scale-110",
               isSelected
-                ? "border-blue-500 bg-blue-50 ring-2 ring-blue-300 ring-offset-1"
+                ? "border-blue-500 bg-blue-50 ring-2 ring-blue-300 ring-offset-1 scale-110"
                 : "border-gray-200 bg-white"
             )}
-            title={iconName}
           >
-            <DynamicIcon
-              name={iconName}
-              size={18}
-              className={cn(
-                isSelected ? "text-blue-600" : "text-gray-500"
-              )}
-            />
-            <span
-              className={cn(
-                "text-[9px] font-medium truncate w-full text-center leading-none",
-                isSelected ? "text-blue-600" : "text-gray-400"
-              )}
-            >
-              {iconName}
-            </span>
+            {emoji}
           </button>
         );
       })}

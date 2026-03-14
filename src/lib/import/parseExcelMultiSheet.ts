@@ -73,14 +73,32 @@ export function parseExcelMultiSheet(file: File): Promise<MultiSheetResult> {
   });
 }
 
+/** Sheet name patterns that indicate generic/form-like sheets (NOT role names) */
+const GENERIC_SHEET_PATTERNS = [
+  /^form\s*responses?/i,
+  /^duplicate/i,
+  /^sheet\d+$/i,
+  /^data$/i,
+  /^copy\s*of/i,
+  /^raw$/i,
+];
+
+function isGenericSheetName(name: string): boolean {
+  return GENERIC_SHEET_PATTERNS.some((p) => p.test(name.trim()));
+}
+
 /**
- * Detect if an Excel file has multiple data sheets with DIFFERENT headers
- * (multi-role format where each sheet = one role).
+ * Detect if an Excel file has multiple data sheets that represent
+ * different roles (multi-role format where each sheet = one role).
+ *
+ * Returns true when:
+ * - 2+ data sheets exist AND
+ * - Either headers differ across sheets, OR
+ * - Headers are identical but sheet names look like role names (not generic)
  *
  * Returns false when:
  * - Only 0-1 data sheets exist
- * - All sheets share identical headers (Google Forms / duplicated data)
- * - Sheet names suggest form responses ("Form responses", "Duplicate", etc.)
+ * - All sheets are generic (Sheet1, Sheet2, Form Responses, etc.)
  */
 export function isMultiSheetExcel(file: File): Promise<boolean> {
   return new Promise((resolve) => {
@@ -90,14 +108,9 @@ export function isMultiSheetExcel(file: File): Promise<boolean> {
         try {
           const workbook = XLSX.read(buffer);
           const SKIP_NAMES = ["summary"];
-          const FORM_PATTERNS = [
-            /^form\s*responses?/i,
-            /^duplicate/i,
-            /^sheet\d+$/i,
-          ];
 
           const sheetHeaders: string[][] = [];
-          let formLikeSheets = 0;
+          const sheetNames: string[] = [];
 
           for (const sheetName of workbook.SheetNames) {
             if (SKIP_NAMES.includes(sheetName.toLowerCase())) continue;
@@ -115,35 +128,40 @@ export function isMultiSheetExcel(file: File): Promise<boolean> {
                 .toLowerCase(),
             );
             sheetHeaders.push(headers);
-
-            if (FORM_PATTERNS.some((p) => p.test(sheetName))) {
-              formLikeSheets++;
-            }
+            sheetNames.push(sheetName);
           }
 
-          // Need 2+ data sheets to be multi-role
+          // Need 2+ data sheets
           if (sheetHeaders.length < 2) {
             resolve(false);
             return;
           }
 
-          // If all sheets have identical headers, it's a form response (not multi-role)
+          // Check if headers differ across sheets
           const firstKey = sheetHeaders[0].join("|");
           const allSameHeaders = sheetHeaders.every(
             (h) => h.join("|") === firstKey,
           );
-          if (allSameHeaders) {
-            resolve(false);
+
+          if (!allSameHeaders) {
+            // Different headers = definitely multi-role
+            resolve(true);
             return;
           }
 
-          // If most sheets look like form responses, not multi-role
-          if (formLikeSheets >= sheetHeaders.length - 1) {
-            resolve(false);
+          // Same headers — check if sheet names look like role names
+          // If most sheet names are descriptive (not generic), treat as multi-role
+          const genericCount = sheetNames.filter(isGenericSheetName).length;
+          const descriptiveCount = sheetNames.length - genericCount;
+
+          // If at least 2 sheets have descriptive names, it's multi-role
+          if (descriptiveCount >= 2) {
+            resolve(true);
             return;
           }
 
-          resolve(true);
+          // All generic sheet names with same headers = not multi-role
+          resolve(false);
         } catch {
           resolve(false);
         }

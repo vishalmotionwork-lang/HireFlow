@@ -1,20 +1,16 @@
 /**
- * Firecrawl scraping wrapper — converts portfolio URLs to markdown.
- * Returns a structured ScrapeResult union type; never throws.
- *
- * Uses FirecrawlAppV1 (legacy API) which has the scrapeUrl method
- * compatible with our use case.
+ * URL scraping — converts portfolio URLs to text content.
+ * Primary: Firecrawl API (best quality markdown)
+ * Fallback: Direct fetch + HTML-to-text (faster, works everywhere)
  */
-
-import { FirecrawlAppV1 } from "@mendable/firecrawl-js";
 
 export type ScrapeResult =
   | { success: true; markdown: string; url: string }
   | { success: false; error: string; url: string };
 
-const TIMEOUT_MS = 30_000;
+const TIMEOUT_MS = 7_000;
 
-/** Platforms that Firecrawl cannot scrape */
+/** Platforms that can't be scraped */
 const UNSUPPORTED_PATTERNS = [
   /instagram\.com/i,
   /tiktok\.com/i,
@@ -26,102 +22,110 @@ function isUnsupportedPlatform(url: string): boolean {
   return UNSUPPORTED_PATTERNS.some((re) => re.test(url));
 }
 
-/**
- * Smart markdown truncation: keep the first 3000 chars (intro/bio) and
- * last 2000 chars (footer often has contact info) from the scraped page.
- * This avoids losing critical contact info found at the bottom of long pages.
- */
 function truncateMarkdown(markdown: string): string {
   const MAX_TOTAL = 5_000;
   if (markdown.length <= MAX_TOTAL) return markdown;
-
   const head = markdown.slice(0, 3_000);
   const tail = markdown.slice(-2_000);
   return `${head}\n\n[...content truncated...]\n\n${tail}`;
 }
 
+/** Strip HTML tags and extract readable text */
+function htmlToText(html: string): string {
+  return html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#\d+;/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /**
- * Scrape a portfolio URL and return clean markdown.
- * Handles unsupported platforms and network errors gracefully.
+ * Direct fetch fallback — fetches HTML and extracts text.
+ * Works on all hosting platforms, no external API needed.
  */
-export async function scrapeUrl(url: string): Promise<ScrapeResult> {
-  // Fast-path: detect platforms that can't be scraped
-  if (isUnsupportedPlatform(url)) {
-    return {
-      success: false,
-      error:
-        "This platform cannot be scraped automatically. Please enter details manually.",
-      url,
-    };
-  }
-
-  const apiKey = process.env.FIRECRAWL_API_KEY;
-  if (!apiKey) {
-    return {
-      success: false,
-      error: "Firecrawl API key is not configured.",
-      url,
-    };
-  }
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
+async function directFetch(url: string): Promise<ScrapeResult> {
   try {
-    const firecrawl = new FirecrawlAppV1({ apiKey });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-    const result = await firecrawl.scrapeUrl(url, {
-      formats: ["markdown"],
+    const resp = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; HireFlowBot/1.0; +https://hireflow.app)",
+        Accept: "text/html,application/xhtml+xml",
+      },
     });
 
     clearTimeout(timeoutId);
 
-    if (!result.success) {
-      const errorMsg: string =
-        (result as { error?: string }).error ?? "Scrape failed";
+    if (!resp.ok) {
+      return { success: false, error: `HTTP ${resp.status}`, url };
+    }
 
-      // Detect unsupported platform errors from Firecrawl itself
-      if (
-        errorMsg.toLowerCase().includes("no longer supported") ||
-        errorMsg.toLowerCase().includes("not supported")
-      ) {
+    const html = await resp.text();
+    const text = htmlToText(html);
+
+    if (!text || text.length < 20) {
+      return { success: false, error: "No readable content found", url };
+    }
+
+    return { success: true, markdown: truncateMarkdown(text), url };
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      return { success: false, error: "Request timed out", url };
+    }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Fetch failed",
+      url,
+    };
+  }
+}
+
+/**
+ * Scrape a portfolio URL. Tries Firecrawl first, falls back to direct fetch.
+ */
+export async function scrapeUrl(url: string): Promise<ScrapeResult> {
+  if (isUnsupportedPlatform(url)) {
+    return {
+      success: false,
+      error: "This platform cannot be scraped automatically. Please enter details manually.",
+      url,
+    };
+  }
+
+  // Try Firecrawl first (better quality)
+  const apiKey = process.env.FIRECRAWL_API_KEY;
+  if (apiKey) {
+    try {
+      const { FirecrawlAppV1 } = await import("@mendable/firecrawl-js");
+      const firecrawl = new FirecrawlAppV1({ apiKey });
+
+      const result = await Promise.race([
+        firecrawl.scrapeUrl(url, { formats: ["markdown"] }),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), TIMEOUT_MS)),
+      ]);
+
+      if (result && result.success && result.markdown?.trim()) {
         return {
-          success: false,
-          error:
-            "This platform cannot be scraped automatically. Please enter details manually.",
+          success: true,
+          markdown: truncateMarkdown(result.markdown),
           url,
         };
       }
-
-      return { success: false, error: errorMsg, url };
+      // Firecrawl failed or timed out — fall through to direct fetch
+    } catch {
+      // Firecrawl error — fall through to direct fetch
     }
-
-    const markdown = result.markdown ?? "";
-    if (!markdown.trim()) {
-      return {
-        success: false,
-        error: "No content found at this URL.",
-        url,
-      };
-    }
-
-    return {
-      success: true,
-      markdown: truncateMarkdown(markdown),
-      url,
-    };
-  } catch (err) {
-    clearTimeout(timeoutId);
-
-    if (err instanceof Error && err.name === "AbortError") {
-      return {
-        success: false,
-        error: `Scrape timed out after ${TIMEOUT_MS / 1000}s. The site may be too slow or blocking scrapers.`,
-        url,
-      };
-    }
-
-    const message = err instanceof Error ? err.message : "Unknown scrape error";
-    return { success: false, error: message, url };
   }
+
+  // Fallback: direct HTML fetch
+  return directFetch(url);
 }

@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { eq, and, desc, gt } from "drizzle-orm";
 import { db } from "@/db";
-import { candidateComments } from "@/db/schema";
+import { candidateComments, candidates, roles, teamMembers } from "@/db/schema";
 import { MOCK_USER } from "@/lib/constants";
 import { createActivity } from "@/lib/actions/activities";
+import { createNotification } from "@/lib/actions/notifications";
+import { sendMentionNotificationEmail } from "@/lib/email";
 
 type ActionError = { error: string };
 type ActionSuccess = { success: true };
@@ -13,6 +15,7 @@ type ActionResult = ActionError | ActionSuccess;
 
 /**
  * Create a new comment on a candidate profile.
+ * After creation, sends email notifications to any @mentioned team members.
  */
 export async function createComment(
   candidateId: string,
@@ -24,9 +27,11 @@ export async function createComment(
       return { error: "Comment cannot be empty" };
     }
 
+    const trimmedBody = body.trim();
+
     await db.insert(candidateComments).values({
       candidateId,
-      body: body.trim(),
+      body: trimmedBody,
       mentions,
       createdBy: MOCK_USER.name,
     });
@@ -34,8 +39,20 @@ export async function createComment(
     await createActivity({
       type: "comment",
       candidateId,
-      metadata: { body: body.trim().slice(0, 100) },
+      metadata: { body: trimmedBody.slice(0, 100) },
     });
+
+    // Send mention notification emails (fire-and-forget, non-blocking)
+    if (mentions.length > 0) {
+      notifyMentionedMembers({
+        mentions,
+        candidateId,
+        commentBody: trimmedBody,
+        commenterName: MOCK_USER.name,
+      }).catch((err) =>
+        console.error("[createComment] mention notification error:", err),
+      );
+    }
 
     revalidatePath("/", "layout");
     return { success: true };
@@ -43,6 +60,93 @@ export async function createComment(
     console.error("[createComment] Error:", err);
     return { error: "Failed to post comment. Please try again." };
   }
+}
+
+/**
+ * Look up mentioned team members' emails and send notification emails
+ * AND create in-app notification records.
+ * Excludes the commenter from receiving a notification.
+ */
+async function notifyMentionedMembers(params: {
+  readonly mentions: ReadonlyArray<{ userId: string; name: string }>;
+  readonly candidateId: string;
+  readonly commentBody: string;
+  readonly commenterName: string;
+}): Promise<void> {
+  const { mentions, candidateId, commentBody, commenterName } = params;
+
+  // Look up candidate name + role slug for the notification link
+  const [candidate] = await db
+    .select({
+      name: candidates.name,
+      roleId: candidates.roleId,
+    })
+    .from(candidates)
+    .where(eq(candidates.id, candidateId))
+    .limit(1);
+
+  const candidateName = candidate?.name ?? "Unknown Candidate";
+
+  // Resolve role slug for the deep link
+  let roleSlug = "dashboard";
+  if (candidate?.roleId) {
+    const [role] = await db
+      .select({ slug: roles.slug })
+      .from(roles)
+      .where(eq(roles.id, candidate.roleId))
+      .limit(1);
+    if (role?.slug) {
+      roleSlug = role.slug;
+    }
+  }
+
+  const notificationLink = `/roles/${roleSlug}?candidate=${candidateId}`;
+
+  // Look up mentioned team members from the DB (need userId for in-app notifications)
+  const mentionedNames = mentions.map((m) => m.name);
+  const members = await db
+    .select({
+      userId: teamMembers.userId,
+      name: teamMembers.name,
+      email: teamMembers.email,
+    })
+    .from(teamMembers)
+    .where(eq(teamMembers.isActive, true));
+
+  // Filter to only members whose name matches a mention, excluding the commenter
+  const recipients = members.filter(
+    (m) =>
+      m.name &&
+      mentionedNames.includes(m.name) &&
+      m.name !== commenterName &&
+      m.email,
+  );
+
+  const truncatedBody =
+    commentBody.length > 120 ? `${commentBody.slice(0, 120)}...` : commentBody;
+
+  // Send emails + create in-app notifications in parallel
+  await Promise.allSettled(
+    recipients.flatMap((recipient) => [
+      // Email notification
+      sendMentionNotificationEmail({
+        recipientEmail: recipient.email,
+        recipientName: recipient.name ?? "Team Member",
+        commenterName,
+        candidateName,
+        candidateId,
+        commentBody,
+      }),
+      // In-app notification
+      createNotification({
+        userId: recipient.userId,
+        type: "mention",
+        title: `${commenterName} mentioned you`,
+        body: `in a comment on ${candidateName}: "${truncatedBody}"`,
+        link: notificationLink,
+      }),
+    ]),
+  );
 }
 
 /**
@@ -72,7 +176,9 @@ export async function editComment(
       .limit(1);
 
     if (!comment) {
-      return { error: "Comment not found, not yours, or edit window expired (5 min)" };
+      return {
+        error: "Comment not found, not yours, or edit window expired (5 min)",
+      };
     }
 
     await db
@@ -97,4 +203,24 @@ export async function getComments(candidateId: string) {
     .from(candidateComments)
     .where(eq(candidateComments.candidateId, candidateId))
     .orderBy(desc(candidateComments.createdAt));
+}
+
+/**
+ * Get active team members for @mention autocomplete.
+ * Returns only id and name — no sensitive data sent to the client.
+ */
+export async function getMentionableMembers(): Promise<
+  Array<{ id: string; name: string }>
+> {
+  const members = await db
+    .select({
+      id: teamMembers.id,
+      name: teamMembers.name,
+    })
+    .from(teamMembers)
+    .where(eq(teamMembers.isActive, true));
+
+  return members
+    .filter((m): m is { id: string; name: string } => m.name !== null)
+    .map((m) => ({ id: m.id, name: m.name }));
 }

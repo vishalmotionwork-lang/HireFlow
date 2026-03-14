@@ -33,7 +33,7 @@ interface ExtractionProgressProps {
 // Constants
 // ---------------------------------------------------------------------------
 
-const POLL_INTERVAL_MS = 2000;
+const POLL_INTERVAL_MS = 500;
 const SESSION_KEY = "pendingExtractionBatchId";
 
 // ---------------------------------------------------------------------------

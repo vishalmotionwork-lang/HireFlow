@@ -8,6 +8,8 @@ import { roles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { AppShell } from "@/components/layout/app-shell";
 import { Toaster } from "@/components/ui/sonner";
+import { getAuthUser } from "@/lib/auth";
+import type { Role } from "@/types";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -21,7 +23,7 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HireFlow",
+  title: "HireFlow Direct",
   description: "Candidate pipeline management for creative teams",
 };
 
@@ -36,10 +38,19 @@ export default async function RootLayout({
     .where(eq(roles.isActive, true))
     .orderBy(roles.sortOrder);
 
+  let user: Awaited<ReturnType<typeof getAuthUser>> = null;
+  try {
+    user = await getAuthUser();
+  } catch {
+    // Auth error — continue without user
+  }
+
   return (
     <html lang="en" className="light">
       <body className={`${inter.className} ${mono.variable} antialiased`}>
-        <AppShell roles={activeRoles}>{children}</AppShell>
+        <AppShell roles={activeRoles} user={user}>
+          {children}
+        </AppShell>
         <Toaster richColors position="bottom-right" />
       </body>
     </html>

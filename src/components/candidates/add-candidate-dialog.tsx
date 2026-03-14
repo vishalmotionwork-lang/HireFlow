@@ -171,7 +171,15 @@ export function AddCandidateDialog({
     setExtractionError(null);
 
     try {
-      const { batchId } = await startSingleExtraction(url, roleId);
+      const result = await startSingleExtraction(url, roleId);
+
+      if (result.error) {
+        setExtractionError(result.error);
+        setExtractionState("error");
+        return;
+      }
+
+      const { batchId } = result;
 
       // Poll for extraction status
       pollRef.current = setInterval(async () => {
@@ -204,7 +212,7 @@ export function AddCandidateDialog({
         } catch {
           // Polling error — keep trying
         }
-      }, 2000);
+      }, 500);
     } catch (err) {
       setExtractionError(
         err instanceof Error ? err.message : "Failed to start extraction",

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -19,6 +20,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { DynamicIcon } from "@/components/layout/dynamic-icon";
 import type { Role } from "@/types";
@@ -29,6 +31,12 @@ interface AppSidebarProps {
 
 export function AppSidebar({ roles }: AppSidebarProps) {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
+
+  // Auto-close mobile sidebar on navigation
+  useEffect(() => {
+    setOpenMobile(false);
+  }, [pathname, setOpenMobile]);
 
   const isActive = (href: string) => pathname === href;
   const isRoleActive = (slug: string) =>
@@ -43,7 +51,7 @@ export function AppSidebar({ roles }: AppSidebarProps) {
             <span className="text-xs font-bold text-white">H</span>
           </div>
           <span className="font-bold text-sm tracking-tight text-foreground group-data-[collapsible=icon]:hidden">
-            HireFlow
+            HireFlow Direct
           </span>
         </div>
       </SidebarHeader>

@@ -7,7 +7,7 @@ const PUBLIC_ROUTES = ["/login", "/auth/callback", "/auth/confirm", "/pending"];
  * API routes that must remain publicly accessible (e.g. email approve links).
  * All other API routes require an active team member session.
  */
-const PUBLIC_API_ROUTES = ["/api/approve-member"];
+const PUBLIC_API_ROUTES = ["/api/approve-member", "/api/cron"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

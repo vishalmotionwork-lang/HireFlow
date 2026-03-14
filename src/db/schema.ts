@@ -172,6 +172,29 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const syncFrequencyEnum = pgEnum("sync_frequency", [
+  "manual",
+  "hourly",
+  "daily",
+]);
+
+export const connectedSheets = pgTable("connected_sheets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  sheetUrl: text("sheet_url").notNull(),
+  sheetId: text("sheet_id").notNull(),
+  gid: text("gid"), // specific tab GID — null means first tab
+  roleId: uuid("role_id")
+    .notNull()
+    .references(() => roles.id),
+  lastSyncAt: timestamp("last_sync_at"),
+  lastRowCount: integer("last_row_count").default(0).notNull(),
+  syncFrequency: syncFrequencyEnum("sync_frequency").default("daily").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  lastError: text("last_error"), // stores last sync error for user visibility
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const activities = pgTable("activities", {
   id: uuid("id").primaryKey().defaultRandom(),
   type: text("type").notNull(), // 'status_change' | 'tier_change' | 'comment' | 'created' | 'imported' | 'merged' | 'rejected' | 'field_update'

@@ -11,16 +11,25 @@ import {
   getPendingMembers,
 } from "@/lib/actions/team";
 import { TeamSection } from "@/components/settings/team-section";
+import { SheetsSection } from "@/components/settings/sheets-section";
+import { getConnectedSheets } from "@/lib/actions/sheets";
 
 export default async function SettingsPage() {
-  const [allRoles, user, members, pendingInvites, pendingMembers] =
-    await Promise.all([
-      db.select().from(roles).orderBy(roles.sortOrder),
-      getAuthUser(),
-      getTeamMembers(),
-      getPendingInvitations(),
-      getPendingMembers(),
-    ]);
+  const [
+    allRoles,
+    user,
+    members,
+    pendingInvites,
+    pendingMembers,
+    connectedSheets,
+  ] = await Promise.all([
+    db.select().from(roles).orderBy(roles.sortOrder),
+    getAuthUser(),
+    getTeamMembers(),
+    getPendingInvitations(),
+    getPendingMembers(),
+    getConnectedSheets(),
+  ]);
 
   const isAdmin = user?.role === "admin";
 
@@ -48,6 +57,12 @@ export default async function SettingsPage() {
 
         <RoleList roles={allRoles} />
       </section>
+
+      {/* Connected Sheets section */}
+      <SheetsSection
+        sheets={connectedSheets}
+        roles={allRoles.map((r) => ({ id: r.id, name: r.name }))}
+      />
 
       {/* Team section */}
       <TeamSection

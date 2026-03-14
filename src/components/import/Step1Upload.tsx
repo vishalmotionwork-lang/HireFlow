@@ -17,6 +17,7 @@ import {
 } from "@/lib/actions/importHistory";
 import type { ImportSourceInfo } from "@/lib/actions/import";
 import type { SheetData } from "@/lib/import/parseExcelMultiSheet";
+import { importFromUrl } from "@/lib/actions/importFromUrl";
 import type { ParseResult } from "@/lib/import/types";
 
 interface Step1UploadProps {
@@ -28,7 +29,7 @@ interface Step1UploadProps {
   onMultiSheetParsed?: (sheets: SheetData[]) => void;
 }
 
-type ActiveTab = "file" | "paste";
+type ActiveTab = "file" | "paste" | "link";
 
 export function Step1Upload({
   onParsed,
@@ -41,6 +42,8 @@ export function Step1Upload({
     rowCount: number;
   } | null>(null);
   const [pasteText, setPasteText] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkError, setLinkError] = useState("");
 
   // Duplicate sheet detection
   const [duplicateWarning, setDuplicateWarning] =
@@ -281,6 +284,16 @@ export function Step1Upload({
         >
           Paste Data
         </button>
+        <button
+          onClick={() => setActiveTab("link")}
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            activeTab === "link"
+              ? "border-blue-500 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+          }`}
+        >
+          Paste Link
+        </button>
       </div>
 
       {/* File upload tab */}
@@ -363,6 +376,82 @@ export function Step1Upload({
             >
               Parse Data
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Paste Link tab */}
+      {activeTab === "link" && (
+        <div className="space-y-3">
+          <p className="text-xs text-gray-500">
+            Paste a public Google Sheet URL or a direct link to a .csv / .xlsx
+            file. The sheet must be shared as &ldquo;Anyone with the
+            link&rdquo;.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="url"
+              value={linkUrl}
+              onChange={(e) => {
+                setLinkUrl(e.target.value);
+                setLinkError("");
+              }}
+              placeholder="https://docs.google.com/spreadsheets/d/..."
+              className="flex-1 rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+            />
+            <button
+              onClick={async () => {
+                if (!linkUrl.trim()) {
+                  setLinkError("Please paste a URL first.");
+                  return;
+                }
+                setIsLoading(true);
+                setLinkError("");
+                setDuplicateWarning(null);
+                setPendingParse(null);
+                try {
+                  const res = await importFromUrl(linkUrl.trim());
+                  if (!res.success) {
+                    setLinkError(res.error);
+                    return;
+                  }
+                  const sourceInfo: ImportSourceInfo = {
+                    sourceName: res.source ?? linkUrl.trim(),
+                    sourceUrl: linkUrl.trim(),
+                    sourceHash: await hashContent(linkUrl.trim()),
+                  };
+                  const duplicate = await checkDuplicateSheet(
+                    sourceInfo.sourceHash!,
+                  );
+                  if (duplicate) {
+                    setDuplicateWarning(duplicate);
+                    setPendingParse({
+                      result: res.data!,
+                      source: "csv",
+                      sourceInfo,
+                    });
+                  } else {
+                    onParsed(res.data!, "csv", sourceInfo);
+                  }
+                } catch {
+                  setLinkError("Failed to fetch the sheet. Please try again.");
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              disabled={isLoading || !linkUrl.trim()}
+              className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isLoading ? "Fetching..." : "Import"}
+            </button>
+          </div>
+          {linkError && <p className="text-sm text-red-600">{linkError}</p>}
+          <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 text-xs text-gray-500 space-y-1">
+            <p className="font-medium text-gray-600">Supported formats:</p>
+            <ul className="list-disc list-inside space-y-0.5">
+              <li>Google Sheets (must be public)</li>
+              <li>Direct .csv or .xlsx file URLs</li>
+            </ul>
           </div>
         </div>
       )}

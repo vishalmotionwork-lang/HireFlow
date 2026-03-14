@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { CandidateRow } from "@/components/candidates/candidate-row";
 import { CandidateAddRow } from "@/components/candidates/candidate-add-row";
 import { AddCandidateDialog } from "@/components/candidates/add-candidate-dialog";
@@ -27,10 +28,20 @@ export function CandidateTable({
   showRoleColumn = false,
   rolesMap = {},
 }: CandidateTableProps) {
+  const searchParams = useSearchParams();
+  const candidateFromUrl = searchParams.get("candidate");
+
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(
-    null,
+    candidateFromUrl,
   );
   const [showAddRow, setShowAddRow] = useState(false);
+
+  // Open drawer when ?candidate= param changes (e.g. from notification link)
+  useEffect(() => {
+    if (candidateFromUrl) {
+      setSelectedCandidateId(candidateFromUrl);
+    }
+  }, [candidateFromUrl]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { detectMapping } from "@/lib/import/columnHeuristics";
 import { ROLE_EMOJI_ICONS } from "@/lib/constants";
@@ -210,7 +210,7 @@ export function Step2Mapping({
     return extractUniqueRoles(rows, mapping.role);
   }, [rows, mapping.role]);
 
-  useMemo(() => {
+  useEffect(() => {
     if (uniqueRoles.length === 0) {
       setRoleMapping({});
       return;

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/db";
 import { teamMembers } from "@/db/schema";
@@ -13,7 +14,12 @@ export interface AuthUser {
   role: TeamRole;
 }
 
-export async function getAuthUser(): Promise<AuthUser | null> {
+/**
+ * Get the authenticated user for the current request.
+ * Wrapped in React.cache() so it is deduplicated per request —
+ * layout, page, and components can all call this without extra DB hits.
+ */
+export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -42,7 +48,7 @@ export async function getAuthUser(): Promise<AuthUser | null> {
     avatar: member.avatar ?? user.user_metadata?.avatar_url ?? null,
     role: member.role as TeamRole,
   };
-}
+});
 
 /**
  * Check if a Supabase-authenticated user is an active team member.
@@ -75,29 +81,39 @@ export function hasPermission(userRole: TeamRole, required: TeamRole): boolean {
   return levels[userRole] >= levels[required];
 }
 
-/** Require auth — throws redirect if not authenticated or not active */
+/**
+ * Require auth — throws redirect if not authenticated or not active.
+ *
+ * Uses getAuthUser() (cached) so no duplicate Supabase calls.
+ * If getAuthUser returns null, does a lightweight session check to
+ * distinguish "not logged in" from "logged in but not a team member".
+ */
 export async function requireAuth(minRole?: TeamRole): Promise<AuthUser> {
-  const supabase = await createClient();
-  const {
-    data: { user: supabaseUser },
-  } = await supabase.auth.getUser();
+  const { redirect } = await import("next/navigation");
 
-  // If Supabase session exists but getAuthUser returns null,
-  // the user is authenticated but not an active team member → pending
   const user = await getAuthUser();
-  if (!user && supabaseUser) {
-    const { redirect } = await import("next/navigation");
-    redirect("/pending");
-    throw new Error("Redirecting to pending");
-  }
+
   if (!user) {
-    const { redirect } = await import("next/navigation");
+    // Distinguish: no session vs session but not an active team member
+    const supabase = await createClient();
+    const {
+      data: { user: supabaseUser },
+    } = await supabase.auth.getUser();
+
+    if (supabaseUser) {
+      // Has a Supabase session but getAuthUser returned null →
+      // authenticated but not an active team member
+      redirect("/pending");
+    }
+
+    // No session at all — redirect() throws internally but TS doesn't know
     redirect("/login");
-    throw new Error("Redirecting to login");
+    throw new Error("Redirecting to login"); // unreachable, satisfies TS
   }
+
   if (minRole && !hasPermission(user.role, minRole)) {
-    const { redirect } = await import("next/navigation");
     redirect("/dashboard?error=unauthorized");
   }
+
   return user;
 }

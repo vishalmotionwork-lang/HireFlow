@@ -9,10 +9,11 @@ import {
   inArray,
   lte,
   or,
+  sql,
 } from "drizzle-orm";
 import { db } from "@/db";
-import { candidates, candidateEvents } from "@/db/schema";
-import type { CandidateStatus, Tier } from "@/types";
+import { candidates, candidateEvents, roles } from "@/db/schema";
+import type { Candidate, CandidateStatus, Tier } from "@/types";
 
 interface GetCandidatesParams {
   roleId?: string;
@@ -21,7 +22,7 @@ interface GetCandidatesParams {
   page?: number;
   status?: CandidateStatus[];
   tier?: Tier | null;
-  sort?: "newest" | "oldest" | "name_asc" | "updated";
+  sort?: "newest" | "oldest" | "name_asc" | "updated" | "priority";
   q?: string;
   dateRange?: "today" | "week" | "month" | null;
   duplicatesOnly?: boolean;
@@ -68,7 +69,7 @@ export async function getCandidates({
   page = 1,
   status = [],
   tier = null,
-  sort = "newest",
+  sort = "priority",
   q = "",
   dateRange = null,
   duplicatesOnly = false,
@@ -130,32 +131,62 @@ export async function getCandidates({
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-  // orderBy mapping — default is "updated" so status changes bubble to top
-  const orderByClause =
-    sort === "oldest"
-      ? asc(candidates.createdAt)
-      : sort === "name_asc"
-        ? asc(candidates.name)
-        : sort === "newest"
-          ? desc(candidates.createdAt)
-          : desc(candidates.updatedAt); // updated (default)
+  // Status-priority weight: SQL CASE for ordering by pipeline stage
+  const statusPriorityExpr = sql`CASE ${candidates.status}
+    WHEN 'hired' THEN 1
+    WHEN 'shortlisted' THEN 1
+    WHEN 'assignment_passed' THEN 1
+    WHEN 'assignment_sent' THEN 2
+    WHEN 'assignment_followup' THEN 2
+    WHEN 'assignment_pending' THEN 2
+    WHEN 'under_review' THEN 2
+    WHEN 'left_to_review' THEN 3
+    WHEN 'maybe' THEN 3
+    WHEN 'rejected' THEN 4
+    WHEN 'not_good' THEN 4
+    WHEN 'assignment_failed' THEN 4
+    ELSE 5
+  END`;
 
-  // Count query — uses SAME conditions (shared array)
-  const [countResult] = await db
-    .select({ total: count() })
-    .from(candidates)
-    .where(whereClause);
+  // Build orderBy clauses array
+  const buildOrderBy = () => {
+    const clauses = [];
 
-  const total = countResult?.total ?? 0;
+    // When sortOrder is set, always sort by it first
+    clauses.push(sql`${candidates.sortOrder} ASC NULLS LAST`);
 
-  // Data query — uses SAME conditions + ordering + pagination
-  const data = await db
-    .select()
-    .from(candidates)
-    .where(whereClause)
-    .orderBy(orderByClause)
-    .limit(limit)
-    .offset(offset);
+    if (sort === "priority") {
+      clauses.push(sql`${statusPriorityExpr} ASC`);
+      clauses.push(desc(candidates.updatedAt));
+    } else if (sort === "oldest") {
+      clauses.push(asc(candidates.createdAt));
+    } else if (sort === "name_asc") {
+      clauses.push(asc(candidates.name));
+    } else if (sort === "newest") {
+      clauses.push(desc(candidates.createdAt));
+    } else {
+      // "updated"
+      clauses.push(desc(candidates.updatedAt));
+    }
+
+    return clauses;
+  };
+
+  const orderByClauses = buildOrderBy();
+
+  // Count + data queries in parallel — both use SAME conditions (shared array)
+  const [countResult, data] = await Promise.all([
+    db.select({ total: count() }).from(candidates).where(whereClause),
+    db
+      .select()
+      .from(candidates)
+      .where(whereClause)
+      .orderBy(...orderByClauses)
+      .limit(limit)
+      .offset(offset),
+  ]);
+
+  const total = countResult[0]?.total ?? 0;
 
   return {
     candidates: data,
@@ -182,11 +213,84 @@ export async function getCandidateWithEvents(candidateId: string) {
     return null;
   }
 
-  const events = await db
-    .select()
-    .from(candidateEvents)
-    .where(eq(candidateEvents.candidateId, candidateId))
-    .orderBy(desc(candidateEvents.createdAt));
+  const [events, [role]] = await Promise.all([
+    db
+      .select()
+      .from(candidateEvents)
+      .where(eq(candidateEvents.candidateId, candidateId))
+      .orderBy(desc(candidateEvents.createdAt)),
+    db
+      .select({ name: roles.name })
+      .from(roles)
+      .where(eq(roles.id, candidate.roleId))
+      .limit(1),
+  ]);
 
-  return { candidate, events };
+  return { candidate, events, roleName: role?.name ?? null };
+}
+
+export interface BestCandidate extends Candidate {
+  roleName: string;
+  roleSlug: string;
+}
+
+export async function getBestCandidates(
+  roleId?: string,
+): Promise<BestCandidate[]> {
+  const BEST_STATUSES: CandidateStatus[] = [
+    "shortlisted",
+    "assignment_passed",
+    "hired",
+  ];
+
+  const conditions = [
+    eq(candidates.isDeleted, false),
+    inArray(candidates.status, BEST_STATUSES),
+  ];
+
+  if (roleId) {
+    conditions.push(eq(candidates.roleId, roleId));
+  }
+
+  const rows = await db
+    .select({
+      id: candidates.id,
+      roleId: candidates.roleId,
+      name: candidates.name,
+      email: candidates.email,
+      phone: candidates.phone,
+      instagram: candidates.instagram,
+      portfolioUrl: candidates.portfolioUrl,
+      linkedinUrl: candidates.linkedinUrl,
+      location: candidates.location,
+      experience: candidates.experience,
+      resumeUrl: candidates.resumeUrl,
+      portfolioLinks: candidates.portfolioLinks,
+      socialHandles: candidates.socialHandles,
+      status: candidates.status,
+      tier: candidates.tier,
+      isDuplicate: candidates.isDuplicate,
+      duplicateOfId: candidates.duplicateOfId,
+      duplicateAction: candidates.duplicateAction,
+      rejectionReason: candidates.rejectionReason,
+      rejectionMessage: candidates.rejectionMessage,
+      rejectionMarkedAt: candidates.rejectionMarkedAt,
+      isDeleted: candidates.isDeleted,
+      source: candidates.source,
+      sortOrder: candidates.sortOrder,
+      lastModifiedBy: candidates.lastModifiedBy,
+      importBatchId: candidates.importBatchId,
+      createdBy: candidates.createdBy,
+      createdAt: candidates.createdAt,
+      updatedAt: candidates.updatedAt,
+      roleName: roles.name,
+      roleSlug: roles.slug,
+    })
+    .from(candidates)
+    .innerJoin(roles, eq(candidates.roleId, roles.id))
+    .where(and(...conditions))
+    .orderBy(desc(candidates.updatedAt))
+    .limit(100);
+
+  return rows;
 }

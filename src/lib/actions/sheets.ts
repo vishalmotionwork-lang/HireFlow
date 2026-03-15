@@ -14,6 +14,7 @@ import { detectMapping, ROLE_KEYWORDS } from "@/lib/import/columnHeuristics";
 import { normalizeRows } from "@/lib/import/normalizeRows";
 import { cleanRows } from "@/lib/import/cleanRows";
 import { createRoleFromData } from "@/lib/actions/roles";
+import { requireAuth, getAuthUser } from "@/lib/auth";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -90,7 +91,7 @@ async function fetchSheetCsv(
 
   const response = await fetch(url, {
     headers: { Accept: "text/csv" },
-    // No cache — always fetch fresh data
+    // No cache -- always fetch fresh data
     cache: "no-store",
   });
 
@@ -209,6 +210,8 @@ export async function detectRoleColumn(
   sheetUrl: string,
 ): Promise<DetectRoleColumnResult | { error: string }> {
   try {
+    await requireAuth("editor");
+
     const googleSheetId = extractSheetId(sheetUrl);
     if (!googleSheetId) {
       return { error: "Invalid Google Sheet URL." };
@@ -295,7 +298,7 @@ async function findOrCreateRole(
     }
   }
 
-  // No match — create a new role
+  // No match -- create a new role
   const created = await createRoleFromData(roleName.trim(), "Briefcase");
   if (!created) {
     throw new Error(`Failed to create role "${roleName}"`);
@@ -306,13 +309,16 @@ async function findOrCreateRole(
 }
 
 // ---------------------------------------------------------------------------
-// CRUD — Connected Sheets
+// CRUD -- Connected Sheets
 // ---------------------------------------------------------------------------
 
 /** List all connected sheets with their role names. */
 export async function getConnectedSheets(): Promise<
   Array<ConnectedSheet & { roleName: string }>
 > {
+  const user = await getAuthUser();
+  if (!user) return [];
+
   const results = await db
     .select({
       id: connectedSheets.id,
@@ -346,6 +352,8 @@ export async function connectSheet(
   input: ConnectSheetInput,
 ): Promise<{ id: string } | { error: string }> {
   try {
+    await requireAuth("editor");
+
     const isAutoDetect = input.autoDetectRole === true;
 
     // Validate role exists (only required when not auto-detecting)
@@ -377,7 +385,7 @@ export async function connectSheet(
     // Extract GID from URL if not provided
     const gid = input.gid || extractGid(input.sheetUrl) || null;
 
-    // Test fetch — verifies the sheet is public and accessible
+    // Test fetch -- verifies the sheet is public and accessible
     try {
       await fetchSheetCsv(googleSheetId, gid);
     } catch (fetchError) {
@@ -427,6 +435,8 @@ export async function updateConnectedSheet(
   },
 ): Promise<{ success: true } | { error: string }> {
   try {
+    await requireAuth("editor");
+
     const setValues: Partial<typeof connectedSheets.$inferInsert> = {};
 
     if (updates.name !== undefined) setValues.name = updates.name.trim();
@@ -453,6 +463,8 @@ export async function disconnectSheet(
   id: string,
 ): Promise<{ success: true } | { error: string }> {
   try {
+    await requireAuth("admin");
+
     await db.delete(connectedSheets).where(eq(connectedSheets.id, id));
     revalidatePath("/settings");
     return { success: true };
@@ -463,7 +475,7 @@ export async function disconnectSheet(
 }
 
 // ---------------------------------------------------------------------------
-// Sync — Core Logic
+// Sync -- Core Logic
 // ---------------------------------------------------------------------------
 
 /**
@@ -472,7 +484,7 @@ export async function disconnectSheet(
  * Flow:
  * 1. Fetch the sheet as CSV
  * 2. Parse headers + rows
- * 3. Compare row count with lastRowCount — skip if no new data
+ * 3. Compare row count with lastRowCount -- skip if no new data
  * 4. Extract only new rows (rows after lastRowCount)
  * 5. Auto-detect column mapping from headers
  * 6. Normalize + clean rows
@@ -483,6 +495,8 @@ export async function disconnectSheet(
 export async function syncConnectedSheet(
   sheetDbId: string,
 ): Promise<SyncResult> {
+  await requireAuth("editor");
+
   // Fetch the sheet record
   const [sheet] = await db
     .select()
@@ -517,7 +531,7 @@ export async function syncConnectedSheet(
     const { headers, rows: allDataRows } = parseServerCsv(csvText);
 
     if (headers.length === 0 || allDataRows.length === 0) {
-      // Update sync time even if empty — don't retry constantly
+      // Update sync time even if empty -- don't retry constantly
       await db
         .update(connectedSheets)
         .set({ lastSyncAt: new Date(), lastError: null })
@@ -527,7 +541,7 @@ export async function syncConnectedSheet(
 
     const totalCurrentRows = allDataRows.length;
 
-    // 3. Compare row count — skip if no new rows
+    // 3. Compare row count -- skip if no new rows
     if (totalCurrentRows <= sheet.lastRowCount) {
       await db
         .update(connectedSheets)
@@ -574,7 +588,7 @@ export async function syncConnectedSheet(
 
     const cleaned = cleanRows(withNames);
 
-    // 7. Dedup by email — find existing candidates with matching emails
+    // 7. Dedup by email -- find existing candidates with matching emails
     const emails = cleaned
       .map((r) => r.email)
       .filter((e): e is string => e !== null && e !== "");
@@ -601,7 +615,7 @@ export async function syncConnectedSheet(
     result.skippedDuplicates = cleaned.length - toImport.length;
 
     if (toImport.length === 0) {
-      // All duplicates — still update counts
+      // All duplicates -- still update counts
       await db
         .update(connectedSheets)
         .set({
@@ -621,7 +635,7 @@ export async function syncConnectedSheet(
       ? (sheet.roleColumnIndex ?? mapping.role)
       : undefined;
 
-    // Cache for role name → role ID (avoids repeated DB lookups within a single sync)
+    // Cache for role name -> role ID (avoids repeated DB lookups within a single sync)
     const roleCache = new Map<string, string>();
 
     // Pre-populate cache if we have a fixed role
@@ -646,7 +660,7 @@ export async function syncConnectedSheet(
           );
           rowRoleIds.push(resolvedRoleId);
         } else {
-          // No role value in this row — skip or use a fallback
+          // No role value in this row -- skip or use a fallback
           // If the sheet also has a fallback roleId, use it; otherwise skip
           if (sheet.roleId) {
             rowRoleIds.push(sheet.roleId);
@@ -778,7 +792,7 @@ export async function syncConnectedSheet(
 }
 
 // ---------------------------------------------------------------------------
-// Sync All — Used by cron
+// Sync All -- Used by cron
 // ---------------------------------------------------------------------------
 
 /**

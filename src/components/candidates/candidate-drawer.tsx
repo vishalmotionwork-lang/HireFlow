@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition, useCallback } from "react";
-import { Copy, ExternalLink } from "lucide-react";
+import { Copy, ExternalLink, MessageCircle } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -15,6 +15,8 @@ import { TierBadge } from "@/components/candidates/tier-badge";
 import { StatusHistory } from "@/components/candidates/status-history";
 import { CommentThread } from "@/components/candidates/comment-thread";
 import { DuplicateBanner } from "@/components/candidates/duplicate-banner";
+import { WhatsAppMessageModal } from "@/components/candidates/whatsapp-message-modal";
+import { StarRating } from "@/components/candidates/star-rating";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   fetchCandidateProfile,
@@ -30,6 +32,7 @@ interface CandidateDrawerProps {
 interface DrawerData {
   candidate: Candidate;
   events: CandidateEvent[];
+  roleName: string | null;
 }
 
 /** Copy text to clipboard with a brief visual confirmation. */
@@ -38,12 +41,17 @@ function CopyButton({ value }: { value: string | null }) {
 
   if (!value) return null;
 
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 1500);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
     } catch {
       // Clipboard API not available — silently ignore
     }
@@ -129,8 +137,11 @@ export function CandidateDrawer({
     loadProfile(candidateId);
   };
 
+  const [whatsappOpen, setWhatsappOpen] = useState(false);
+
   const candidate = data?.candidate ?? null;
   const events = data?.events ?? [];
+  const roleName = data?.roleName ?? null;
 
   const side = isMobile ? "bottom" : "right";
 
@@ -171,6 +182,11 @@ export function CandidateDrawer({
                   candidateName={candidate.name}
                 />
                 <TierBadge candidateId={candidate.id} tier={candidate.tier} />
+              </div>
+
+              {/* Star rating */}
+              <div className="pt-1">
+                <StarRating candidateId={candidate.id} />
               </div>
             </SheetHeader>
 
@@ -216,6 +232,19 @@ export function CandidateDrawer({
                       onSave={(v) => handleFieldSave("phone", v)}
                       placeholder="Add phone / WhatsApp"
                     />
+                    {candidate.phone && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setWhatsappOpen(true);
+                        }}
+                        title="Send WhatsApp message"
+                        aria-label="Send WhatsApp message"
+                        className="ml-1 shrink-0 rounded p-0.5 text-[#25D366] hover:text-[#128C7E] transition-colors"
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                     <CopyButton value={candidate.phone} />
                   </div>
                 </div>
@@ -488,6 +517,16 @@ export function CandidateDrawer({
           </div>
         )}
       </SheetContent>
+
+      {candidate?.phone && (
+        <WhatsAppMessageModal
+          open={whatsappOpen}
+          onClose={() => setWhatsappOpen(false)}
+          candidateName={candidate.name}
+          phone={candidate.phone}
+          roleName={roleName}
+        />
+      )}
     </Sheet>
   );
 }

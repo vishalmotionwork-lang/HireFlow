@@ -8,6 +8,7 @@ import {
   Users,
   PlusCircle,
   Settings,
+  Star,
   Upload,
 } from "lucide-react";
 import {
@@ -78,6 +79,22 @@ export function AppSidebar({ roles }: AppSidebarProps) {
               >
                 <Users size={16} />
                 <span>Master View</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+
+        {/* Best Candidates */}
+        <SidebarGroup>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                render={<Link href="/best" />}
+                isActive={isActive("/best")}
+                tooltip="Best Candidates"
+              >
+                <Star size={16} />
+                <span>Best Candidates</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

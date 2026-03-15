@@ -1,9 +1,14 @@
 {
   "regions": ["sin1"],
+  "functions": {
+    "src/**/*.ts": {
+      "maxDuration": 60
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/sync-sheets",
-      "schedule": "0 8 * * *"
+      "schedule": "0 */6 * * *"
     }
   ]
 }

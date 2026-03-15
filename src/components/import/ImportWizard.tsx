@@ -286,6 +286,31 @@ function StepIndicator({ currentStep }: { currentStep: WizardStep }) {
 }
 
 // ---------------------------------------------------------------------------
+// Type mapping: ExtractionStatusDraft -> ExtractionDraft
+// ---------------------------------------------------------------------------
+
+/** Map a polling status draft to a full ExtractionDraft shape for review. */
+function toExtractionDraft(draft: ExtractionStatusDraft): ExtractionDraft {
+  return {
+    id: draft.id,
+    candidateId: null,
+    importBatchId: null,
+    sourceUrl: draft.sourceUrl,
+    rawText: null,
+    extractedData: draft.extractedData,
+    platform: null,
+    overallConfidence: draft.overallConfidence,
+    fieldConfidence: draft.fieldConfidence,
+    status: draft.status,
+    error: draft.error,
+    reviewedAt: null,
+    appliedAt: null,
+    createdBy: "mock-user",
+    createdAt: new Date(),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // ImportWizard component
 // ---------------------------------------------------------------------------
 
@@ -404,11 +429,11 @@ export function ImportWizard({ roles }: ImportWizardProps) {
 
   const handleExtractionComplete = (drafts: ExtractionStatusDraft[]) => {
     setExtractionDrafts(drafts);
-    // Transition directly to review: use the drafts from polling as ExtractionDraft
-    const asDrafts = drafts as unknown as ExtractionDraft[];
-    setReviewDrafts(asDrafts);
+    // Map polling drafts to ExtractionDraft shape for review
+    const mapped: ExtractionDraft[] = drafts.map((d) => toExtractionDraft(d));
+    setReviewDrafts(mapped);
     // Auto-select the first reviewable draft
-    const firstReviewable = asDrafts.find((d) => d.status === "completed");
+    const firstReviewable = mapped.find((d) => d.status === "completed");
     setSelectedDraftId(firstReviewable?.id ?? null);
   };
 
@@ -427,8 +452,8 @@ export function ImportWizard({ roles }: ImportWizardProps) {
       const res = await fetch(`/api/extraction-status/${extractionBatchId}`);
       if (!res.ok) return;
       const data = await res.json();
-      const asDrafts = data.drafts as unknown as ExtractionDraft[];
-      setReviewDrafts(asDrafts);
+      const statusDrafts = data.drafts as ExtractionStatusDraft[];
+      setReviewDrafts(statusDrafts.map((d) => toExtractionDraft(d)));
     } catch {
       // ignore — stale data is acceptable
     }

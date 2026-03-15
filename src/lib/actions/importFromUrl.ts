@@ -11,13 +11,106 @@ import type { ParseResult, RawRow } from "@/lib/import/types";
 const GOOGLE_SHEETS_REGEX =
   /^https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/;
 
-type SpreadsheetUrlKind = "google_sheets" | "direct_csv" | "direct_xlsx" | "unsupported";
+type SpreadsheetUrlKind =
+  | "google_sheets"
+  | "direct_csv"
+  | "direct_xlsx"
+  | "unsupported";
 
 interface UrlInfo {
   kind: SpreadsheetUrlKind;
   fetchUrl: string;
   /** Google Sheet ID (only for google_sheets kind) */
   sheetId?: string;
+}
+
+// ---------------------------------------------------------------------------
+// SSRF protection — block private/internal IPs and restrict to allowed hosts
+// ---------------------------------------------------------------------------
+
+/** Check if a hostname resolves to a private/internal IP range */
+function isPrivateOrInternalHostname(hostname: string): boolean {
+  const lower = hostname.toLowerCase();
+
+  // Block obvious internal hostnames
+  const blocked = [
+    "localhost",
+    "127.0.0.1",
+    "0.0.0.0",
+    "::1",
+    "[::1]",
+    "metadata.google.internal",
+    "169.254.169.254",
+  ];
+  if (blocked.includes(lower)) return true;
+
+  // Block .local, .internal, .localhost TLDs
+  if (
+    lower.endsWith(".local") ||
+    lower.endsWith(".internal") ||
+    lower.endsWith(".localhost")
+  ) {
+    return true;
+  }
+
+  // Block private IP ranges (10.x, 172.16-31.x, 192.168.x, 169.254.x, 127.x, 0.x)
+  const ipv4Match = hostname.match(
+    /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/,
+  );
+  if (ipv4Match) {
+    const [, aStr, bStr] = ipv4Match;
+    const a = Number(aStr);
+    const b = Number(bStr);
+    if (a === 10) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 169 && b === 254) return true;
+    if (a === 127) return true;
+    if (a === 0) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Validate that a URL is safe to fetch (not SSRF).
+ * Only allows: docs.google.com and URLs ending in .csv/.xlsx/.xls.
+ * Returns an error message string if invalid, null if safe.
+ */
+function validateUrlSafety(url: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return "Invalid URL format.";
+  }
+
+  // Only allow http(s)
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    return "Only HTTP and HTTPS URLs are supported.";
+  }
+
+  // Block private/internal hostnames
+  if (isPrivateOrInternalHostname(parsed.hostname)) {
+    return "URLs pointing to private or internal addresses are not allowed.";
+  }
+
+  // Google Sheets is always allowed
+  if (parsed.hostname === "docs.google.com") {
+    return null;
+  }
+
+  // For non-Google hosts, only allow direct .csv/.xlsx/.xls file URLs
+  const pathLower = parsed.pathname.toLowerCase();
+  if (
+    pathLower.endsWith(".csv") ||
+    pathLower.endsWith(".xlsx") ||
+    pathLower.endsWith(".xls")
+  ) {
+    return null;
+  }
+
+  return "Only Google Sheets links and direct .csv/.xlsx/.xls file URLs are supported.";
 }
 
 function classifyUrl(raw: string): UrlInfo {
@@ -72,9 +165,7 @@ function parseExcelBuffer(buffer: ArrayBuffer): ParseResult {
     if (data.length < 2) continue;
 
     const [headerRow, ...dataRows] = data as unknown[][];
-    const headers = (headerRow as unknown[]).map((h) =>
-      String(h ?? "").trim(),
-    );
+    const headers = (headerRow as unknown[]).map((h) => String(h ?? "").trim());
     const rows: RawRow[] = dataRows.filter((row) =>
       row.some((cell) => cell !== undefined && String(cell).trim() !== ""),
     );
@@ -105,7 +196,9 @@ function parseExcelBuffer(buffer: ArrayBuffer): ParseResult {
       for (const row of sheet.rows) {
         const key =
           emailIdx >= 0
-            ? String(row[emailIdx] ?? "").trim().toLowerCase()
+            ? String(row[emailIdx] ?? "")
+                .trim()
+                .toLowerCase()
             : "";
         if (key && seen.has(key)) continue;
         if (key) seen.add(key);
@@ -166,6 +259,12 @@ export async function importFromUrl(url: string): Promise<ImportFromUrlResult> {
     return { success: false, error: "URL must start with http:// or https://" };
   }
 
+  // SSRF protection — block private IPs, internal hosts, and unsupported domains
+  const safetyError = validateUrlSafety(trimmed);
+  if (safetyError) {
+    return { success: false, error: safetyError };
+  }
+
   const info = classifyUrl(trimmed);
 
   if (info.kind === "unsupported") {
@@ -196,12 +295,14 @@ export async function importFromUrl(url: string): Promise<ImportFromUrlResult> {
     if (err instanceof DOMException && err.name === "AbortError") {
       return {
         success: false,
-        error: "Request timed out after 15 seconds. Please check the URL and try again.",
+        error:
+          "Request timed out after 15 seconds. Please check the URL and try again.",
       };
     }
     return {
       success: false,
-      error: "Could not fetch the file. Please check the URL and your network connection.",
+      error:
+        "Could not fetch the file. Please check the URL and your network connection.",
     };
   }
 
@@ -243,7 +344,10 @@ export async function importFromUrl(url: string): Promise<ImportFromUrlResult> {
       const data = parseCsvText(text);
 
       if (data.headers.length === 0 || data.rows.length === 0) {
-        return { success: false, error: "The CSV file appears to be empty or has no data rows." };
+        return {
+          success: false,
+          error: "The CSV file appears to be empty or has no data rows.",
+        };
       }
 
       return { success: true, data, source: "csv" };
@@ -272,14 +376,18 @@ export async function importFromUrl(url: string): Promise<ImportFromUrlResult> {
     const data = parseExcelBuffer(buffer);
 
     if (data.headers.length === 0 || data.rows.length === 0) {
-      return { success: false, error: "The spreadsheet appears to be empty or has no data rows." };
+      return {
+        success: false,
+        error: "The spreadsheet appears to be empty or has no data rows.",
+      };
     }
 
     return { success: true, data, source: "excel" };
   } catch {
     return {
       success: false,
-      error: "Failed to parse the spreadsheet. The file may be corrupted or in an unsupported format.",
+      error:
+        "Failed to parse the spreadsheet. The file may be corrupted or in an unsupported format.",
     };
   }
 }

@@ -254,78 +254,12 @@ export function TeamSection({
           </h3>
           <div className="rounded-xl border-2 border-amber-200 bg-amber-50/50 divide-y divide-amber-100 overflow-hidden">
             {pendingMembers.map((member) => (
-              <div
+              <PendingMemberRow
                 key={member.id}
-                className="flex items-center gap-3 px-4 py-3"
-              >
-                {member.avatar ? (
-                  <img
-                    src={member.avatar}
-                    alt={member.name ?? ""}
-                    className="h-8 w-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold text-amber-700">
-                    {(member.name ?? member.email)[0]?.toUpperCase()}
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">
-                    {member.name ?? member.email.split("@")[0]}
-                  </p>
-                  <p className="text-xs text-gray-400">{member.email}</p>
-                </div>
-                <select
-                  defaultValue="viewer"
-                  id={`role-${member.id}`}
-                  className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium focus:border-blue-400 focus:outline-none"
-                >
-                  <option value="viewer">Viewer</option>
-                  <option value="editor">Editor</option>
-                  <option value="admin">Admin</option>
-                </select>
-                <button
-                  onClick={() => {
-                    const select = document.getElementById(
-                      `role-${member.id}`,
-                    ) as HTMLSelectElement;
-                    const role = (select?.value ?? "viewer") as
-                      | "admin"
-                      | "editor"
-                      | "viewer";
-                    startTransition(async () => {
-                      const result = await approveMember(member.id, role);
-                      if ("error" in result) {
-                        toast.error(result.error as string);
-                      } else {
-                        toast.success(
-                          `${member.name ?? member.email} approved`,
-                        );
-                      }
-                    });
-                  }}
-                  disabled={isPending}
-                  className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors disabled:opacity-50"
-                >
-                  Approve
-                </button>
-                <button
-                  onClick={() => {
-                    startTransition(async () => {
-                      const result = await rejectPendingMember(member.id);
-                      if ("error" in result) {
-                        toast.error(result.error as string);
-                      } else {
-                        toast.success("Request rejected");
-                      }
-                    });
-                  }}
-                  disabled={isPending}
-                  className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                >
-                  Reject
-                </button>
-              </div>
+                member={member}
+                isPending={isPending}
+                startTransition={startTransition}
+              />
             ))}
           </div>
         </div>
@@ -379,5 +313,84 @@ export function TeamSection({
         </div>
       )}
     </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PendingMemberRow — extracted component with controlled React state
+// ---------------------------------------------------------------------------
+
+function PendingMemberRow({
+  member,
+  isPending,
+  startTransition,
+}: {
+  member: TeamMember;
+  isPending: boolean;
+  startTransition: React.TransitionStartFunction;
+}) {
+  const [selectedRole, setSelectedRole] = useState<TeamRole>("viewer");
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      {member.avatar ? (
+        <img
+          src={member.avatar}
+          alt={member.name ?? ""}
+          className="h-8 w-8 rounded-full object-cover"
+        />
+      ) : (
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold text-amber-700">
+          {(member.name ?? member.email)[0]?.toUpperCase()}
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-gray-900">
+          {member.name ?? member.email.split("@")[0]}
+        </p>
+        <p className="text-xs text-gray-400">{member.email}</p>
+      </div>
+      <select
+        value={selectedRole}
+        onChange={(e) => setSelectedRole(e.target.value as TeamRole)}
+        className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium focus:border-blue-400 focus:outline-none"
+      >
+        <option value="viewer">Viewer</option>
+        <option value="editor">Editor</option>
+        <option value="admin">Admin</option>
+      </select>
+      <button
+        onClick={() => {
+          startTransition(async () => {
+            const result = await approveMember(member.id, selectedRole);
+            if ("error" in result) {
+              toast.error(result.error as string);
+            } else {
+              toast.success(`${member.name ?? member.email} approved`);
+            }
+          });
+        }}
+        disabled={isPending}
+        className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+      >
+        Approve
+      </button>
+      <button
+        onClick={() => {
+          startTransition(async () => {
+            const result = await rejectPendingMember(member.id);
+            if ("error" in result) {
+              toast.error(result.error as string);
+            } else {
+              toast.success("Request rejected");
+            }
+          });
+        }}
+        disabled={isPending}
+        className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+      >
+        Reject
+      </button>
+    </div>
   );
 }

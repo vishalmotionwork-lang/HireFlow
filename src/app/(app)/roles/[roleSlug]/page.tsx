@@ -5,6 +5,8 @@ import { roles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { DynamicIcon } from "@/components/layout/dynamic-icon";
 import { CandidateTable } from "@/components/candidates/candidate-table";
+import { KanbanBoard } from "@/components/candidates/kanban-board";
+import { ViewToggle } from "@/components/candidates/view-toggle";
 import { CandidateFilterBar } from "@/components/candidates/candidate-filter-bar";
 import { CandidatePagination } from "@/components/candidates/candidate-pagination";
 import { RealtimeRefresh } from "@/components/realtime/realtime-refresh";
@@ -46,11 +48,14 @@ export default async function RolePage({
       ? rawTier
       : null;
 
-  const rawSort = typeof sp.sort === "string" ? sp.sort : "updated";
-  const sort: "newest" | "oldest" | "name_asc" | "updated" =
-    rawSort === "oldest" || rawSort === "name_asc" || rawSort === "newest"
+  const rawSort = typeof sp.sort === "string" ? sp.sort : "priority";
+  const sort: "newest" | "oldest" | "name_asc" | "updated" | "priority" =
+    rawSort === "oldest" ||
+    rawSort === "name_asc" ||
+    rawSort === "newest" ||
+    rawSort === "priority"
       ? rawSort
-      : "updated";
+      : "priority";
 
   const q = typeof sp.q === "string" ? sp.q : "";
 
@@ -66,6 +71,9 @@ export default async function RolePage({
   const importSource: string[] = rawSource
     ? rawSource.split(",").filter(Boolean)
     : [];
+
+  const rawView = typeof sp.view === "string" ? sp.view : "list";
+  const view: "list" | "board" = rawView === "board" ? "board" : "list";
 
   // Fetch the current role
   const [role] = await db
@@ -85,7 +93,7 @@ export default async function RolePage({
     .where(eq(roles.isActive, true))
     .orderBy(roles.sortOrder);
 
-  const loadAll = sp.loadAll === "true" || page > 1;
+  const loadAll = sp.loadAll === "true" || page > 1 || view === "board";
 
   // Fetch filtered candidates for this role
   const { candidates, total, totalPages } = await getCandidates({
@@ -145,25 +153,34 @@ export default async function RolePage({
         ))}
       </div>
 
-      {/* Filter bar — between tab strip and table */}
-      <CandidateFilterBar showing={candidates.length} total={total} />
+      {/* View toggle + filter bar */}
+      <div className="flex items-center justify-between gap-3">
+        <CandidateFilterBar showing={candidates.length} total={total} />
+        <ViewToggle currentView={view} />
+      </div>
 
-      {/* Candidates table */}
-      <CandidateTable
-        candidates={candidates}
-        total={total}
-        roleId={role.id}
-        currentPage={page}
-        totalPages={totalPages}
-      />
+      {/* Candidates view — table or kanban board */}
+      {view === "board" ? (
+        <KanbanBoard candidates={candidates} />
+      ) : (
+        <>
+          <CandidateTable
+            candidates={candidates}
+            total={total}
+            roleId={role.id}
+            currentPage={page}
+            totalPages={totalPages}
+          />
 
-      {/* Load More / Load All */}
-      <CandidatePagination
-        currentPage={page}
-        totalPages={totalPages}
-        total={total}
-        showing={candidates.length}
-      />
+          {/* Load More / Load All */}
+          <CandidatePagination
+            currentPage={page}
+            totalPages={totalPages}
+            total={total}
+            showing={candidates.length}
+          />
+        </>
+      )}
     </div>
   );
 }

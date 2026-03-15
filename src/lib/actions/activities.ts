@@ -2,21 +2,39 @@
 
 import { db } from "@/db";
 import { activities } from "@/db/schema";
-import { getCurrentUserForAudit } from "@/lib/actions/get-current-user";
 import type { NewActivity } from "@/types";
 
+export interface ActivityActor {
+  readonly id: string;
+  readonly name: string;
+  readonly avatar: string | null;
+}
+
 /**
- * Create an activity record. Denormalized for fast reads — no joins needed.
+ * Create an activity record. Denormalized for fast reads -- no joins needed.
  * Called from other server actions after mutations.
+ *
+ * The caller must pass the authenticated user (actor) explicitly.
+ * This avoids a redundant auth lookup since the caller already has the user.
  */
 export async function createActivity(
   params: Omit<NewActivity, "id" | "createdAt" | "actorId" | "actorName">,
+  actor?: ActivityActor,
 ) {
-  const actor = await getCurrentUserForAudit();
+  // If no actor provided, resolve from session (backward compatibility)
+  const resolvedActor = actor ?? (await resolveActor());
+
   await db.insert(activities).values({
     ...params,
-    actorId: actor.id,
-    actorName: actor.name,
-    actorAvatar: actor.avatar,
+    actorId: resolvedActor.id,
+    actorName: resolvedActor.name,
+    actorAvatar: resolvedActor.avatar,
   });
+}
+
+async function resolveActor(): Promise<ActivityActor> {
+  const { getCurrentUserForAudit } = await import(
+    "@/lib/actions/get-current-user"
+  );
+  return getCurrentUserForAudit();
 }

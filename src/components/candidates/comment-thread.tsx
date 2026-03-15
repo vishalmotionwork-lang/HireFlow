@@ -9,7 +9,7 @@ import {
   getComments,
   getMentionableMembers,
 } from "@/lib/actions/comments";
-import { MOCK_USER, TEAM_MEMBERS } from "@/lib/constants";
+import { getCurrentUserForAudit } from "@/lib/actions/get-current-user";
 import { formatRelativeTime } from "@/lib/utils/format-relative-time";
 import type { CandidateComment } from "@/types";
 
@@ -54,17 +54,19 @@ function extractMentions(
 
 // ─── CommentItem ─────────────────────────────────────────────────────────────
 
-function canEdit(comment: CandidateComment): boolean {
-  if (comment.createdBy !== MOCK_USER.name) return false;
+function canEdit(comment: CandidateComment, currentUserName: string): boolean {
+  if (comment.createdBy !== currentUserName) return false;
   const fiveMin = 5 * 60 * 1000;
   return Date.now() - new Date(comment.createdAt).getTime() < fiveMin;
 }
 
 function CommentItem({
   comment,
+  currentUserName,
   onEdited,
 }: {
   comment: CandidateComment;
+  currentUserName: string;
   onEdited: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -102,7 +104,7 @@ function CommentItem({
           {comment.editedAt && (
             <span className="text-xs text-gray-300">(edited)</span>
           )}
-          {canEdit(comment) && !isEditing && (
+          {canEdit(comment, currentUserName) && !isEditing && (
             <button
               onClick={() => {
                 setEditText(comment.body);
@@ -161,10 +163,12 @@ export function CommentThread({ candidateId }: CommentThreadProps) {
   const [newComment, setNewComment] = useState("");
   const [isPending, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(true);
+  const [currentUserName, setCurrentUserName] = useState("");
 
-  // Team members for @mention (loaded from DB, falls back to constants)
-  const [mentionMembers, setMentionMembers] =
-    useState<ReadonlyArray<MentionableMember>>(TEAM_MEMBERS);
+  // Team members for @mention (loaded from DB)
+  const [mentionMembers, setMentionMembers] = useState<
+    ReadonlyArray<MentionableMember>
+  >([]);
 
   // @mention popover state
   const [showMentionPopover, setShowMentionPopover] = useState(false);
@@ -180,18 +184,18 @@ export function CommentThread({ candidateId }: CommentThreadProps) {
     });
   }, [candidateId]);
 
-  // Load DB team members for @mention autocomplete (once on mount)
+  // Load current user name + DB team members for @mention (once on mount)
   useEffect(() => {
+    getCurrentUserForAudit()
+      .then((u) => setCurrentUserName(u.name))
+      .catch(() => {});
     getMentionableMembers()
       .then((members) => {
         if (members.length > 0) {
           setMentionMembers(members);
         }
-        // If DB returns nothing, keep the hardcoded TEAM_MEMBERS fallback
       })
-      .catch(() => {
-        // Fallback already set — no action needed
-      });
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -293,6 +297,7 @@ export function CommentThread({ candidateId }: CommentThreadProps) {
             onChange={handleInputChange}
             onKeyDown={handleInputKeyDown}
             placeholder="Add a comment... (type @ to mention)"
+            maxLength={5000}
             className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-blue-300 focus:outline-none"
             disabled={isPending}
           />
@@ -329,6 +334,13 @@ export function CommentThread({ candidateId }: CommentThreadProps) {
           <Send size={14} />
         </button>
       </div>
+      {newComment.length > 4500 && (
+        <p
+          className={`text-xs ${newComment.length >= 5000 ? "text-red-500" : "text-gray-400"}`}
+        >
+          {newComment.length}/5000
+        </p>
+      )}
 
       {/* Comments list */}
       {comments.length === 0 ? (
@@ -341,6 +353,7 @@ export function CommentThread({ candidateId }: CommentThreadProps) {
             <CommentItem
               key={comment.id}
               comment={comment}
+              currentUserName={currentUserName}
               onEdited={loadComments}
             />
           ))}

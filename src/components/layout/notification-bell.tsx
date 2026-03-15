@@ -55,34 +55,31 @@ interface NotificationBellProps {
 }
 
 export function NotificationBell({
-  userId,
   initialUnreadCount,
   initialNotifications,
 }: NotificationBellProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
-  const [items, setItems] = useState<ReadonlyArray<NotificationRow>>(
-    initialNotifications,
-  );
+  const [items, setItems] =
+    useState<ReadonlyArray<NotificationRow>>(initialNotifications);
   const [isOpen, setIsOpen] = useState(false);
 
   // Refresh data from server
   const refreshNotifications = useCallback(() => {
     startTransition(async () => {
       const [freshItems, freshCount] = await Promise.all([
-        getNotifications(userId),
-        getUnreadCount(userId),
+        getNotifications(),
+        getUnreadCount(),
       ]);
       setItems(freshItems);
       setUnreadCount(freshCount);
     });
-  }, [userId]);
+  }, []);
 
-  // Real-time: subscribe to notifications table filtered by this user
+  // Real-time: subscribe to notifications table
   useRealtimeSubscription({
     table: "notifications",
-    filter: `user_id=eq.${userId}`,
     event: "INSERT",
     onChanged: refreshNotifications,
   });
@@ -121,11 +118,11 @@ export function NotificationBell({
   // Mark all as read
   const handleMarkAllRead = useCallback(() => {
     startTransition(async () => {
-      await markAllNotificationsRead(userId);
+      await markAllNotificationsRead();
       setItems((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
     });
-  }, [userId]);
+  }, []);
 
   return (
     <Popover open={isOpen} onOpenChange={handleOpenChange}>

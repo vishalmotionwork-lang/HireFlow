@@ -7,6 +7,7 @@ import {
   integer,
   timestamp,
   jsonb,
+  unique,
 } from "drizzle-orm/pg-core";
 
 // Enums
@@ -43,8 +44,12 @@ export const roles = pgTable("roles", {
   description: text("description"),
   sortOrder: integer("sort_order").default(0).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const importBatches = pgTable("import_batches", {
@@ -60,7 +65,9 @@ export const importBatches = pgTable("import_batches", {
   sourceUrl: text("source_url"), // the URL/filename of the imported sheet
   sourceHash: text("source_hash"), // SHA-256 hash of file content or URL for dedup
   createdBy: text("created_by").default("mock-user").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const candidates = pgTable("candidates", {
@@ -86,14 +93,19 @@ export const candidates = pgTable("candidates", {
   duplicateAction: text("duplicate_action"), // 'merged' | 'kept_separate' | null
   rejectionReason: text("rejection_reason"),
   rejectionMessage: text("rejection_message"),
-  rejectionMarkedAt: timestamp("rejection_marked_at"),
+  rejectionMarkedAt: timestamp("rejection_marked_at", { withTimezone: true }),
+  sortOrder: integer("sort_order"),
   isDeleted: boolean("is_deleted").default(false).notNull(),
   source: text("source").default("manual").notNull(), // 'manual' | 'excel' | 'csv' | 'paste' | 'url'
   lastModifiedBy: text("last_modified_by"),
   importBatchId: uuid("import_batch_id").references(() => importBatches.id),
   createdBy: text("created_by").default("mock-user").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const candidateEvents = pgTable("candidate_events", {
@@ -105,7 +117,9 @@ export const candidateEvents = pgTable("candidate_events", {
   fromValue: text("from_value"),
   toValue: text("to_value").notNull(),
   createdBy: text("created_by").default("mock-user").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   // INSERT ONLY — no updatedAt
 });
 
@@ -118,8 +132,10 @@ export const candidateComments = pgTable("candidate_comments", {
   mentions: jsonb("mentions").default([]).notNull(), // [{userId, name}]
   authorAvatar: text("author_avatar"),
   createdBy: text("created_by").default("mock-user").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  editedAt: timestamp("edited_at"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  editedAt: timestamp("edited_at", { withTimezone: true }),
 });
 
 export const extractionDrafts = pgTable("extraction_drafts", {
@@ -134,10 +150,12 @@ export const extractionDrafts = pgTable("extraction_drafts", {
   fieldConfidence: jsonb("field_confidence"), // ConfidenceScore[]
   status: text("status").default("pending").notNull(), // 'pending' | 'processing' | 'completed' | 'failed' | 'reviewed' | 'applied'
   error: text("error"),
-  reviewedAt: timestamp("reviewed_at"),
-  appliedAt: timestamp("applied_at"),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  appliedAt: timestamp("applied_at", { withTimezone: true }),
   createdBy: text("created_by").default("mock-user").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const teamMembers = pgTable("team_members", {
@@ -151,8 +169,12 @@ export const teamMembers = pgTable("team_members", {
   role: text("role").default("viewer").notNull(), // 'admin' | 'editor' | 'viewer'
   isActive: boolean("is_active").default(true).notNull(),
   invitedBy: text("invited_by"),
-  joinedAt: timestamp("joined_at").defaultNow().notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  joinedAt: timestamp("joined_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const invitations = pgTable("invitations", {
@@ -162,8 +184,10 @@ export const invitations = pgTable("invitations", {
   invitedBy: text("invited_by").notNull(),
   status: text("status").default("pending").notNull(), // 'pending' | 'accepted' | 'expired'
   token: text("token").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const notifications = pgTable("notifications", {
@@ -174,7 +198,9 @@ export const notifications = pgTable("notifications", {
   body: text("body").notNull(), // e.g. "in a comment on John Doe: 'Great portfolio...'"
   link: text("link").notNull(), // e.g. "/roles/editor?candidate=uuid"
   isRead: boolean("is_read").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const syncFrequencyEnum = pgEnum("sync_frequency", [
@@ -192,12 +218,14 @@ export const connectedSheets = pgTable("connected_sheets", {
   roleId: uuid("role_id").references(() => roles.id), // nullable when auto-detecting roles
   autoDetectRole: boolean("auto_detect_role").default(false).notNull(),
   roleColumnIndex: integer("role_column_index"), // which column has the role data (nullable)
-  lastSyncAt: timestamp("last_sync_at"),
+  lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
   lastRowCount: integer("last_row_count").default(0).notNull(),
   syncFrequency: syncFrequencyEnum("sync_frequency").default("daily").notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   lastError: text("last_error"), // stores last sync error for user visibility
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const activities = pgTable("activities", {
@@ -211,5 +239,31 @@ export const activities = pgTable("activities", {
   roleId: uuid("role_id").references(() => roles.id),
   roleName: text("role_name"),
   metadata: jsonb("metadata").default({}).notNull(), // flexible payload per activity type
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
+
+export const candidateRatings = pgTable(
+  "candidate_ratings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    candidateId: uuid("candidate_id")
+      .notNull()
+      .references(() => candidates.id),
+    userId: text("user_id").notNull(),
+    rating: integer("rating").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    unique("candidate_ratings_candidate_user_unique").on(
+      table.candidateId,
+      table.userId,
+    ),
+  ],
+);

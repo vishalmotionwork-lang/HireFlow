@@ -3,6 +3,8 @@
 import { TriangleAlert } from "lucide-react";
 import { StatusBadge } from "@/components/candidates/status-badge";
 import { TierBadge } from "@/components/candidates/tier-badge";
+import { CompactStarRating } from "@/components/candidates/star-rating";
+import { formatRelativeTime } from "@/lib/utils/format-time";
 import type { Candidate } from "@/types";
 
 interface CandidateRowProps {
@@ -12,6 +14,10 @@ interface CandidateRowProps {
   rolesMap?: Record<string, string>;
   isChecked?: boolean;
   onCheckboxToggle?: (candidateId: string) => void;
+  /** When true, renders with elevation/shadow for drag overlay */
+  isDragOverlay?: boolean;
+  /** Drag handle element to render in the first cell */
+  dragHandle?: React.ReactNode;
 }
 
 /**
@@ -33,7 +39,7 @@ function formatDate(date: Date | string): string {
 
 /**
  * Strip protocol from a URL, showing just the domain + path.
- * e.g. "https://behance.net/john" → "behance.net/john"
+ * e.g. "https://behance.net/john" -> "behance.net/john"
  */
 function stripProtocol(url: string): string {
   try {
@@ -51,6 +57,8 @@ export function CandidateRow({
   rolesMap = {},
   isChecked = false,
   onCheckboxToggle,
+  isDragOverlay = false,
+  dragHandle,
 }: CandidateRowProps) {
   const handleRowClick = () => {
     onSelect(candidate);
@@ -75,14 +83,25 @@ export function CandidateRow({
     candidate.status === "not_good" ||
     candidate.status === "assignment_failed";
 
-  const rowClass = isPositive
+  const baseRowClass = isPositive
     ? "border-b border-gray-100 bg-emerald-50/60 hover:bg-emerald-100/70 cursor-pointer transition-colors border-l-4 border-l-emerald-500 [&_td:first-child]:pl-1.5"
     : isNegative
       ? "border-b border-gray-100 bg-red-50 hover:bg-red-100/70 cursor-pointer transition-colors border-l-4 border-l-red-400"
       : "border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors";
 
+  const overlayClass = isDragOverlay
+    ? "shadow-lg ring-2 ring-blue-400/50 bg-white opacity-95"
+    : "";
+
+  const rowClass = `${baseRowClass} ${overlayClass}`;
+
   return (
     <tr onClick={handleRowClick} className={rowClass}>
+      {/* Drag handle */}
+      <td className="w-8 px-1 py-2.5">
+        {dragHandle ?? <div className="w-5" />}
+      </td>
+
       {/* Checkbox */}
       <td className="w-8 px-2 py-2.5">
         <input
@@ -114,7 +133,7 @@ export function CandidateRow({
         </span>
       </td>
 
-      {/* Role — only shown in master view */}
+      {/* Role -- only shown in master view */}
       {showRoleColumn && (
         <td className="px-3 py-2.5 max-w-[140px]">
           <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 truncate max-w-full">
@@ -126,7 +145,7 @@ export function CandidateRow({
       {/* Email */}
       <td className="hidden lg:table-cell px-3 py-2.5 max-w-[180px]">
         <span className="text-sm text-gray-500 truncate block">
-          {candidate.email ?? <span className="text-gray-300">—</span>}
+          {candidate.email ?? <span className="text-gray-300">--</span>}
         </span>
       </td>
 
@@ -144,21 +163,21 @@ export function CandidateRow({
             {stripProtocol(candidate.portfolioUrl)}
           </a>
         ) : (
-          <span className="text-gray-300 text-sm">—</span>
+          <span className="text-gray-300 text-sm">--</span>
         )}
       </td>
 
       {/* Phone/WhatsApp */}
       <td className="hidden xl:table-cell px-3 py-2.5">
         <span className="text-sm text-gray-500">
-          {candidate.phone ?? <span className="text-gray-300">—</span>}
+          {candidate.phone ?? <span className="text-gray-300">--</span>}
         </span>
       </td>
 
       {/* Instagram */}
       <td className="hidden lg:table-cell px-3 py-2.5">
         <span className="text-sm text-gray-500">
-          {instagramHandle ?? <span className="text-gray-300">—</span>}
+          {instagramHandle ?? <span className="text-gray-300">--</span>}
         </span>
       </td>
 
@@ -175,13 +194,18 @@ export function CandidateRow({
         <TierBadge candidateId={candidate.id} tier={candidate.tier} />
       </td>
 
+      {/* Rating */}
+      <td className="hidden sm:table-cell px-3 py-2.5">
+        <CompactStarRating candidateId={candidate.id} />
+      </td>
+
       {/* Date Added */}
       <td className="hidden md:table-cell px-3 py-2.5 whitespace-nowrap">
         <span
           className="text-sm text-gray-400"
           title={new Date(candidate.createdAt).toLocaleString()}
         >
-          {formatDate(candidate.createdAt)}
+          {formatRelativeTime(candidate.createdAt)}
         </span>
       </td>
     </tr>

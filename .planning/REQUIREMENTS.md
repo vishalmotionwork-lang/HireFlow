@@ -1,4 +1,4 @@
-# Requirements: HireFlow
+# Requirements: HireFlow Direct
 
 **Defined:** 2026-03-13
 **Core Value:** Team can import candidates in bulk, review portfolios by role, and move candidates through the hiring pipeline — without switching between spreadsheets, emails, and messaging apps.

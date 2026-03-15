@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { and, eq, inArray, or } from "drizzle-orm";
 import { db } from "@/db";
 import { candidates, candidateEvents, importBatches, roles } from "@/db/schema";
-import { MOCK_USER } from "@/lib/constants";
+import { requireAuth } from "@/lib/auth";
 
 // ---------------------------------------------------------------------------
 // Input/Output types
@@ -45,7 +45,7 @@ export interface DuplicateMatch {
 }
 
 // ---------------------------------------------------------------------------
-// detectDuplicates — batch lookup called by wizard UI before final submission
+// detectDuplicates -- batch lookup called by wizard UI before final submission
 // ---------------------------------------------------------------------------
 
 /**
@@ -57,7 +57,9 @@ export async function detectDuplicates(
   emails: string[],
   phones: string[],
 ): Promise<Record<string, DuplicateMatch>> {
-  // Normalise inputs — filter out empty strings
+  await requireAuth("editor");
+
+  // Normalise inputs -- filter out empty strings
   const cleanEmails = emails.map((e) => e.trim().toLowerCase()).filter(Boolean);
   const cleanPhones = phones.map((p) => p.trim()).filter(Boolean);
 
@@ -65,7 +67,7 @@ export async function detectDuplicates(
     return {};
   }
 
-  // Build OR conditions — only include non-empty arrays to avoid Drizzle inArray([]) error
+  // Build OR conditions -- only include non-empty arrays to avoid Drizzle inArray([]) error
   const conditions = [];
   if (cleanEmails.length > 0) {
     conditions.push(inArray(candidates.email, cleanEmails));
@@ -118,7 +120,7 @@ export async function detectDuplicates(
 }
 
 // ---------------------------------------------------------------------------
-// importCandidates — main server action called after Step 3 wizard completion
+// importCandidates -- main server action called after Step 3 wizard completion
 // ---------------------------------------------------------------------------
 
 /**
@@ -132,7 +134,7 @@ export async function detectDuplicates(
  * Returns ImportResult with full accounting of what happened.
  *
  * IMPORTANT: This action executes the decisions already made by the user in the
- * wizard Step 3. It does NOT auto-decide merges — that is the user's job.
+ * wizard Step 3. It does NOT auto-decide merges -- that is the user's job.
  */
 export interface ImportSourceInfo {
   sourceName?: string;
@@ -147,6 +149,8 @@ export async function importCandidates(
   sourceInfo?: ImportSourceInfo,
 ): Promise<ImportResult | { error: string }> {
   try {
+    const user = await requireAuth("editor");
+
     // ------------------------------------------------------------------
     // 1. Validate targetRoleId
     // ------------------------------------------------------------------
@@ -187,7 +191,7 @@ export async function importCandidates(
         totalRows: rows.length,
         importedCount: 0,
         skippedCount: 0,
-        createdBy: MOCK_USER.name,
+        createdBy: user.name,
       })
       .returning({ id: importBatches.id });
 
@@ -219,7 +223,7 @@ export async function importCandidates(
           resumeUrl: row.resumeUrl ?? null,
           isDuplicate: false,
           importBatchId: batchId,
-          createdBy: MOCK_USER.name,
+          createdBy: user.name,
         }));
 
         const inserted = await tx
@@ -239,7 +243,7 @@ export async function importCandidates(
               eventType: "imported",
               fromValue: null,
               toValue: "left_to_review",
-              createdBy: MOCK_USER.name,
+              createdBy: user.name,
             })),
           );
         }
@@ -257,7 +261,7 @@ export async function importCandidates(
           .limit(1);
 
         if (!existing) {
-          // Target no longer exists — skip silently
+          // Target no longer exists -- skip silently
           continue;
         }
 
@@ -294,7 +298,7 @@ export async function importCandidates(
           eventType: "imported",
           fromValue: null,
           toValue: "merged",
-          createdBy: MOCK_USER.name,
+          createdBy: user.name,
         });
       }
 

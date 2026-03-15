@@ -1,8 +1,5 @@
 import { getAuthUser } from "@/lib/auth";
-import {
-  getNotifications,
-  getUnreadCount,
-} from "@/lib/actions/notifications";
+import { getNotifications, getUnreadCount } from "@/lib/actions/notifications";
 import { NotificationBell } from "@/components/layout/notification-bell";
 
 /**
@@ -14,8 +11,8 @@ export async function NotificationBellServer() {
   if (!user) return null;
 
   const [notifications, unreadCount] = await Promise.all([
-    getNotifications(user.id),
-    getUnreadCount(user.id),
+    getNotifications(),
+    getUnreadCount(),
   ]);
 
   return (

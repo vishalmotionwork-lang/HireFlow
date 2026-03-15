@@ -3,6 +3,7 @@
 import { eq, desc, and, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { notifications } from "@/db/schema";
+import { requireAuth, getAuthUser } from "@/lib/auth";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -30,39 +31,40 @@ export interface NotificationRow {
 }
 
 // ---------------------------------------------------------------------------
-// Queries
+// Queries -- derive userId from session, not client parameter
 // ---------------------------------------------------------------------------
 
 /**
- * Fetch up to 50 notifications for a user, newest first.
+ * Fetch up to 50 notifications for the authenticated user, newest first.
+ * userId is derived from the session to prevent IDOR.
  */
-export async function getNotifications(
-  userId: string,
-): Promise<ReadonlyArray<NotificationRow>> {
-  if (!userId) return [];
+export async function getNotifications(): Promise<
+  ReadonlyArray<NotificationRow>
+> {
+  const user = await getAuthUser();
+  if (!user) return [];
 
   return db
     .select()
     .from(notifications)
-    .where(eq(notifications.userId, userId))
+    .where(eq(notifications.userId, user.id))
     .orderBy(desc(notifications.createdAt))
     .limit(50);
 }
 
 /**
- * Count unread notifications for a user.
+ * Count unread notifications for the authenticated user.
+ * userId is derived from the session to prevent IDOR.
  */
-export async function getUnreadCount(userId: string): Promise<number> {
-  if (!userId) return 0;
+export async function getUnreadCount(): Promise<number> {
+  const user = await getAuthUser();
+  if (!user) return 0;
 
   const [result] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(notifications)
     .where(
-      and(
-        eq(notifications.userId, userId),
-        eq(notifications.isRead, false),
-      ),
+      and(eq(notifications.userId, user.id), eq(notifications.isRead, false)),
     );
 
   return result?.count ?? 0;
@@ -74,6 +76,9 @@ export async function getUnreadCount(userId: string): Promise<number> {
 
 /**
  * Create a single notification record.
+ * This is an internal function called by other server actions
+ * (e.g., notifyMentionedMembers) to create notifications for specific users.
+ * The userId here is the target recipient, not the current user.
  */
 export async function createNotification(
   input: CreateNotificationInput,
@@ -89,33 +94,39 @@ export async function createNotification(
 
 /**
  * Mark a single notification as read.
+ * Verifies the notification belongs to the authenticated user.
  */
 export async function markNotificationRead(
   notificationId: string,
 ): Promise<void> {
   if (!notificationId) return;
 
-  await db
-    .update(notifications)
-    .set({ isRead: true })
-    .where(eq(notifications.id, notificationId));
-}
-
-/**
- * Mark all notifications for a user as read.
- */
-export async function markAllNotificationsRead(
-  userId: string,
-): Promise<void> {
-  if (!userId) return;
+  const user = await requireAuth();
+  if (!user) return;
 
   await db
     .update(notifications)
     .set({ isRead: true })
     .where(
       and(
-        eq(notifications.userId, userId),
-        eq(notifications.isRead, false),
+        eq(notifications.id, notificationId),
+        eq(notifications.userId, user.id),
       ),
+    );
+}
+
+/**
+ * Mark all notifications for the authenticated user as read.
+ * userId is derived from the session to prevent IDOR.
+ */
+export async function markAllNotificationsRead(): Promise<void> {
+  const user = await requireAuth();
+  if (!user) return;
+
+  await db
+    .update(notifications)
+    .set({ isRead: true })
+    .where(
+      and(eq(notifications.userId, user.id), eq(notifications.isRead, false)),
     );
 }

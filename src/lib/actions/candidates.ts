@@ -1,11 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { candidates, candidateEvents, candidateComments } from "@/db/schema";
-import { MOCK_USER } from "@/lib/constants";
+import { requireAuth, getAuthUser } from "@/lib/auth";
 import { getCandidateWithEvents } from "@/lib/queries/candidates";
 import type { CandidateStatus, Tier } from "@/types";
 
@@ -60,6 +60,8 @@ export async function createCandidate(
   formData: FormData,
 ): Promise<ActionResult> {
   try {
+    const user = await requireAuth("editor");
+
     const raw = {
       roleId: formData.get("roleId"),
       name: formData.get("name"),
@@ -90,7 +92,7 @@ export async function createCandidate(
         phone: normalizeEmpty(phone),
         instagram: normalizeEmpty(instagram),
         portfolioUrl: normalizeEmpty(portfolioUrl),
-        createdBy: MOCK_USER.name,
+        createdBy: user.name,
       })
       .returning({ id: candidates.id });
 
@@ -98,23 +100,26 @@ export async function createCandidate(
       return { error: "Failed to create candidate" };
     }
 
-    // INSERT ONLY — log creation event
+    // INSERT ONLY -- log creation event
     await db.insert(candidateEvents).values({
       candidateId: newCandidate.id,
       eventType: "created",
       fromValue: null,
       toValue: "left_to_review",
-      createdBy: MOCK_USER.name,
+      createdBy: user.name,
     });
 
     // Activity record for dashboard feed
     const { createActivity } = await import("@/lib/actions/activities");
-    await createActivity({
-      type: "created",
-      candidateId: newCandidate.id,
-      candidateName: name,
-      roleId,
-    });
+    await createActivity(
+      {
+        type: "created",
+        candidateId: newCandidate.id,
+        candidateName: name,
+        roleId,
+      },
+      { id: user.id, name: user.name, avatar: user.avatar },
+    );
 
     revalidatePath("/", "layout");
     return { success: true };
@@ -136,6 +141,8 @@ export async function changeStatus(
   rejection?: { reason: string; message: string },
 ): Promise<ActionResult> {
   try {
+    const user = await requireAuth("editor");
+
     await db.transaction(async (tx) => {
       const updatePayload: Record<string, unknown> = {
         status: toStatus,
@@ -158,27 +165,30 @@ export async function changeStatus(
         .set(updatePayload)
         .where(eq(candidates.id, candidateId));
 
-      // INSERT ONLY — status change event log
+      // INSERT ONLY -- status change event log
       await tx.insert(candidateEvents).values({
         candidateId,
         eventType: "status_change",
         fromValue: fromStatus,
         toValue: toStatus,
-        createdBy: MOCK_USER.name,
+        createdBy: user.name,
       });
     });
 
-    // Create activity record (non-blocking — outside transaction)
+    // Create activity record (non-blocking -- outside transaction)
     const { createActivity } = await import("@/lib/actions/activities");
-    await createActivity({
-      type: toStatus === "rejected" ? "rejected" : "status_change",
-      candidateId,
-      metadata: {
-        from: fromStatus,
-        to: toStatus,
-        ...(rejection ? { reason: rejection.reason } : {}),
+    await createActivity(
+      {
+        type: toStatus === "rejected" ? "rejected" : "status_change",
+        candidateId,
+        metadata: {
+          from: fromStatus,
+          to: toStatus,
+          ...(rejection ? { reason: rejection.reason } : {}),
+        },
       },
-    });
+      { id: user.id, name: user.name, avatar: user.avatar },
+    );
 
     revalidatePath("/", "layout");
     return { success: true };
@@ -198,19 +208,21 @@ export async function changeTier(
   toTier: Tier,
 ): Promise<ActionResult> {
   try {
+    const user = await requireAuth("editor");
+
     await db.transaction(async (tx) => {
       await tx
         .update(candidates)
         .set({ tier: toTier, updatedAt: new Date() })
         .where(eq(candidates.id, candidateId));
 
-      // INSERT ONLY — tier change event log
+      // INSERT ONLY -- tier change event log
       await tx.insert(candidateEvents).values({
         candidateId,
         eventType: "tier_change",
         fromValue: fromTier,
         toValue: toTier,
-        createdBy: MOCK_USER.name,
+        createdBy: user.name,
       });
     });
 
@@ -232,6 +244,8 @@ export async function updateCandidateField(
   value: string,
 ): Promise<ActionResult> {
   try {
+    await requireAuth("editor");
+
     if (!UPDATABLE_FIELDS.includes(field as UpdatableField)) {
       return {
         error: `Field '${field}' is not allowed. Allowed fields: ${UPDATABLE_FIELDS.join(", ")}`,
@@ -278,11 +292,12 @@ export async function updateCandidateField(
 /**
  * Server action wrapper for getCandidateWithEvents.
  * Safe to call from client components via useEffect or startTransition.
- * Drizzle queries cannot run directly in client components — this wrapper
- * exposes them as a 'use server' boundary.
  */
 export async function fetchCandidateProfile(candidateId: string) {
   try {
+    const user = await getAuthUser();
+    if (!user) return null;
+
     return await getCandidateWithEvents(candidateId);
   } catch (err) {
     console.error("[fetchCandidateProfile] Error:", err);
@@ -296,6 +311,9 @@ export async function fetchCandidateProfile(candidateId: string) {
  */
 export async function checkDuplicatesAction(candidateId: string) {
   try {
+    const user = await getAuthUser();
+    if (!user) return [];
+
     const [candidate] = await db
       .select({ email: candidates.email, phone: candidates.phone })
       .from(candidates)
@@ -325,6 +343,8 @@ export async function mergeCandidates(
   targetId: string,
 ): Promise<ActionResult> {
   try {
+    const user = await requireAuth("editor");
+
     const [source] = await db
       .select()
       .from(candidates)
@@ -342,7 +362,7 @@ export async function mergeCandidates(
     }
 
     await db.transaction(async (tx) => {
-      // Merge contact info — prefer non-null target values
+      // Merge contact info -- prefer non-null target values
       await tx
         .update(candidates)
         .set({
@@ -380,12 +400,15 @@ export async function mergeCandidates(
 
     // Activity record
     const { createActivity } = await import("@/lib/actions/activities");
-    await createActivity({
-      type: "merged",
-      candidateId: targetId,
-      candidateName: target.name,
-      metadata: { mergedFrom: source.name, sourceId },
-    });
+    await createActivity(
+      {
+        type: "merged",
+        candidateId: targetId,
+        candidateName: target.name,
+        metadata: { mergedFrom: source.name, sourceId },
+      },
+      { id: user.id, name: user.name, avatar: user.avatar },
+    );
 
     revalidatePath("/", "layout");
     return { success: true };
@@ -406,6 +429,8 @@ export async function deleteCandidates(
   }
 
   try {
+    await requireAuth("admin");
+
     const { inArray } = await import("drizzle-orm");
 
     await db
@@ -418,5 +443,38 @@ export async function deleteCandidates(
   } catch (err) {
     console.error("[deleteCandidates] Error:", err);
     return { error: "Failed to delete candidates. Please try again." };
+  }
+}
+
+/**
+ * Reorder candidates by updating their sort_order column.
+ * Uses a single SQL CASE statement for efficiency.
+ */
+export async function reorderCandidates(
+  orderedIds: string[],
+): Promise<ActionResult> {
+  await requireAuth("editor");
+
+  if (orderedIds.length === 0) {
+    return { error: "No candidates to reorder" };
+  }
+
+  try {
+    const whenClauses = orderedIds
+      .map((id, index) => sql`WHEN ${id} THEN ${index}`)
+      .reduce((acc, clause) => sql`${acc} ${clause}`);
+
+    await db.execute(
+      sql`UPDATE candidates SET sort_order = CASE id::text ${whenClauses} ELSE sort_order END WHERE id::text IN (${sql.join(
+        orderedIds.map((id) => sql`${id}`),
+        sql`,`,
+      )})`,
+    );
+
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch (err) {
+    console.error("[reorderCandidates] Error:", err);
+    return { error: "Failed to reorder candidates. Please try again." };
   }
 }

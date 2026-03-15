@@ -6,10 +6,10 @@ import {
   importBatches,
   roles,
 } from "@/db/schema";
-import { eq, inArray, and, or, count } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { runExtraction, runRegexOnly } from "@/lib/ai/extract";
 import { scrapeUrl } from "@/lib/extraction/firecrawl";
-import { MOCK_USER } from "@/lib/constants";
+import { requireAuth, getAuthUser } from "@/lib/auth";
 
 const MAX_URLS_PER_BATCH = 20;
 
@@ -22,12 +22,14 @@ const MAX_URLS_PER_BATCH = 20;
  * Creates an importBatch + one extractionDraft per URL, then fires-and-forgets
  * the actual scraping work via next/server after() so the response returns immediately.
  *
- * Returns { batchId } — client polls /api/extraction-status/[batchId] for progress.
+ * Returns { batchId } -- client polls /api/extraction-status/[batchId] for progress.
  */
 export async function startExtractions(
   urls: string[],
   roleId: string,
 ): Promise<{ batchId: string }> {
+  const user = await requireAuth("editor");
+
   // Validate
   if (!urls || urls.length === 0) {
     throw new Error("At least one URL is required");
@@ -49,7 +51,7 @@ export async function startExtractions(
       roleId,
       source: "url",
       totalRows: urls.length,
-      createdBy: MOCK_USER.name,
+      createdBy: user.name,
     })
     .returning();
 
@@ -61,12 +63,12 @@ export async function startExtractions(
         importBatchId: batch.id,
         sourceUrl: url,
         status: "pending" as const,
-        createdBy: MOCK_USER.name,
+        createdBy: user.name,
       })),
     )
     .returning();
 
-  // Background processing — parallel with concurrency limit of 3
+  // Background processing -- parallel with concurrency limit of 3
   // Fire-and-forget background processing
   void (async () => {
     const CONCURRENCY = 3;
@@ -135,6 +137,8 @@ export async function startSingleExtraction(
   roleId: string,
 ): Promise<{ batchId: string; candidateId: string; error?: string }> {
   try {
+    const user = await requireAuth("editor");
+
     if (!roleId || roleId.trim() === "") {
       return {
         batchId: "",
@@ -147,14 +151,14 @@ export async function startSingleExtraction(
       return { batchId: "", candidateId: "", error: "Role not found" };
     }
 
-    // Create records only — actual scraping happens via API route
+    // Create records only -- actual scraping happens via API route
     const [batch] = await db
       .insert(importBatches)
       .values({
         roleId,
         source: "url",
         totalRows: 1,
-        createdBy: MOCK_USER.name,
+        createdBy: user.name,
       })
       .returning();
 
@@ -166,7 +170,7 @@ export async function startSingleExtraction(
         source: "url",
         portfolioUrl: url,
         importBatchId: batch.id,
-        createdBy: MOCK_USER.name,
+        createdBy: user.name,
       })
       .returning();
 
@@ -175,7 +179,7 @@ export async function startSingleExtraction(
       importBatchId: batch.id,
       sourceUrl: url,
       status: "pending",
-      createdBy: MOCK_USER.name,
+      createdBy: user.name,
     });
 
     return { batchId: batch.id, candidateId: candidate.id };
@@ -190,13 +194,15 @@ export async function startSingleExtraction(
 }
 
 /**
- * Confirm an extraction draft — applies extracted + edited data to the candidate.
+ * Confirm an extraction draft -- applies extracted + edited data to the candidate.
  * If draft has a candidateId, updates that candidate. Otherwise, creates a new one.
  */
 export async function confirmExtraction(
   draftId: string,
   edits: Record<string, string>,
 ): Promise<{ success: boolean; candidateId: string }> {
+  const user = await requireAuth("editor");
+
   const [draft] = await db
     .select()
     .from(extractionDrafts)
@@ -217,7 +223,7 @@ export async function confirmExtraction(
   const merged: Record<string, unknown> = {
     ...extracted,
     ...edits,
-    lastModifiedBy: MOCK_USER.name,
+    lastModifiedBy: user.name,
     updatedAt: new Date(),
   };
 
@@ -234,7 +240,7 @@ export async function confirmExtraction(
         instagram: (merged.instagram as string) || null,
         portfolioLinks: (merged.portfolioLinks as object[]) || [],
         socialHandles: (merged.socialHandles as object[]) || [],
-        lastModifiedBy: MOCK_USER.name,
+        lastModifiedBy: user.name,
         updatedAt: new Date(),
       })
       .where(eq(candidates.id, draft.candidateId));
@@ -268,7 +274,7 @@ export async function confirmExtraction(
         socialHandles: (merged.socialHandles as object[]) || [],
         source: "url",
         importBatchId: draft.importBatchId,
-        createdBy: MOCK_USER.name,
+        createdBy: user.name,
       })
       .returning();
 
@@ -285,11 +291,13 @@ export async function confirmExtraction(
 }
 
 /**
- * Skip an extraction draft — marks it reviewed without applying any changes.
+ * Skip an extraction draft -- marks it reviewed without applying any changes.
  */
 export async function skipExtraction(
   draftId: string,
 ): Promise<{ success: boolean }> {
+  await requireAuth("editor");
+
   await db
     .update(extractionDrafts)
     .set({ status: "reviewed", reviewedAt: new Date() })
@@ -311,6 +319,8 @@ export async function createExtractionDraft(input: {
   sourceUrl?: string;
   rawText?: string;
 }) {
+  const user = await requireAuth("editor");
+
   const [draft] = await db
     .insert(extractionDrafts)
     .values({
@@ -319,7 +329,7 @@ export async function createExtractionDraft(input: {
       sourceUrl: input.sourceUrl,
       rawText: input.rawText,
       status: "pending",
-      createdBy: MOCK_USER.name,
+      createdBy: user.name,
     })
     .returning();
 
@@ -327,9 +337,11 @@ export async function createExtractionDraft(input: {
 }
 
 /**
- * Process a single extraction draft — runs the full AI pipeline.
+ * Process a single extraction draft -- runs the full AI pipeline.
  */
 export async function processExtraction(draftId: string) {
+  await requireAuth("editor");
+
   // Mark as processing
   await db
     .update(extractionDrafts)
@@ -400,6 +412,8 @@ export async function applyExtraction(
     socialHandles?: Array<{ platform: string; handle: string; url: string }>;
   },
 ) {
+  const user = await requireAuth("editor");
+
   const [draft] = await db
     .select()
     .from(extractionDrafts)
@@ -409,9 +423,9 @@ export async function applyExtraction(
     throw new Error("Draft has no associated candidate");
   }
 
-  // Build update object — only include non-null overrides
+  // Build update object -- only include non-null overrides
   const updateData: Record<string, unknown> = {
-    lastModifiedBy: MOCK_USER.name,
+    lastModifiedBy: user.name,
     updatedAt: new Date(),
   };
 
@@ -442,13 +456,18 @@ export async function applyExtraction(
  * Quick regex-only extraction (no AI). Returns result without persisting.
  */
 export async function previewExtraction(rawText: string, sourceUrl?: string) {
+  await requireAuth("editor");
   return runRegexOnly(rawText, sourceUrl);
 }
 
 /**
  * Get all extraction drafts for a candidate.
+ * Read-only -- requires authenticated user.
  */
 export async function getExtractionDrafts(candidateId: string) {
+  const user = await getAuthUser();
+  if (!user) return [];
+
   return db
     .select()
     .from(extractionDrafts)
@@ -457,8 +476,12 @@ export async function getExtractionDrafts(candidateId: string) {
 
 /**
  * Get pending/processing extraction drafts (for queue UI).
+ * Read-only -- requires authenticated user.
  */
 export async function getPendingExtractions() {
+  const user = await getAuthUser();
+  if (!user) return [];
+
   return db
     .select()
     .from(extractionDrafts)
@@ -472,8 +495,12 @@ export async function getPendingExtractions() {
 
 /**
  * Get completed extractions awaiting review.
+ * Read-only -- requires authenticated user.
  */
 export async function getCompletedExtractions() {
+  const user = await getAuthUser();
+  if (!user) return [];
+
   return db
     .select()
     .from(extractionDrafts)
@@ -484,6 +511,8 @@ export async function getCompletedExtractions() {
  * Process all pending extractions (batch worker).
  */
 export async function processPendingExtractions() {
+  await requireAuth("editor");
+
   const pending = await db
     .select()
     .from(extractionDrafts)
@@ -491,8 +520,52 @@ export async function processPendingExtractions() {
 
   const results = [];
   for (const draft of pending) {
-    const result = await processExtraction(draft.id);
-    results.push({ draftId: draft.id, result });
+    // processExtraction already has auth, but we're calling internally
+    // so we process directly to avoid redundant auth checks
+    await db
+      .update(extractionDrafts)
+      .set({ status: "processing" })
+      .where(eq(extractionDrafts.id, draft.id));
+
+    const rawText = draft.rawText ?? "";
+
+    if (!rawText.trim()) {
+      await db
+        .update(extractionDrafts)
+        .set({ status: "failed", error: "No raw text to extract from" })
+        .where(eq(extractionDrafts.id, draft.id));
+      results.push({ draftId: draft.id, result: null });
+      continue;
+    }
+
+    try {
+      const result = await runExtraction({
+        rawText,
+        sourceUrl: draft.sourceUrl ?? undefined,
+        candidateId: draft.candidateId ?? undefined,
+      });
+
+      await db
+        .update(extractionDrafts)
+        .set({
+          status: "completed",
+          extractedData: result.data,
+          platform: result.platform,
+          overallConfidence: Math.round(result.overallConfidence * 100),
+          fieldConfidence: result.fieldConfidence,
+          error: result.error,
+        })
+        .where(eq(extractionDrafts.id, draft.id));
+
+      results.push({ draftId: draft.id, result });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      await db
+        .update(extractionDrafts)
+        .set({ status: "failed", error: message })
+        .where(eq(extractionDrafts.id, draft.id));
+      results.push({ draftId: draft.id, result: null });
+    }
   }
 
   return results;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef, useEffect, useTransition } from "react";
 
 interface EditFieldProps {
   value: string;
@@ -14,11 +14,16 @@ export function EditField({ value, onSave, placeholder }: EditFieldProps) {
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-focus input when entering edit mode
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+    }
+  }, [editing]);
+
   const startEditing = () => {
     setDraft(value);
     setEditing(true);
-    // Auto-focus input after state update renders the input
-    setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   const handleSave = () => {

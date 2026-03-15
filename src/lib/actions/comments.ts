@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { eq, and, desc, gt } from "drizzle-orm";
 import { db } from "@/db";
 import { candidateComments, candidates, roles, teamMembers } from "@/db/schema";
-import { MOCK_USER } from "@/lib/constants";
+import { requireAuth, getAuthUser } from "@/lib/auth";
 import { createActivity } from "@/lib/actions/activities";
 import { createNotification } from "@/lib/actions/notifications";
 import { sendMentionNotificationEmail } from "@/lib/email";
@@ -24,6 +24,8 @@ export async function createComment(
   mentions: Array<{ userId: string; name: string }> = [],
 ): Promise<ActionResult> {
   try {
+    const user = await requireAuth("editor");
+
     if (!body.trim()) {
       return { error: "Comment cannot be empty" };
     }
@@ -34,14 +36,17 @@ export async function createComment(
       candidateId,
       body: trimmedBody,
       mentions,
-      createdBy: MOCK_USER.name,
+      createdBy: user.name,
     });
 
-    await createActivity({
-      type: "comment",
-      candidateId,
-      metadata: { body: trimmedBody.slice(0, 100) },
-    });
+    await createActivity(
+      {
+        type: "comment",
+        candidateId,
+        metadata: { body: trimmedBody.slice(0, 100) },
+      },
+      { id: user.id, name: user.name, avatar: user.avatar },
+    );
 
     // Send mention notification emails (fire-and-forget, non-blocking)
     if (mentions.length > 0) {
@@ -49,7 +54,7 @@ export async function createComment(
         mentions,
         candidateId,
         commentBody: trimmedBody,
-        commenterName: MOCK_USER.name,
+        commenterName: user.name,
       }).catch((err) =>
         console.error("[createComment] mention notification error:", err),
       );
@@ -159,12 +164,12 @@ async function notifyMentionedMembers(params: {
         }),
       ];
 
-      // WhatsApp — one simple message with link
+      // WhatsApp -- one simple message with link
       if (whatsappConfigured && recipient.whatsappEnabled && recipient.phone) {
         tasks.push(
           sendWhatsAppText(
             recipient.phone,
-            `[HireFlow] ${commenterName} mentioned you on ${candidateName} — ${candidateUrl}`,
+            `[HireFlow] ${commenterName} mentioned you on ${candidateName} -- ${candidateUrl}`,
           ),
         );
       }
@@ -176,12 +181,15 @@ async function notifyMentionedMembers(params: {
 
 /**
  * Edit an existing comment. Only the author can edit, within 5 minutes.
+ * Uses user.name from session to verify ownership.
  */
 export async function editComment(
   commentId: string,
   body: string,
 ): Promise<ActionResult> {
   try {
+    const user = await requireAuth("editor");
+
     if (!body.trim()) {
       return { error: "Comment cannot be empty" };
     }
@@ -194,7 +202,7 @@ export async function editComment(
       .where(
         and(
           eq(candidateComments.id, commentId),
-          eq(candidateComments.createdBy, MOCK_USER.name),
+          eq(candidateComments.createdBy, user.name),
           gt(candidateComments.createdAt, fiveMinAgo),
         ),
       )
@@ -220,9 +228,46 @@ export async function editComment(
 }
 
 /**
+ * Delete a comment. Only the author can delete.
+ */
+export async function deleteComment(commentId: string): Promise<ActionResult> {
+  try {
+    const user = await requireAuth("editor");
+
+    const [comment] = await db
+      .select({ createdBy: candidateComments.createdBy })
+      .from(candidateComments)
+      .where(eq(candidateComments.id, commentId))
+      .limit(1);
+
+    if (!comment) {
+      return { error: "Comment not found" };
+    }
+
+    if (comment.createdBy !== user.name) {
+      return { error: "You can only delete your own comments" };
+    }
+
+    await db
+      .delete(candidateComments)
+      .where(eq(candidateComments.id, commentId));
+
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch (err) {
+    console.error("[deleteComment] Error:", err);
+    return { error: "Failed to delete comment. Please try again." };
+  }
+}
+
+/**
  * Get all comments for a candidate, newest first.
+ * Read-only -- requires authenticated user.
  */
 export async function getComments(candidateId: string) {
+  const user = await getAuthUser();
+  if (!user) return [];
+
   return db
     .select()
     .from(candidateComments)
@@ -232,11 +277,15 @@ export async function getComments(candidateId: string) {
 
 /**
  * Get active team members for @mention autocomplete.
- * Returns only id and name — no sensitive data sent to the client.
+ * Returns only id and name -- no sensitive data sent to the client.
+ * Read-only -- requires authenticated user.
  */
 export async function getMentionableMembers(): Promise<
   Array<{ id: string; name: string }>
 > {
+  const user = await getAuthUser();
+  if (!user) return [];
+
   const members = await db
     .select({
       id: teamMembers.id,

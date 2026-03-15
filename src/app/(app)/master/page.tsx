@@ -37,11 +37,14 @@ export default async function MasterPage({ searchParams }: MasterPageProps) {
       ? rawTier
       : null;
 
-  const rawSort = typeof sp.sort === "string" ? sp.sort : "updated";
-  const sort: "newest" | "oldest" | "name_asc" | "updated" =
-    rawSort === "oldest" || rawSort === "name_asc" || rawSort === "newest"
+  const rawSort = typeof sp.sort === "string" ? sp.sort : "priority";
+  const sort: "newest" | "oldest" | "name_asc" | "updated" | "priority" =
+    rawSort === "oldest" ||
+    rawSort === "name_asc" ||
+    rawSort === "newest" ||
+    rawSort === "priority"
       ? rawSort
-      : "updated";
+      : "priority";
 
   const q = typeof sp.q === "string" ? sp.q : "";
 

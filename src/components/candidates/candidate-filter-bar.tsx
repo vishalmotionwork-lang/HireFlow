@@ -31,6 +31,7 @@ const DATE_OPTIONS = [
 ] as const;
 
 const SORT_OPTIONS = [
+  { value: "priority", label: "Priority" },
   { value: "newest", label: "Newest" },
   { value: "oldest", label: "Oldest" },
   { value: "name_asc", label: "Name A–Z" },
@@ -78,7 +79,7 @@ export function CandidateFilterBar({
 
   const selectedTier = searchParams.get("tier") ?? "all";
   const selectedDate = searchParams.get("date") ?? "";
-  const selectedSort = searchParams.get("sort") ?? "updated";
+  const selectedSort = searchParams.get("sort") ?? "priority";
   const duplicatesOnly = searchParams.get("duplicates") === "true";
 
   // Role multi-select (comma-separated role IDs, master view only)

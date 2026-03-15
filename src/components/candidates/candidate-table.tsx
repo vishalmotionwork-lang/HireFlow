@@ -211,7 +211,6 @@ export function CandidateTable({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="w-8 px-1 py-2" aria-label="Reorder" />
                 <th className="w-8 px-2 py-2">
                   <input
                     type="checkbox"

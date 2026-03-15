@@ -141,41 +141,41 @@ export function CandidateRow({
       )}
 
       {/* Email */}
-      <td className="hidden lg:table-cell px-3 py-2.5 max-w-[180px]">
-        <span className="text-sm text-gray-500 truncate block">
-          {candidate.email ?? <span className="text-gray-300">--</span>}
+      <td className="hidden lg:table-cell px-3 py-2.5">
+        <span className="text-sm text-gray-500 truncate block max-w-[200px]">
+          {candidate.email || <span className="text-gray-300">—</span>}
         </span>
       </td>
 
       {/* Portfolio Link */}
-      <td className="hidden xl:table-cell px-3 py-2.5 max-w-[160px]">
+      <td className="hidden xl:table-cell px-3 py-2.5">
         {candidate.portfolioUrl ? (
           <a
             href={candidate.portfolioUrl}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate block"
+            className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate block max-w-[180px]"
             title={candidate.portfolioUrl}
           >
             {stripProtocol(candidate.portfolioUrl)}
           </a>
         ) : (
-          <span className="text-gray-300 text-sm">--</span>
+          <span className="text-gray-300 text-sm">—</span>
         )}
       </td>
 
       {/* Phone/WhatsApp */}
       <td className="hidden xl:table-cell px-3 py-2.5">
-        <span className="text-sm text-gray-500">
-          {candidate.phone ?? <span className="text-gray-300">--</span>}
+        <span className="text-sm text-gray-500 tabular-nums">
+          {candidate.phone || <span className="text-gray-300">—</span>}
         </span>
       </td>
 
       {/* Instagram */}
       <td className="hidden lg:table-cell px-3 py-2.5">
-        <span className="text-sm text-gray-500">
-          {instagramHandle ?? <span className="text-gray-300">--</span>}
+        <span className="text-sm text-gray-500 truncate block max-w-[120px]">
+          {instagramHandle || <span className="text-gray-300">—</span>}
         </span>
       </td>
 
@@ -192,10 +192,7 @@ export function CandidateRow({
         <TierBadge candidateId={candidate.id} tier={candidate.tier} />
       </td>
 
-      {/* Rating */}
-      <td className="hidden sm:table-cell px-3 py-2.5">
-        <CompactStarRating candidateId={candidate.id} />
-      </td>
+      {/* Rating — only show in drawer for now, not in table */}
 
       {/* Date Added */}
       <td className="hidden md:table-cell px-3 py-2.5 whitespace-nowrap">

@@ -82,10 +82,7 @@ export function CandidateTable({
   }, []);
 
   const candidates = orderedCandidates;
-  const candidateIds = useMemo(
-    () => candidates.map((c) => c.id),
-    [candidates],
-  );
+  const candidateIds = useMemo(() => candidates.map((c) => c.id), [candidates]);
 
   // DnD sensors with activation constraint to avoid accidental drags
   const sensors = useSensors(
@@ -185,10 +182,10 @@ export function CandidateTable({
     candidates.length > 0 && selectedIds.size === candidates.length;
 
   const isEmpty = candidates.length === 0 && !showAddRow;
-  const colCount = (showRoleColumn ? 9 : 8) + 1 + 1; // +1 checkbox, +1 drag handle
+  const colCount = (showRoleColumn ? 9 : 8) + 1; // +1 checkbox
 
   const activeDragCandidate = activeDragId
-    ? candidates.find((c) => c.id === activeDragId) ?? null
+    ? (candidates.find((c) => c.id === activeDragId) ?? null)
     : null;
 
   return (
@@ -258,7 +255,10 @@ export function CandidateTable({
             <tbody>
               {/* Inline add row -- shown at top when active */}
               {showAddRow && (
-                <CandidateAddRow roleId={roleId} onCancel={handleAddRowCancel} />
+                <CandidateAddRow
+                  roleId={roleId}
+                  onCancel={handleAddRowCancel}
+                />
               )}
 
               {/* Candidate rows with sortable context */}
@@ -324,7 +324,8 @@ export function CandidateTable({
                         No candidates yet
                       </p>
                       <p className="text-xs text-gray-400">
-                        Click &ldquo;+ Add Candidate&rdquo; to add the first one.
+                        Click &ldquo;+ Add Candidate&rdquo; to add the first
+                        one.
                       </p>
                     </div>
                   </td>

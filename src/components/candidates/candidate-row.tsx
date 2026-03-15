@@ -97,10 +97,8 @@ export function CandidateRow({
 
   return (
     <tr onClick={handleRowClick} className={rowClass}>
-      {/* Drag handle */}
-      <td className="w-8 px-1 py-2.5">
-        {dragHandle ?? <div className="w-5" />}
-      </td>
+      {/* Drag handle — only render if provided */}
+      {dragHandle && <td className="w-6 px-0.5 py-2.5">{dragHandle}</td>}
 
       {/* Checkbox */}
       <td className="w-8 px-2 py-2.5">

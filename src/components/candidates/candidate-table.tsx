@@ -220,33 +220,33 @@ export function CandidateTable({
                     aria-label="Select all candidates"
                   />
                 </th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <th className="px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Name
                 </th>
                 {showRoleColumn && (
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     Role
                   </th>
                 )}
-                <th className="hidden lg:table-cell px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <th className="hidden lg:table-cell px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Email
                 </th>
-                <th className="hidden xl:table-cell px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <th className="hidden xl:table-cell px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Portfolio
                 </th>
-                <th className="hidden xl:table-cell px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <th className="hidden xl:table-cell px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Phone
                 </th>
-                <th className="hidden lg:table-cell px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <th className="hidden lg:table-cell px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Instagram
                 </th>
-                <th className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <th className="px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Status
                 </th>
-                <th className="hidden sm:table-cell px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <th className="hidden sm:table-cell px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Tier
                 </th>
-                <th className="hidden md:table-cell px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <th className="hidden md:table-cell px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Added
                 </th>
               </tr>

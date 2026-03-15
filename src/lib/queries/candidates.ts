@@ -130,15 +130,15 @@ export async function getCandidates({
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-  // orderBy mapping
+  // orderBy mapping — default is "updated" so status changes bubble to top
   const orderByClause =
     sort === "oldest"
       ? asc(candidates.createdAt)
       : sort === "name_asc"
         ? asc(candidates.name)
-        : sort === "updated"
-          ? desc(candidates.updatedAt)
-          : desc(candidates.createdAt); // newest (default)
+        : sort === "newest"
+          ? desc(candidates.createdAt)
+          : desc(candidates.updatedAt); // updated (default)
 
   // Count query — uses SAME conditions (shared array)
   const [countResult] = await db

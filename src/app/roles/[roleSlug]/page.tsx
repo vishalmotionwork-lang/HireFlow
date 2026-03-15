@@ -46,11 +46,11 @@ export default async function RolePage({
       ? rawTier
       : null;
 
-  const rawSort = typeof sp.sort === "string" ? sp.sort : "newest";
+  const rawSort = typeof sp.sort === "string" ? sp.sort : "updated";
   const sort: "newest" | "oldest" | "name_asc" | "updated" =
-    rawSort === "oldest" || rawSort === "name_asc" || rawSort === "updated"
+    rawSort === "oldest" || rawSort === "name_asc" || rawSort === "newest"
       ? rawSort
-      : "newest";
+      : "updated";
 
   const q = typeof sp.q === "string" ? sp.q : "";
 

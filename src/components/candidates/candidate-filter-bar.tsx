@@ -78,7 +78,7 @@ export function CandidateFilterBar({
 
   const selectedTier = searchParams.get("tier") ?? "all";
   const selectedDate = searchParams.get("date") ?? "";
-  const selectedSort = searchParams.get("sort") ?? "newest";
+  const selectedSort = searchParams.get("sort") ?? "updated";
   const duplicatesOnly = searchParams.get("duplicates") === "true";
 
   // Role multi-select (comma-separated role IDs, master view only)

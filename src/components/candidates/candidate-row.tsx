@@ -1,9 +1,8 @@
 "use client";
 
-import { TriangleAlert } from "lucide-react";
+import { ExternalLink, AtSign, Phone as PhoneIcon, TriangleAlert } from "lucide-react";
 import { StatusBadge } from "@/components/candidates/status-badge";
 import { TierBadge } from "@/components/candidates/tier-badge";
-import { CompactStarRating } from "@/components/candidates/star-rating";
 import { formatRelativeTime } from "@/lib/utils/format-time";
 import type { Candidate } from "@/types";
 
@@ -14,39 +13,26 @@ interface CandidateRowProps {
   rolesMap?: Record<string, string>;
   isChecked?: boolean;
   onCheckboxToggle?: (candidateId: string) => void;
-  /** When true, renders with elevation/shadow for drag overlay */
   isDragOverlay?: boolean;
-  /** Drag handle element to render in the first cell */
   dragHandle?: React.ReactNode;
 }
 
 /**
- * Format a date as relative time (e.g. "2d ago") or short date (e.g. "Mar 13")
+ * Extract the name part of an email: "harshit@gmail.com" → "harshit"
  */
-function formatDate(date: Date | string): string {
-  const d = new Date(date);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays}d ago`;
-
-  // Short date for older entries
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+function emailName(email: string): string {
+  return email.split("@")[0] ?? email;
 }
 
 /**
- * Strip protocol from a URL, showing just the domain + path.
- * e.g. "https://behance.net/john" -> "behance.net/john"
+ * Get a short domain label from a URL: "https://behance.net/john" → "behance.net"
  */
-function stripProtocol(url: string): string {
+function shortDomain(url: string): string {
   try {
     const parsed = new URL(url);
-    return parsed.hostname + (parsed.pathname !== "/" ? parsed.pathname : "");
+    return parsed.hostname.replace("www.", "");
   } catch {
-    return url;
+    return "Link";
   }
 }
 
@@ -64,11 +50,6 @@ export function CandidateRow({
     onSelect(candidate);
   };
 
-  const instagramHandle =
-    candidate.instagram && !candidate.instagram.startsWith("@")
-      ? `@${candidate.instagram}`
-      : candidate.instagram;
-
   const roleName = showRoleColumn
     ? (rolesMap[candidate.roleId] ?? "Unknown Role")
     : null;
@@ -84,7 +65,7 @@ export function CandidateRow({
     candidate.status === "assignment_failed";
 
   const baseRowClass = isPositive
-    ? "border-b border-gray-100 bg-emerald-50/60 hover:bg-emerald-100/70 cursor-pointer transition-colors border-l-4 border-l-emerald-500 [&_td:first-child]:pl-1.5"
+    ? "border-b border-gray-100 bg-emerald-50/60 hover:bg-emerald-100/70 cursor-pointer transition-colors border-l-4 border-l-emerald-500"
     : isNegative
       ? "border-b border-gray-100 bg-red-50 hover:bg-red-100/70 cursor-pointer transition-colors border-l-4 border-l-red-400"
       : "border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors";
@@ -101,7 +82,7 @@ export function CandidateRow({
       {dragHandle && <td className="w-6 px-0.5 py-2.5">{dragHandle}</td>}
 
       {/* Checkbox */}
-      <td className="w-8 px-2 py-2.5">
+      <td className="w-8 px-2 py-2">
         <input
           type="checkbox"
           checked={isChecked}
@@ -116,88 +97,105 @@ export function CandidateRow({
       </td>
 
       {/* Name */}
-      <td className="px-3 py-2.5 max-w-[160px]">
+      <td className="px-3 py-2 max-w-[150px]">
         <span className="font-medium text-sm text-gray-900 truncate flex items-center gap-1 min-w-0">
           {candidate.isDuplicate && (
-            <span
-              title="Potential duplicate"
-              aria-label="Potential duplicate"
-              className="flex-shrink-0"
-            >
-              <TriangleAlert size={14} className="text-amber-500" />
-            </span>
+            <TriangleAlert size={13} className="text-amber-500 flex-shrink-0" />
           )}
           <span className="truncate">{candidate.name}</span>
         </span>
       </td>
 
-      {/* Role -- only shown in master view */}
+      {/* Role — only shown in master view */}
       {showRoleColumn && (
-        <td className="px-3 py-2.5 max-w-[140px]">
-          <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 truncate max-w-full">
+        <td className="px-2 py-2">
+          <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 truncate max-w-[100px]">
             {roleName}
           </span>
         </td>
       )}
 
-      {/* Email */}
-      <td className="hidden lg:table-cell px-3 py-2.5">
-        <span className="text-sm text-gray-500 truncate block max-w-[200px]">
-          {candidate.email || <span className="text-gray-300">—</span>}
-        </span>
+      {/* Email — show name part only, full on hover */}
+      <td className="hidden lg:table-cell px-2 py-2 max-w-[130px]">
+        {candidate.email ? (
+          <span
+            className="text-sm text-gray-500 truncate block"
+            title={candidate.email}
+          >
+            {emailName(candidate.email)}
+          </span>
+        ) : (
+          <span className="text-gray-300 text-sm">—</span>
+        )}
       </td>
 
-      {/* Portfolio Link */}
-      <td className="hidden xl:table-cell px-3 py-2.5">
+      {/* Portfolio — compact: domain name as clickable link */}
+      <td className="hidden xl:table-cell px-2 py-2">
         {candidate.portfolioUrl ? (
           <a
             href={candidate.portfolioUrl}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate block max-w-[180px]"
+            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
             title={candidate.portfolioUrl}
           >
-            {stripProtocol(candidate.portfolioUrl)}
+            <ExternalLink size={12} className="flex-shrink-0" />
+            <span className="truncate max-w-[90px]">{shortDomain(candidate.portfolioUrl)}</span>
           </a>
         ) : (
           <span className="text-gray-300 text-sm">—</span>
         )}
       </td>
 
-      {/* Phone/WhatsApp */}
-      <td className="hidden xl:table-cell px-3 py-2.5">
-        <span className="text-sm text-gray-500 tabular-nums">
-          {candidate.phone || <span className="text-gray-300">—</span>}
-        </span>
+      {/* Phone — compact with icon */}
+      <td className="hidden xl:table-cell px-2 py-2">
+        {candidate.phone ? (
+          <span className="inline-flex items-center gap-1 text-xs text-gray-500 tabular-nums" title={candidate.phone}>
+            <PhoneIcon size={11} className="text-gray-400 flex-shrink-0" />
+            <span className="truncate max-w-[90px]">{candidate.phone}</span>
+          </span>
+        ) : (
+          <span className="text-gray-300 text-sm">—</span>
+        )}
       </td>
 
-      {/* Instagram */}
-      <td className="hidden lg:table-cell px-3 py-2.5">
-        <span className="text-sm text-gray-500 truncate block max-w-[120px]">
-          {instagramHandle || <span className="text-gray-300">—</span>}
-        </span>
+      {/* Instagram — @ icon + handle, compact */}
+      <td className="hidden lg:table-cell px-2 py-2">
+        {candidate.instagram ? (
+          <a
+            href={`https://instagram.com/${candidate.instagram.replace("@", "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-0.5 text-xs text-gray-500 hover:text-pink-600"
+            title={`@${candidate.instagram.replace("@", "")}`}
+          >
+            <AtSign size={12} className="flex-shrink-0" />
+            <span className="truncate max-w-[70px]">{candidate.instagram.replace("@", "")}</span>
+          </a>
+        ) : (
+          <span className="text-gray-300 text-sm">—</span>
+        )}
       </td>
 
       {/* Status Badge */}
-      <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+      <td className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
         <StatusBadge candidateId={candidate.id} status={candidate.status} />
       </td>
 
       {/* Tier Badge */}
       <td
-        className="hidden sm:table-cell px-3 py-2.5"
+        className="hidden sm:table-cell px-2 py-2"
         onClick={(e) => e.stopPropagation()}
       >
         <TierBadge candidateId={candidate.id} tier={candidate.tier} />
       </td>
 
-      {/* Rating — only show in drawer for now, not in table */}
-
       {/* Date Added */}
-      <td className="hidden md:table-cell px-3 py-2.5 whitespace-nowrap">
+      <td className="hidden md:table-cell px-2 py-2 whitespace-nowrap">
         <span
-          className="text-sm text-gray-400"
+          className="text-xs text-gray-400"
           title={new Date(candidate.createdAt).toLocaleString()}
         >
           {formatRelativeTime(candidate.createdAt)}

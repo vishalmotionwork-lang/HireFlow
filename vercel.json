@@ -1,10 +1,5 @@
 {
   "regions": ["sin1"],
-  "functions": {
-    "src/**/*.ts": {
-      "maxDuration": 60
-    }
-  },
   "crons": [
     {
       "path": "/api/cron/sync-sheets",

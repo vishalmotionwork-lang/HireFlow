@@ -329,19 +329,24 @@ function SheetRow({ sheet, roles }: { sheet: SheetWithRole; roles: Role[] }) {
   const handleSync = () => {
     setIsSyncing(true);
     startTransition(async () => {
-      const result = await syncConnectedSheet(sheet.id);
-      setIsSyncing(false);
-      if (result.error) {
-        toast.error(`Sync failed: ${result.error}`);
-      } else if (result.newRows === 0) {
-        toast.info(`No new rows in "${sheet.name}"`);
-      } else {
-        toast.success(
-          `Synced "${sheet.name}": ${result.importedCount} new candidates imported` +
-            (result.skippedDuplicates > 0
-              ? `, ${result.skippedDuplicates} duplicates skipped`
-              : ""),
-        );
+      try {
+        const result = await syncConnectedSheet(sheet.id);
+        if (result.error) {
+          toast.error(`Sync failed: ${result.error}`);
+        } else if (result.newRows === 0) {
+          toast.info(`No new rows in "${sheet.name}"`);
+        } else {
+          toast.success(
+            `Synced "${sheet.name}": ${result.importedCount} new candidates imported` +
+              (result.skippedDuplicates > 0
+                ? `, ${result.skippedDuplicates} duplicates skipped`
+                : ""),
+          );
+        }
+      } catch {
+        toast.error("Sync timed out or failed. Try again later.");
+      } finally {
+        setIsSyncing(false);
       }
     });
   };

@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { db } from "@/db";
 import { roles } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -10,9 +9,10 @@ import { ViewToggle } from "@/components/candidates/view-toggle";
 import { CandidateFilterBar } from "@/components/candidates/candidate-filter-bar";
 import { CandidatePagination } from "@/components/candidates/candidate-pagination";
 import { RealtimeRefresh } from "@/components/realtime/realtime-refresh";
-import { getCandidates } from "@/lib/queries/candidates";
+import { getCandidates, getArchiveCount } from "@/lib/queries/candidates";
 import { CANDIDATE_STATUSES } from "@/types";
 import type { CandidateStatus } from "@/types";
+import Link from "next/link";
 
 interface RolePageProps {
   params: Promise<{ roleSlug: string }>;
@@ -66,6 +66,7 @@ export default async function RolePage({
       : null;
 
   const duplicatesOnly = sp.duplicates === "true";
+  const showArchived = sp.archived === "true";
 
   const rawSource = typeof sp.source === "string" ? sp.source : "";
   const importSource: string[] = rawSource
@@ -86,28 +87,25 @@ export default async function RolePage({
     notFound();
   }
 
-  // Fetch all active roles for the tab strip
-  const allRoles = await db
-    .select()
-    .from(roles)
-    .where(eq(roles.isActive, true))
-    .orderBy(roles.sortOrder);
-
   const loadAll = sp.loadAll === "true" || page > 1 || view === "board";
 
-  // Fetch filtered candidates for this role
-  const { candidates, total, totalPages } = await getCandidates({
-    roleId: role.id,
-    page,
-    status,
-    tier,
-    sort,
-    q,
-    dateRange,
-    duplicatesOnly,
-    importSource,
-    loadAll,
-  });
+  // Fetch filtered candidates + archive count in parallel
+  const [{ candidates, total, totalPages }, archiveCount] = await Promise.all([
+    getCandidates({
+      roleId: role.id,
+      page,
+      status,
+      tier,
+      sort,
+      q,
+      dateRange,
+      duplicatesOnly,
+      importSource,
+      loadAll,
+      showArchived,
+    }),
+    getArchiveCount(role.id),
+  ]);
 
   return (
     <div className="space-y-4">
@@ -126,31 +124,37 @@ export default async function RolePage({
           <DynamicIcon name={role.icon} size={18} className="text-blue-500" />
         </div>
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">
-            {role.name}{" "}
-            <span className="text-sm font-normal text-gray-400">({total})</span>
-          </h1>
-          {role.description && (
-            <p className="text-xs text-gray-400">{role.description}</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-semibold text-gray-900">
+              {role.name}{" "}
+              <span className="text-sm font-normal text-gray-400">
+                ({total})
+              </span>
+            </h1>
+            {showArchived ? (
+              <Link
+                href={`/roles/${roleSlug}`}
+                className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                &larr; Back to active
+              </Link>
+            ) : archiveCount > 0 ? (
+              <Link
+                href={`/roles/${roleSlug}?archived=true`}
+                className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                Archive ({archiveCount})
+              </Link>
+            ) : null}
+          </div>
+          {showArchived ? (
+            <p className="text-xs text-gray-400">Archived candidates</p>
+          ) : (
+            role.description && (
+              <p className="text-xs text-gray-400">{role.description}</p>
+            )
           )}
         </div>
-      </div>
-
-      {/* Tab strip */}
-      <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
-        {allRoles.map((r) => (
-          <Link
-            key={r.id}
-            href={`/roles/${r.slug}`}
-            className={`shrink-0 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
-              r.slug === roleSlug
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            {r.name}
-          </Link>
-        ))}
       </div>
 
       {/* View toggle + filter bar */}
@@ -168,6 +172,7 @@ export default async function RolePage({
             candidates={candidates}
             total={total}
             roleId={role.id}
+            roleName={role.name}
             currentPage={page}
             totalPages={totalPages}
           />

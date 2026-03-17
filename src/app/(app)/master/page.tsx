@@ -55,6 +55,7 @@ export default async function MasterPage({ searchParams }: MasterPageProps) {
       : null;
 
   const duplicatesOnly = sp.duplicates === "true";
+  const showArchived = sp.archived === "true";
 
   const rawSource = typeof sp.source === "string" ? sp.source : "";
   const importSource: string[] = rawSource
@@ -91,6 +92,7 @@ export default async function MasterPage({ searchParams }: MasterPageProps) {
     importSource,
     roleIds: roleIds.length > 0 ? roleIds : undefined,
     loadAll,
+    showArchived,
   });
 
   return (

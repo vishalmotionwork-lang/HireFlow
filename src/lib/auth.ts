@@ -20,6 +20,17 @@ export interface AuthUser {
  * layout, page, and components can all call this without extra DB hits.
  */
 export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
+  // Dev mode: return a mock admin user to bypass auth
+  if (process.env.NODE_ENV === "development") {
+    return {
+      id: "dev-user",
+      email: "dev@localhost",
+      name: "Dev User",
+      avatar: null,
+      role: "admin" as TeamRole,
+    };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

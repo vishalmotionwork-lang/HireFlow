@@ -18,6 +18,7 @@ interface SortableCandidateRowProps {
   isMobile: boolean;
   onMoveUp?: (candidateId: string) => void;
   onMoveDown?: (candidateId: string) => void;
+  onWhatsAppClick?: (candidate: Candidate) => void;
 }
 
 /**
@@ -32,7 +33,7 @@ function DragHandle({
 }) {
   return (
     <button
-      className="flex items-center justify-center w-5 h-5 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing transition-colors touch-none"
+      className="flex items-center justify-center w-3 h-5 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing transition-colors touch-none"
       aria-label="Drag to reorder"
       {...attributes}
       {...listeners}
@@ -99,6 +100,7 @@ export function SortableCandidateRow({
   isMobile,
   onMoveUp,
   onMoveDown,
+  onWhatsAppClick,
 }: SortableCandidateRowProps) {
   // On mobile, skip dnd-kit sortable entirely
   if (isMobile) {
@@ -110,6 +112,7 @@ export function SortableCandidateRow({
         rolesMap={rolesMap}
         isChecked={isChecked}
         onCheckboxToggle={onCheckboxToggle}
+        onWhatsAppClick={onWhatsAppClick}
         dragHandle={
           <MobileReorderControls
             candidateId={candidate.id}
@@ -131,13 +134,14 @@ export function SortableCandidateRow({
       rolesMap={rolesMap}
       isChecked={isChecked}
       onCheckboxToggle={onCheckboxToggle}
+      onWhatsAppClick={onWhatsAppClick}
     />
   );
 }
 
 /**
- * Desktop-only sortable row that uses dnd-kit hooks.
- * Separated to ensure useSortable is only called inside SortableContext.
+ * Desktop-only sortable row — applies dnd-kit ref + styles directly
+ * on the CandidateRow <tr> via forwardRef. No nested table.
  */
 function DesktopSortableRow({
   candidate,
@@ -146,6 +150,7 @@ function DesktopSortableRow({
   rolesMap,
   isChecked,
   onCheckboxToggle,
+  onWhatsAppClick,
 }: {
   candidate: Candidate;
   onSelect: (candidate: Candidate) => void;
@@ -153,6 +158,7 @@ function DesktopSortableRow({
   rolesMap?: Record<string, string>;
   isChecked?: boolean;
   onCheckboxToggle?: (candidateId: string) => void;
+  onWhatsAppClick?: (candidate: Candidate) => void;
 }) {
   const {
     attributes,
@@ -163,35 +169,29 @@ function DesktopSortableRow({
     isDragging,
   } = useSortable({ id: candidate.id });
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.4 : 1,
   };
 
   return (
-    <tr ref={setNodeRef} style={style}>
-      <td colSpan={100} className="p-0">
-        {/* Drop indicator: blue line when dragging over */}
-        <table className="w-full text-left border-collapse">
-          <tbody>
-            <CandidateRow
-              candidate={candidate}
-              onSelect={onSelect}
-              showRoleColumn={showRoleColumn}
-              rolesMap={rolesMap}
-              isChecked={isChecked}
-              onCheckboxToggle={onCheckboxToggle}
-              dragHandle={
-                <DragHandle
-                  listeners={listeners as unknown as Record<string, unknown>}
-                  attributes={attributes as unknown as Record<string, unknown>}
-                />
-              }
-            />
-          </tbody>
-        </table>
-      </td>
-    </tr>
+    <CandidateRow
+      ref={setNodeRef}
+      style={style}
+      candidate={candidate}
+      onSelect={onSelect}
+      showRoleColumn={showRoleColumn}
+      rolesMap={rolesMap}
+      isChecked={isChecked}
+      onCheckboxToggle={onCheckboxToggle}
+      onWhatsAppClick={onWhatsAppClick}
+      dragHandle={
+        <DragHandle
+          listeners={listeners as unknown as Record<string, unknown>}
+          attributes={attributes as unknown as Record<string, unknown>}
+        />
+      }
+    />
   );
 }

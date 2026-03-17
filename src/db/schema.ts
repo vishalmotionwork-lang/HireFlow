@@ -84,6 +84,9 @@ export const candidates = pgTable("candidates", {
   location: text("location"),
   experience: text("experience"),
   resumeUrl: text("resume_url"),
+  resumeFileName: text("resume_file_name"),
+  statusChangedBy: text("status_changed_by"),
+  statusChangedAt: timestamp("status_changed_at", { withTimezone: true }),
   portfolioLinks: jsonb("portfolio_links").default([]).notNull(), // [{url, sourceType, label}]
   socialHandles: jsonb("social_handles").default([]).notNull(), // [{platform, handle, url}]
   status: candidateStatusEnum("status").default("left_to_review").notNull(),

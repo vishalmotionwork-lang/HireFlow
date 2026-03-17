@@ -1,6 +1,7 @@
-import { count, eq, and, sql, inArray } from "drizzle-orm";
+import { count, eq, and, not, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { candidates, roles, candidateEvents } from "@/db/schema";
+import { ARCHIVED_STATUSES } from "@/lib/constants/pipeline";
 
 /**
  * Dashboard stats — global counts by status.
@@ -12,7 +13,12 @@ export async function getDashboardStats() {
       total: count(),
     })
     .from(candidates)
-    .where(eq(candidates.isDeleted, false))
+    .where(
+      and(
+        eq(candidates.isDeleted, false),
+        not(inArray(candidates.status, [...ARCHIVED_STATUSES])),
+      ),
+    )
     .groupBy(candidates.status);
 
   const statusMap = Object.fromEntries(rows.map((r) => [r.status, r.total]));
@@ -39,7 +45,12 @@ export async function getRoleCandidateCounts() {
       total: count(),
     })
     .from(candidates)
-    .where(eq(candidates.isDeleted, false))
+    .where(
+      and(
+        eq(candidates.isDeleted, false),
+        not(inArray(candidates.status, [...ARCHIVED_STATUSES])),
+      ),
+    )
     .groupBy(candidates.roleId);
 
   return Object.fromEntries(rows.map((r) => [r.roleId, r.total]));
@@ -199,7 +210,12 @@ export async function getRoleTierBreakdown() {
       total: count(),
     })
     .from(candidates)
-    .where(eq(candidates.isDeleted, false))
+    .where(
+      and(
+        eq(candidates.isDeleted, false),
+        not(inArray(candidates.status, [...ARCHIVED_STATUSES])),
+      ),
+    )
     .groupBy(candidates.roleId, candidates.tier);
 
   const breakdown: Record<string, Record<string, number>> = {};

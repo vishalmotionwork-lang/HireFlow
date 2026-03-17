@@ -11,13 +11,19 @@ import type { AuthUser } from "@/lib/auth";
 interface AppShellProps {
   roles: Role[];
   user: AuthUser | null;
+  reviewCounts?: Record<string, number>;
   children: React.ReactNode;
 }
 
-export function AppShell({ roles, user, children }: AppShellProps) {
+export function AppShell({
+  roles,
+  user,
+  reviewCounts,
+  children,
+}: AppShellProps) {
   return (
     <SidebarProvider>
-      <AppSidebar roles={roles} />
+      <AppSidebar roles={roles} reviewCounts={reviewCounts} />
       <SidebarInset>
         <Topbar
           user={user}

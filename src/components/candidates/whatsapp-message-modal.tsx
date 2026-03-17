@@ -26,12 +26,15 @@ interface WhatsAppMessageModalProps {
 }
 
 /**
- * Strip all non-digit characters from a phone number to produce
- * the international format required by the wa.me API.
- * Example: "+91 98765-43210" -> "919876543210"
+ * Normalize a phone number to international format for wa.me API.
+ * Auto-prepends Indian country code (91) for 10-digit numbers.
+ * Examples: "9876543210" -> "919876543210", "+91 98765-43210" -> "919876543210"
  */
 function cleanPhoneNumber(phone: string): string {
-  return phone.replace(/[^0-9]/g, "");
+  const digits = phone.replace(/[^0-9]/g, "");
+  const stripped = digits.startsWith("0") ? digits.slice(1) : digits;
+  if (stripped.length === 10) return "91" + stripped;
+  return stripped;
 }
 
 function buildDefaultMessage(
@@ -91,14 +94,11 @@ export function WhatsAppMessageModal({
           <DialogTitle>Send WhatsApp Message</DialogTitle>
           <DialogDescription>
             Message for{" "}
-            <span className="font-medium text-foreground">
-              {candidateName}
-            </span>
+            <span className="font-medium text-foreground">{candidateName}</span>
             {roleName && (
               <>
                 {" "}
-                &mdash;{" "}
-                <span className="text-foreground">{roleName}</span>
+                &mdash; <span className="text-foreground">{roleName}</span>
               </>
             )}
           </DialogDescription>
@@ -107,9 +107,7 @@ export function WhatsAppMessageModal({
         {/* Phone display */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span className="font-medium text-foreground">{phone}</span>
-          <span className="text-xs text-gray-400">
-            (wa.me/{cleanedPhone})
-          </span>
+          <span className="text-xs text-gray-400">(wa.me/{cleanedPhone})</span>
         </div>
 
         {/* Editable message */}

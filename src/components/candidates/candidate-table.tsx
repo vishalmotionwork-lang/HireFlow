@@ -22,8 +22,16 @@ import { CandidateRow } from "@/components/candidates/candidate-row";
 import { SortableCandidateRow } from "@/components/candidates/sortable-candidate-row";
 import { CandidateAddRow } from "@/components/candidates/candidate-add-row";
 import { AddCandidateDialog } from "@/components/candidates/add-candidate-dialog";
-import { CandidateDrawer } from "@/components/candidates/candidate-drawer";
+import { CandidateModal } from "@/components/candidates/candidate-modal";
+import { WhatsAppMessageModal } from "@/components/candidates/whatsapp-message-modal";
 import { BulkActionBar } from "@/components/candidates/bulk-action-bar";
+import { CvCreateCandidate } from "@/components/candidates/cv-create-candidate";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { reorderCandidates } from "@/lib/actions/candidates";
 import type { Candidate } from "@/types";
 
@@ -31,6 +39,7 @@ interface CandidateTableProps {
   candidates: Candidate[];
   total: number;
   roleId: string;
+  roleName?: string;
   currentPage: number;
   totalPages: number;
   showRoleColumn?: boolean;
@@ -41,6 +50,7 @@ export function CandidateTable({
   candidates: serverCandidates,
   total,
   roleId,
+  roleName,
   currentPage,
   totalPages,
   showRoleColumn = false,
@@ -62,6 +72,10 @@ export function CandidateTable({
   }, [candidateFromUrl]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [whatsappCandidate, setWhatsappCandidate] = useState<Candidate | null>(
+    null,
+  );
+  const [cvUploadOpen, setCvUploadOpen] = useState(false);
 
   // Drag-and-drop: local optimistic ordering
   const [orderedCandidates, setOrderedCandidates] = useState(serverCandidates);
@@ -182,7 +196,7 @@ export function CandidateTable({
     candidates.length > 0 && selectedIds.size === candidates.length;
 
   const isEmpty = candidates.length === 0 && !showAddRow;
-  const colCount = (showRoleColumn ? 9 : 8) + 1; // +1 checkbox
+  const colCount = showRoleColumn ? 8 : 7; // checkbox+drag, name, [role], email, phone, links, status, tier
 
   const activeDragCandidate = activeDragId
     ? (candidates.find((c) => c.id === activeDragId) ?? null)
@@ -192,12 +206,19 @@ export function CandidateTable({
     <div className="flex flex-col gap-3">
       {/* Action button */}
       <div className="flex items-center justify-end">
-        <button
-          onClick={handleAddClick}
-          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-        >
-          + Add Candidate
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+            + Add Candidate
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleAddClick}>
+              Add Manually
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setCvUploadOpen(true)}>
+              Upload CV
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Table */}
@@ -208,15 +229,34 @@ export function CandidateTable({
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <table className="w-full text-left border-collapse">
+          <table
+            className="w-full text-left border-collapse"
+            style={{ tableLayout: "fixed" }}
+          >
+            <colgroup>
+              <col style={{ width: "40px" }} />
+              <col style={{ width: "17%" }} />
+              {showRoleColumn && <col style={{ width: "10%" }} />}
+              <col
+                className="hidden lg:table-column"
+                style={{ width: "16%" }}
+              />
+              <col style={{ width: "13%" }} />
+              <col
+                className="hidden md:table-column"
+                style={{ width: "17%" }}
+              />
+              <col style={{ width: "10%" }} />
+              <col className="hidden sm:table-column" style={{ width: "8%" }} />
+            </colgroup>
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="w-8 px-2 py-2">
+                <th className="pl-2 pr-1 py-1.5">
                   <input
                     type="checkbox"
                     checked={allSelected}
                     onChange={handleSelectAll}
-                    className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 ml-3.5"
                     aria-label="Select all candidates"
                   />
                 </th>
@@ -231,23 +271,17 @@ export function CandidateTable({
                 <th className="hidden lg:table-cell px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Email
                 </th>
-                <th className="hidden xl:table-cell px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Portfolio
-                </th>
-                <th className="hidden xl:table-cell px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <th className="px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Phone
                 </th>
-                <th className="hidden lg:table-cell px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Instagram
+                <th className="hidden md:table-cell px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Portfolio
                 </th>
                 <th className="px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Status
                 </th>
                 <th className="hidden sm:table-cell px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Tier
-                </th>
-                <th className="hidden md:table-cell px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Added
                 </th>
               </tr>
             </thead>
@@ -278,6 +312,7 @@ export function CandidateTable({
                       isFirst={index === 0}
                       isLast={index === candidates.length - 1}
                       isMobile={false}
+                      onWhatsAppClick={setWhatsappCandidate}
                     />
                   ))}
                 </SortableContext>
@@ -296,6 +331,7 @@ export function CandidateTable({
                     isMobile={true}
                     onMoveUp={handleMoveUp}
                     onMoveDown={handleMoveDown}
+                    onWhatsAppClick={setWhatsappCandidate}
                   />
                 ))
               )}
@@ -370,8 +406,8 @@ export function CandidateTable({
         </div>
       )}
 
-      {/* Candidate profile drawer */}
-      <CandidateDrawer
+      {/* Candidate profile modal */}
+      <CandidateModal
         candidateId={selectedCandidateId}
         onClose={() => setSelectedCandidateId(null)}
       />
@@ -381,6 +417,23 @@ export function CandidateTable({
         roleId={roleId}
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
+      />
+
+      {/* WhatsApp message modal -- triggered from row phone icon */}
+      <WhatsAppMessageModal
+        open={whatsappCandidate !== null}
+        onClose={() => setWhatsappCandidate(null)}
+        candidateName={whatsappCandidate?.name ?? ""}
+        phone={whatsappCandidate?.phone ?? ""}
+        roleName={null}
+      />
+
+      {/* CV upload dialog */}
+      <CvCreateCandidate
+        roleId={roleId}
+        roleName={roleName}
+        open={cvUploadOpen}
+        onOpenChange={setCvUploadOpen}
       />
     </div>
   );

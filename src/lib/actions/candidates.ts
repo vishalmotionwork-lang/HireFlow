@@ -45,6 +45,7 @@ const UPDATABLE_FIELDS = [
   "location",
   "experience",
   "resumeUrl",
+  "resumeFileName",
   "rejectionReason",
   "rejectionMessage",
   "lastModifiedBy",
@@ -147,6 +148,8 @@ export async function changeStatus(
       const updatePayload: Record<string, unknown> = {
         status: toStatus,
         updatedAt: new Date(),
+        statusChangedBy: user.id,
+        statusChangedAt: new Date(),
       };
 
       if (toStatus === "rejected" && rejection) {
@@ -268,6 +271,7 @@ export async function updateCandidateField(
       location: "location",
       experience: "experience",
       resumeUrl: "resumeUrl",
+      resumeFileName: "resumeFileName",
       rejectionReason: "rejectionReason",
       rejectionMessage: "rejectionMessage",
       lastModifiedBy: "lastModifiedBy",

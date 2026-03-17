@@ -8,11 +8,13 @@ import {
   ilike,
   inArray,
   lte,
+  not,
   or,
   sql,
 } from "drizzle-orm";
 import { db } from "@/db";
 import { candidates, candidateEvents, roles } from "@/db/schema";
+import { ARCHIVED_STATUSES } from "@/lib/constants/pipeline";
 import type { Candidate, CandidateStatus, Tier } from "@/types";
 
 interface GetCandidatesParams {
@@ -29,6 +31,8 @@ interface GetCandidatesParams {
   importSource?: string[];
   /** When true, load all rows up to page * PAGE_SIZE (accumulating mode) */
   loadAll?: boolean;
+  /** When true, show only archived candidates; when false (default), exclude them */
+  showArchived?: boolean;
 }
 
 /**
@@ -76,6 +80,7 @@ export async function getCandidates({
   importSource = [],
   roleIds,
   loadAll = false,
+  showArchived = false,
 }: GetCandidatesParams) {
   const PAGE_SIZE = 50;
   // In accumulating mode, fetch from 0 to page * PAGE_SIZE
@@ -87,6 +92,13 @@ export async function getCandidates({
 
   // Always exclude soft-deleted candidates
   conditions.push(eq(candidates.isDeleted, false));
+
+  // Archive filter: show archived OR exclude archived
+  if (showArchived) {
+    conditions.push(inArray(candidates.status, [...ARCHIVED_STATUSES]));
+  } else {
+    conditions.push(not(inArray(candidates.status, [...ARCHIVED_STATUSES])));
+  }
 
   if (roleId) {
     conditions.push(eq(candidates.roleId, roleId));
@@ -280,6 +292,9 @@ export async function getBestCandidates(
       sortOrder: candidates.sortOrder,
       lastModifiedBy: candidates.lastModifiedBy,
       importBatchId: candidates.importBatchId,
+      resumeFileName: candidates.resumeFileName,
+      statusChangedBy: candidates.statusChangedBy,
+      statusChangedAt: candidates.statusChangedAt,
       createdBy: candidates.createdBy,
       createdAt: candidates.createdAt,
       updatedAt: candidates.updatedAt,
@@ -293,4 +308,44 @@ export async function getBestCandidates(
     .limit(100);
 
   return rows;
+}
+
+/**
+ * Count candidates in archived statuses for a given role.
+ */
+export async function getArchiveCount(roleId: string): Promise<number> {
+  const [result] = await db
+    .select({ total: count() })
+    .from(candidates)
+    .where(
+      and(
+        eq(candidates.isDeleted, false),
+        eq(candidates.roleId, roleId),
+        inArray(candidates.status, [...ARCHIVED_STATUSES]),
+      ),
+    );
+
+  return result?.total ?? 0;
+}
+
+/**
+ * Count candidates with "left_to_review" status, grouped by role_id.
+ * Used for sidebar "Needs Review" badges.
+ */
+export async function getReviewCounts(): Promise<Record<string, number>> {
+  const rows = await db
+    .select({
+      roleId: candidates.roleId,
+      total: count(),
+    })
+    .from(candidates)
+    .where(
+      and(
+        eq(candidates.isDeleted, false),
+        eq(candidates.status, "left_to_review"),
+      ),
+    )
+    .groupBy(candidates.roleId);
+
+  return Object.fromEntries(rows.map((r) => [r.roleId, r.total]));
 }

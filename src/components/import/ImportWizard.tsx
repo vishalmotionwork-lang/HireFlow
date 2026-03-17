@@ -12,6 +12,8 @@ import { ExtractionProgress } from "@/components/import/ExtractionProgress";
 import { ExtractionReviewList } from "@/components/import/ExtractionReviewList";
 import { ExtractionReviewModal } from "@/components/import/ExtractionReviewModal";
 import { StepMultiRoleImport } from "@/components/import/StepMultiRoleImport";
+import { StepCvImport } from "@/components/import/StepCvImport";
+import { FileText } from "lucide-react";
 import type { SheetData } from "@/lib/import/parseExcelMultiSheet";
 import type { ExtractionStatusDraft } from "@/components/import/ExtractionProgress";
 import type {
@@ -30,7 +32,7 @@ import type { Role, ExtractionDraft } from "@/types";
 // Import tab type (top-level mode switcher)
 // ---------------------------------------------------------------------------
 
-type ImportTab = "file" | "url";
+type ImportTab = "file" | "url" | "cv";
 
 // ---------------------------------------------------------------------------
 // Wizard state
@@ -491,7 +493,11 @@ export function ImportWizard({ roles }: ImportWizardProps) {
     setActiveTab(tab);
     if (tab === "file") {
       handleExtractionReset();
+    } else if (tab === "url") {
+      handleReset();
     } else {
+      // cv tab — reset both flows
+      handleExtractionReset();
       handleReset();
     }
   };
@@ -527,6 +533,17 @@ export function ImportWizard({ roles }: ImportWizardProps) {
             }`}
           >
             URL
+          </button>
+          <button
+            onClick={() => handleTabChange("cv")}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px inline-flex items-center gap-1.5 ${
+              activeTab === "cv"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            CV Upload
           </button>
         </div>
       )}
@@ -725,6 +742,14 @@ export function ImportWizard({ roles }: ImportWizardProps) {
             </div>
           );
         })()}
+
+      {/* ------------------------------------------------------------------ */}
+      {/* CV UPLOAD FLOW                                                      */}
+      {/* ------------------------------------------------------------------ */}
+
+      {activeTab === "cv" && (
+        <StepCvImport roles={roles.map((r) => ({ id: r.id, name: r.name }))} />
+      )}
     </div>
   );
 }

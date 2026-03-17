@@ -8,6 +8,11 @@ const PUBLIC_API_ROUTES = ["/api/approve-member", "/api/cron"];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Skip auth entirely on localhost (dev mode)
+  if (process.env.NODE_ENV === "development") {
+    return NextResponse.next();
+  }
+
   // Allow public routes
   if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
     return NextResponse.next();

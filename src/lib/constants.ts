@@ -41,7 +41,7 @@ export type LucideRoleIcon = RoleEmojiIcon;
 
 // Display labels for each candidate status
 export const STATUS_LABELS: Record<CandidateStatus, string> = {
-  left_to_review: "Left to Review",
+  left_to_review: "To Review",
   under_review: "Under Review",
   shortlisted: "Shortlisted",
   not_good: "Not Good",

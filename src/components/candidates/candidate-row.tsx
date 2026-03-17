@@ -135,14 +135,12 @@ function collectLinks(candidate: Candidate): LinkItem[] {
   }
   addLink(candidate.linkedinUrl);
 
-  // Resume link — detect storage paths vs external URLs
+  // Resume link — external URLs open directly, everything else uses download API
   if (candidate.resumeUrl) {
-    const isStorage =
-      candidate.resumeUrl.startsWith("resumes/") ||
-      candidate.resumeUrl.startsWith("temp/");
-    const url = isStorage
-      ? `/api/resume/download/${candidate.id}`
-      : candidate.resumeUrl;
+    const isExternal = candidate.resumeUrl.startsWith("http");
+    const url = isExternal
+      ? candidate.resumeUrl
+      : `/api/resume/download/${candidate.id}`;
     if (!seen.has("resume")) {
       seen.add("resume");
       links.push({

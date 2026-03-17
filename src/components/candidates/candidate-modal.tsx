@@ -22,10 +22,7 @@ import {
   Briefcase,
   MessageCircle,
 } from "lucide-react";
-import {
-  FaInstagram,
-  FaLinkedinIn,
-} from "react-icons/fa";
+import { FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import {
   fetchCandidateProfile,
   updateCandidateField,
@@ -80,6 +77,7 @@ function PropertyItem({
   icon,
   label,
   value,
+  href,
   hasData,
   isActive,
   onClick,
@@ -88,20 +86,23 @@ function PropertyItem({
   icon: React.ReactNode;
   label: string;
   value?: string | null;
+  href?: string | null;
   hasData: boolean;
   isActive?: boolean;
   onClick?: () => void;
   children?: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-        isActive
-          ? "bg-blue-50 text-blue-700"
-          : "hover:bg-gray-50 text-gray-700"
+    <div
+      className={`flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-left text-sm transition-colors cursor-pointer ${
+        isActive ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50 text-gray-700"
       }`}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") onClick?.();
+      }}
     >
       {/* Status dot */}
       <span
@@ -114,17 +115,24 @@ function PropertyItem({
         <span className="block text-xs text-gray-400">{label}</span>
         {children ?? (
           <span className="block truncate text-sm">
-            {value || (
-              <span className="text-gray-300 italic">Not added</span>
-            )}
+            {value || <span className="text-gray-300 italic">Not added</span>}
           </span>
         )}
       </span>
-      {/* External link for URLs */}
-      {hasData && value && (value.startsWith("http") || value.startsWith("resumes/")) && (
-        <ExternalLink className="h-3 w-3 text-gray-300 shrink-0" />
+      {/* Open link in new tab */}
+      {hasData && href && (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          title={`Open ${label}`}
+          className="shrink-0 rounded p-1 text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+        </a>
       )}
-    </button>
+    </div>
   );
 }
 
@@ -247,10 +255,14 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
                     <span className="flex items-center gap-1">
                       <span className="truncate text-sm">
                         {candidate.email || (
-                          <span className="text-gray-300 italic">Add email</span>
+                          <span className="text-gray-300 italic">
+                            Add email
+                          </span>
                         )}
                       </span>
-                      {candidate.email && <CopyButton value={candidate.email} />}
+                      {candidate.email && (
+                        <CopyButton value={candidate.email} />
+                      )}
                     </span>
                   </PropertyItem>
 
@@ -265,7 +277,9 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
                     <span className="flex items-center gap-1">
                       <span className="truncate text-sm tabular-nums">
                         {candidate.phone || (
-                          <span className="text-gray-300 italic">Add phone</span>
+                          <span className="text-gray-300 italic">
+                            Add phone
+                          </span>
                         )}
                       </span>
                       {candidate.phone && (
@@ -280,7 +294,9 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
                           <MessageCircle className="h-3 w-3" />
                         </button>
                       )}
-                      {candidate.phone && <CopyButton value={candidate.phone} />}
+                      {candidate.phone && (
+                        <CopyButton value={candidate.phone} />
+                      )}
                     </span>
                   </PropertyItem>
 
@@ -288,6 +304,11 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
                     icon={<FaInstagram className="h-3.5 w-3.5" />}
                     label="Instagram"
                     value={candidate.instagram}
+                    href={
+                      candidate.instagram
+                        ? `https://instagram.com/${candidate.instagram.replace(/^@/, "")}`
+                        : null
+                    }
                     hasData={!!candidate.instagram}
                     isActive={activeProperty === "instagram"}
                     onClick={() => setActiveProperty("instagram")}
@@ -297,6 +318,7 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
                     icon={<Globe className="h-3.5 w-3.5" />}
                     label="Portfolio"
                     value={candidate.portfolioUrl}
+                    href={candidate.portfolioUrl}
                     hasData={!!candidate.portfolioUrl}
                     isActive={activeProperty === "portfolio"}
                     onClick={() => setActiveProperty("portfolio")}
@@ -306,6 +328,7 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
                     icon={<FaLinkedinIn className="h-3.5 w-3.5" />}
                     label="LinkedIn"
                     value={candidate.linkedinUrl}
+                    href={candidate.linkedinUrl}
                     hasData={!!candidate.linkedinUrl}
                     isActive={activeProperty === "linkedin"}
                     onClick={() => setActiveProperty("linkedin")}
@@ -321,13 +344,20 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
                     icon={<FileText className="h-3.5 w-3.5" />}
                     label="Resume / CV"
                     value={candidate.resumeFileName ?? candidate.resumeUrl}
+                    href={
+                      candidate.resumeUrl
+                        ? `/api/resume/download/${candidate.id}`
+                        : null
+                    }
                     hasData={!!candidate.resumeUrl}
                     isActive={activeProperty === "resume"}
                     onClick={() => handlePropertyClick("resume")}
                   >
                     <span className="truncate text-sm">
                       {candidate.resumeFileName ??
-                        (candidate.resumeUrl ? "Attached" : (
+                        (candidate.resumeUrl ? (
+                          "Attached"
+                        ) : (
                           <span className="text-purple-500 font-medium">
                             Upload CV
                           </span>
@@ -387,7 +417,9 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
                 {/* Footer metadata */}
                 <div className="border-t border-gray-100 px-4 py-2.5">
                   <p className="text-xs text-gray-400">
-                    {candidate.source === "cv_upload" ? "CV Upload" : candidate.source}
+                    {candidate.source === "cv_upload"
+                      ? "CV Upload"
+                      : candidate.source}
                     {" · "}
                     {new Date(candidate.createdAt).toLocaleDateString("en-US", {
                       month: "short",

@@ -85,6 +85,7 @@ export const candidates = pgTable("candidates", {
   experience: text("experience"),
   resumeUrl: text("resume_url"),
   resumeFileName: text("resume_file_name"),
+  customFields: jsonb("custom_fields").default({}).notNull(),
   statusChangedBy: text("status_changed_by"),
   statusChangedAt: timestamp("status_changed_at", { withTimezone: true }),
   portfolioLinks: jsonb("portfolio_links").default([]).notNull(), // [{url, sourceType, label}]

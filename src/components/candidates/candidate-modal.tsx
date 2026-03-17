@@ -21,6 +21,7 @@ import {
   MapPin,
   Briefcase,
   MessageCircle,
+  Tag,
 } from "lucide-react";
 import { FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import {
@@ -365,36 +366,50 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
                     </span>
                   </PropertyItem>
 
-                  {(candidate.location || candidate.experience) && (
-                    <>
-                      <div className="my-1 mx-3 border-t border-gray-100" />
-                      <p className="px-3 text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
-                        Details
-                      </p>
-                    </>
-                  )}
+                  <div className="my-1 mx-3 border-t border-gray-100" />
+                  <p className="px-3 text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
+                    Details
+                  </p>
 
-                  {candidate.location !== null && (
-                    <PropertyItem
-                      icon={<MapPin className="h-3.5 w-3.5" />}
-                      label="Location"
-                      value={candidate.location}
-                      hasData={!!candidate.location}
-                      isActive={activeProperty === "location"}
-                      onClick={() => setActiveProperty("location")}
-                    />
-                  )}
+                  <PropertyItem
+                    icon={<MapPin className="h-3.5 w-3.5" />}
+                    label="Location"
+                    value={candidate.location}
+                    hasData={!!candidate.location}
+                    isActive={activeProperty === "location"}
+                    onClick={() => setActiveProperty("location")}
+                  />
 
-                  {candidate.experience !== null && (
-                    <PropertyItem
-                      icon={<Briefcase className="h-3.5 w-3.5" />}
-                      label="Experience"
-                      value={candidate.experience}
-                      hasData={!!candidate.experience}
-                      isActive={activeProperty === "experience"}
-                      onClick={() => setActiveProperty("experience")}
-                    />
-                  )}
+                  <PropertyItem
+                    icon={<Briefcase className="h-3.5 w-3.5" />}
+                    label="Experience"
+                    value={candidate.experience}
+                    hasData={!!candidate.experience}
+                    isActive={activeProperty === "experience"}
+                    onClick={() => setActiveProperty("experience")}
+                  />
+
+                  {/* Dynamic custom fields from import */}
+                  {(() => {
+                    const cf = candidate.customFields as Record<
+                      string,
+                      string
+                    > | null;
+                    if (!cf || typeof cf !== "object") return null;
+                    return Object.entries(cf)
+                      .filter(([, v]) => !!v)
+                      .map(([key, val]) => (
+                        <PropertyItem
+                          key={key}
+                          icon={<Tag className="h-3.5 w-3.5" />}
+                          label={key}
+                          value={String(val)}
+                          hasData={!!val}
+                          isActive={activeProperty === `custom:${key}`}
+                          onClick={() => setActiveProperty(`custom:${key}`)}
+                        />
+                      ));
+                  })()}
                 </div>
 
                 {/* Rejection details */}

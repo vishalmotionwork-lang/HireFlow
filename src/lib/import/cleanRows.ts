@@ -22,6 +22,7 @@ export interface CleanedImportRow {
   location: string | null;
   experience: string | null;
   resumeUrl: string | null;
+  customFields: Record<string, string>;
   _rowIndex: number;
   fixes: string[];
 }
@@ -36,6 +37,7 @@ interface RawImportRow {
   location: string | null;
   experience: string | null;
   resumeUrl: string | null;
+  customFields: Record<string, string>;
   _rowIndex: number;
 }
 
@@ -46,8 +48,10 @@ interface RawImportRow {
 const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
 const PHONE_RE = /(?:\+?\d[\d\s\-().]{6,}\d)/;
 const URL_RE = /https?:\/\/[^\s]+/i;
-const INSTAGRAM_URL_RE = /(?:https?:\/\/)?(?:www\.)?instagram\.com\/([a-zA-Z0-9_.]+)/i;
-const LINKEDIN_URL_RE = /(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/([a-zA-Z0-9_-]+)/i;
+const INSTAGRAM_URL_RE =
+  /(?:https?:\/\/)?(?:www\.)?instagram\.com\/([a-zA-Z0-9_.]+)/i;
+const LINKEDIN_URL_RE =
+  /(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/([a-zA-Z0-9_-]+)/i;
 
 // ---------------------------------------------------------------------------
 // Individual field cleaners (pure functions)
@@ -63,9 +67,7 @@ function fixNameCasing(name: string): string {
   if (hasUpper && hasLower) return trimmed;
 
   // All upper or all lower — title case it
-  return trimmed
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return trimmed.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function normalizeEmail(email: string): string {
@@ -126,9 +128,7 @@ function normalizeLocation(raw: string): string {
   const hasLower = /[a-z]/.test(trimmed);
   if (hasUpper && hasLower) return trimmed;
 
-  return trimmed
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return trimmed.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 // ---------------------------------------------------------------------------
@@ -286,6 +286,7 @@ function cleanSingleRow(row: RawImportRow): CleanedImportRow {
     location,
     experience,
     resumeUrl,
+    customFields: row.customFields ?? {},
     _rowIndex: row._rowIndex,
     fixes,
   };
@@ -295,6 +296,8 @@ function cleanSingleRow(row: RawImportRow): CleanedImportRow {
  * Clean all import rows using fast deterministic heuristics.
  * No AI calls — processes thousands of rows instantly.
  */
-export function cleanRows(rows: ReadonlyArray<RawImportRow>): CleanedImportRow[] {
+export function cleanRows(
+  rows: ReadonlyArray<RawImportRow>,
+): CleanedImportRow[] {
   return rows.map(cleanSingleRow);
 }

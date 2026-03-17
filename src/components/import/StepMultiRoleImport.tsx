@@ -175,7 +175,7 @@ export function StepMultiRoleImport({
 
       try {
         // Auto-detect column mapping from headers
-        const columnMapping = detectMapping(sheet.headers);
+        const { mapping: columnMapping } = detectMapping(sheet.headers);
 
         // Normalize rows using detected mapping
         const normalized = normalizeRows(sheet.rows, columnMapping);

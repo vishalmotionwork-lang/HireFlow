@@ -555,7 +555,7 @@ export async function syncConnectedSheet(
     result.newRows = newDataRows.length;
 
     // 5. Auto-detect column mapping
-    const mapping = detectMapping(headers);
+    const { mapping } = detectMapping(headers);
 
     // Must have at least a name column to import
     if (mapping.name === undefined) {

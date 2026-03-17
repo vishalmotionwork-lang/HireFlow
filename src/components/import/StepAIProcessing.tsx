@@ -87,6 +87,7 @@ export function StepAIProcessing({
           location: getCellValue(row, fieldIndices.location),
           experience: getCellValue(row, fieldIndices.experience),
           resumeUrl: getCellValue(row, fieldIndices.resumeUrl),
+          customFields: {},
           _rowIndex: i,
         }));
 

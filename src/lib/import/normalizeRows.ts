@@ -1,4 +1,5 @@
 import type { ColumnMapping, NormalizedRow, RawRow } from "./types";
+import type { DetectMappingResult } from "./columnHeuristics";
 
 /**
  * Normalize an Indian or international phone number to a canonical form.
@@ -46,6 +47,7 @@ function normalizePhone(raw: string): string | null {
 export function normalizeRows(
   rows: RawRow[],
   mapping: ColumnMapping,
+  saveToProfileIndices?: DetectMappingResult["saveToProfileIndices"],
 ): NormalizedRow[] {
   return rows.map((row, idx) => {
     const get = (colIndex: number | undefined): string | null => {
@@ -55,6 +57,17 @@ export function normalizeRows(
     };
 
     const rawPhone = mapping.phone !== undefined ? get(mapping.phone) : null;
+
+    // Build custom fields from "Save to Profile" columns
+    const customFields: Record<string, string> = {};
+    if (saveToProfileIndices) {
+      for (const { index, header } of saveToProfileIndices) {
+        const value = String(row[index] ?? "").trim();
+        if (value) {
+          customFields[header] = value;
+        }
+      }
+    }
 
     return {
       name: get(mapping.name),
@@ -69,6 +82,7 @@ export function normalizeRows(
       location: get(mapping.location),
       experience: get(mapping.experience),
       resumeUrl: get(mapping.resumeUrl),
+      customFields,
       role: get(mapping.role),
       _rowIndex: idx,
     };

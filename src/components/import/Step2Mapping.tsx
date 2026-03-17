@@ -30,6 +30,7 @@ const FIELD_LABELS: Record<Exclude<CandidateField, "ignore">, string> = {
   experience: "Experience",
   resumeUrl: "Resume/CV Link",
   role: "Role",
+  saveToProfile: "Save to Profile",
 };
 
 const FIELD_OPTIONS: { value: CandidateField; label: string }[] = [
@@ -43,6 +44,7 @@ const FIELD_OPTIONS: { value: CandidateField; label: string }[] = [
   { value: "experience", label: "Experience" },
   { value: "resumeUrl", label: "Resume/CV Link" },
   { value: "role", label: "Role" },
+  { value: "saveToProfile", label: "Save to Profile" },
   { value: "ignore", label: "Ignore" },
 ];
 
@@ -53,13 +55,16 @@ const FIELD_OPTIONS: { value: CandidateField; label: string }[] = [
 function getFieldForColumn(
   mapping: ColumnMapping,
   colIndex: number,
+  saveToProfileSet?: Set<number>,
 ): CandidateField {
   const entries = Object.entries(mapping) as [
     Exclude<CandidateField, "ignore">,
     number,
   ][];
   const entry = entries.find(([, idx]) => idx === colIndex);
-  return entry ? entry[0] : "ignore";
+  if (entry) return entry[0];
+  if (saveToProfileSet?.has(colIndex)) return "saveToProfile";
+  return "ignore";
 }
 
 function updateMapping(
@@ -143,6 +148,8 @@ export function Step2Mapping({
   onConfirm,
   onBack,
 }: Step2MappingProps) {
+  const detectedResult = useMemo(() => detectMapping(headers), [headers]);
+
   const [mapping, setMapping] = useState<ColumnMapping>(() => {
     // Use AI mapping if available, otherwise fall back to heuristics
     if (aiMapping && Object.keys(aiMapping).length > 0) {
@@ -167,7 +174,12 @@ export function Step2Mapping({
       }
       return converted;
     }
-    return detectMapping(headers);
+    return detectedResult.mapping;
+  });
+
+  // Track which column indices are "Save to Profile" (not mapped to a known field, not ignored)
+  const [saveToProfileSet, setSaveToProfileSet] = useState<Set<number>>(() => {
+    return new Set(detectedResult.saveToProfileIndices.map((s) => s.index));
   });
   const [selectedRoleId, setSelectedRoleId] = useState<string>(
     roles[0]?.id ?? "",
@@ -185,20 +197,20 @@ export function Step2Mapping({
       .map((header, index) => ({
         header,
         index,
-        field: getFieldForColumn(mapping, index),
+        field: getFieldForColumn(mapping, index, saveToProfileSet),
       }))
       .filter((col) => col.field !== "ignore");
-  }, [headers, mapping]);
+  }, [headers, mapping, saveToProfileSet]);
 
   const ignoredColumns = useMemo(() => {
     return headers
       .map((header, index) => ({
         header,
         index,
-        field: getFieldForColumn(mapping, index),
+        field: getFieldForColumn(mapping, index, saveToProfileSet),
       }))
       .filter((col) => col.field === "ignore");
-  }, [headers, mapping]);
+  }, [headers, mapping, saveToProfileSet]);
 
   // Preview rows
   const previewRows = rows.slice(0, previewCount);
@@ -303,7 +315,11 @@ export function Step2Mapping({
         {/* Mapped columns as cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {headers.map((header, colIndex) => {
-            const currentField = getFieldForColumn(mapping, colIndex);
+            const currentField = getFieldForColumn(
+              mapping,
+              colIndex,
+              saveToProfileSet,
+            );
             const isMapped = currentField !== "ignore";
             const sampleValues = rows
               .slice(0, 3)

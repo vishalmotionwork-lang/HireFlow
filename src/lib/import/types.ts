@@ -21,6 +21,7 @@ export type CandidateField =
   | "experience"
   | "resumeUrl"
   | "role"
+  | "saveToProfile"
   | "ignore";
 
 /**
@@ -43,6 +44,8 @@ export type NormalizedRow = {
   location: string | null;
   experience: string | null;
   resumeUrl: string | null;
+  /** Key-value pairs for columns mapped to "Save to Profile" */
+  customFields: Record<string, string>;
   /** Raw role value from sheet (null when no role column is mapped) */
   role: string | null;
   /** Original row index (0-based, offset from data start) for error reporting */

@@ -229,7 +229,7 @@ export async function analyzeSheetColumns(
   sampleRows: unknown[][],
 ): Promise<AIColumnMapping> {
   // Phase 1: Keyword-based heuristics (instant)
-  const heuristicMapping = detectMapping(headers);
+  const { mapping: heuristicMapping } = detectMapping(headers);
 
   // Phase 2: Data-based pattern detection (instant)
   const enrichedMapping = detectColumnsByData(
@@ -371,6 +371,7 @@ function cleanImportData(
     location: getCellValue(row, fieldIndices.location),
     experience: getCellValue(row, fieldIndices.experience),
     resumeUrl: getCellValue(row, fieldIndices.resumeUrl),
+    customFields: {},
     _rowIndex: i,
   }));
 
@@ -490,6 +491,7 @@ export async function cleanImportBatch(
     location: r.location ?? null,
     experience: r.experience ?? null,
     resumeUrl: r.resumeUrl ?? null,
+    customFields: {},
     _rowIndex: r.rowIndex,
   }));
 

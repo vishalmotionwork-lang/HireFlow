@@ -6,7 +6,7 @@ import type { CandidateField, ColumnMapping } from "./types";
  * First match wins per field.
  */
 const FIELD_KEYWORDS: Record<
-  Exclude<CandidateField, "ignore" | "role">,
+  Exclude<CandidateField, "ignore" | "role" | "saveToProfile">,
   string[]
 > = {
   name: ["full name", "name", "candidate", "applicant", "person"],
@@ -30,7 +30,16 @@ const FIELD_KEYWORDS: Record<
     "work experience",
     "exp",
   ],
-  resumeUrl: ["resume", "cv", "resume link", "cv link", "resume url", "cv url"],
+  resumeUrl: [
+    "resume",
+    "cv",
+    "resume link",
+    "cv link",
+    "resume url",
+    "cv url",
+    "upload your resume",
+    "upload your cv",
+  ],
 };
 
 /** Keywords that identify a role/position column */
@@ -62,40 +71,45 @@ const IGNORE_KEYWORDS = [
   "timestamp",
   "submitted",
   "date",
-  "upload",
-  "file",
-  "statement",
-  "why are you",
-  "cover letter",
-  "brief",
-  "compensation",
-  "ctc",
-  "salary",
-  "expected",
-  "notice period",
+  "serial number",
+  "s.no",
+  "sr no",
+  "id",
 ];
+
+export interface DetectMappingResult {
+  mapping: ColumnMapping;
+  /** Column indices that should be saved as custom profile fields (header → index) */
+  saveToProfileIndices: { index: number; header: string }[];
+}
 
 /**
  * Auto-detect column mapping from spreadsheet headers using keyword heuristics.
  *
- * Each header is normalized to lowercase and checked against keyword lists.
- * First matching header per field wins — columns are never double-assigned.
- * Returns a partial mapping — unmapped fields are absent from the result.
+ * Known fields get mapped to dedicated columns.
+ * Timestamps/IDs get ignored.
+ * Everything else gets flagged as "Save to Profile" — captured in customFields.
  */
-export function detectMapping(headers: string[]): ColumnMapping {
+export function detectMapping(headers: string[]): DetectMappingResult {
   const mapping: ColumnMapping = {};
   const assignedIndices = new Set<number>();
+  const ignoredIndices = new Set<number>();
 
+  // First pass: mark ignored columns
   for (let index = 0; index < headers.length; index++) {
-    const header = headers[index];
-    const normalized = header.toLowerCase().trim();
-
-    // Skip columns that match ignore patterns (timestamps, uploads, etc.)
+    const normalized = headers[index].toLowerCase().trim();
     if (IGNORE_KEYWORDS.some((kw) => normalized.includes(kw))) {
-      continue;
+      ignoredIndices.add(index);
     }
+  }
 
-    // Check for role column first
+  // Second pass: map known fields + role
+  for (let index = 0; index < headers.length; index++) {
+    if (ignoredIndices.has(index)) continue;
+
+    const normalized = headers[index].toLowerCase().trim();
+
+    // Check for role column
     if (
       mapping.role === undefined &&
       !assignedIndices.has(index) &&
@@ -107,13 +121,12 @@ export function detectMapping(headers: string[]): ColumnMapping {
     }
 
     const entries = Object.entries(FIELD_KEYWORDS) as [
-      Exclude<CandidateField, "ignore" | "role">,
+      Exclude<CandidateField, "ignore" | "role" | "saveToProfile">,
       string[],
     ][];
+
     for (const [field, keywords] of entries) {
-      // Skip if this field already has a column assigned
       if (mapping[field] !== undefined) continue;
-      // Skip if this column index is already assigned to another field
       if (assignedIndices.has(index)) continue;
 
       if (keywords.some((kw) => normalized.includes(kw))) {
@@ -124,5 +137,13 @@ export function detectMapping(headers: string[]): ColumnMapping {
     }
   }
 
-  return mapping;
+  // Third pass: everything unassigned and not ignored → save to profile
+  const saveToProfileIndices: { index: number; header: string }[] = [];
+  for (let index = 0; index < headers.length; index++) {
+    if (!assignedIndices.has(index) && !ignoredIndices.has(index)) {
+      saveToProfileIndices.push({ index, header: headers[index] });
+    }
+  }
+
+  return { mapping, saveToProfileIndices };
 }

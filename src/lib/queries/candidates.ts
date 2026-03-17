@@ -293,6 +293,7 @@ export async function getBestCandidates(
       lastModifiedBy: candidates.lastModifiedBy,
       importBatchId: candidates.importBatchId,
       resumeFileName: candidates.resumeFileName,
+      customFields: candidates.customFields,
       statusChangedBy: candidates.statusChangedBy,
       statusChangedAt: candidates.statusChangedAt,
       createdBy: candidates.createdBy,

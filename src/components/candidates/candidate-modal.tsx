@@ -191,7 +191,7 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
         }}
       >
         <DialogContent
-          className="sm:max-w-[80vw] md:max-w-[75vw] lg:max-w-[70vw] max-h-[85vh] overflow-hidden p-0"
+          className="max-w-full h-full md:max-w-[75vw] lg:max-w-[70vw] md:h-auto md:max-h-[85vh] overflow-hidden p-0 rounded-none md:rounded-lg"
           showCloseButton
         >
           <DialogTitle className="sr-only">
@@ -201,9 +201,9 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
           {isLoading || !candidate ? (
             <ModalSkeleton />
           ) : (
-            <div className="flex flex-col md:flex-row h-[80vh] max-h-[80vh]">
+            <div className="flex flex-col md:flex-row h-full md:h-[80vh] md:max-h-[80vh] overflow-y-auto md:overflow-hidden">
               {/* ── Left Panel: Properties Sidebar ── */}
-              <div className="w-full md:w-72 border-b md:border-b-0 md:border-r border-gray-100 overflow-y-auto shrink-0">
+              <div className="w-full md:w-72 border-b md:border-b-0 md:border-r border-gray-100 md:overflow-y-auto shrink-0">
                 {/* Header */}
                 <div className="px-4 pt-4 pb-3 border-b border-gray-100">
                   <div className="text-base font-semibold">
@@ -495,7 +495,7 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
               </div>
 
               {/* ── Right Panel ── */}
-              <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 flex flex-col min-h-96 md:overflow-hidden">
                 {/* Tab bar */}
                 <div className="flex border-b border-gray-100 px-5 pt-4 gap-1 shrink-0">
                   <button
@@ -533,7 +533,7 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
                 </div>
 
                 {/* Tab content */}
-                <div className="flex-1 overflow-y-auto p-5">
+                <div className="flex-1 md:overflow-y-auto p-4 sm:p-5">
                   {rightPanel === "comments" && (
                     <CommentThread candidateId={candidate.id} />
                   )}

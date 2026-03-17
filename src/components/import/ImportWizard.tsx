@@ -224,27 +224,27 @@ function StepIndicator({ currentStep }: { currentStep: WizardStep }) {
   const currentIndex = STEP_ORDER.indexOf(currentStep);
 
   return (
-    <div className="flex items-center gap-0 mb-6">
+    <div className="flex items-center justify-center gap-0 mb-4 overflow-x-auto">
       {STEPS.map((step, i) => {
         const isDone = i < currentIndex;
         const isCurrent = i === currentIndex;
 
         return (
-          <div key={step.key} className="flex items-center">
+          <div key={step.key} className="flex items-center shrink-0">
             {/* Step dot */}
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-0.5">
               <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
                   isDone
                     ? "bg-blue-500 text-white"
                     : isCurrent
-                      ? "bg-blue-500 text-white ring-4 ring-blue-100"
+                      ? "bg-blue-500 text-white ring-2 ring-blue-100"
                       : "bg-gray-100 text-gray-400"
                 }`}
               >
                 {isDone ? (
                   <svg
-                    className="w-3.5 h-3.5"
+                    className="w-3 h-3"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -261,7 +261,7 @@ function StepIndicator({ currentStep }: { currentStep: WizardStep }) {
                 )}
               </div>
               <span
-                className={`text-xs font-medium ${
+                className={`text-xs font-medium hidden sm:block ${
                   isCurrent
                     ? "text-blue-600"
                     : isDone
@@ -275,9 +275,10 @@ function StepIndicator({ currentStep }: { currentStep: WizardStep }) {
             {/* Connector line */}
             {i < STEPS.length - 1 && (
               <div
-                className={`h-0.5 w-16 mx-2 mt-[-14px] rounded transition-colors ${
+                className={`h-0.5 w-6 sm:w-12 mx-1 sm:mx-2 rounded transition-colors ${
                   i < currentIndex ? "bg-blue-500" : "bg-gray-200"
                 }`}
+                style={{ marginTop: "-8px" }}
               />
             )}
           </div>
@@ -510,23 +511,23 @@ export function ImportWizard({ roles }: ImportWizardProps) {
   const isDeepInFileWizard = state.step !== "upload" || multiSheets !== null;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-6">
       {/* Top-level import mode tabs — hidden when deep in the file/paste wizard */}
       {!isDeepInFileWizard && !extractionBatchId && (
-        <div className="flex gap-1 border-b border-gray-200 mb-6">
+        <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
           <button
             onClick={() => handleTabChange("file")}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`shrink-0 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
               activeTab === "file"
                 ? "border-blue-500 text-blue-600"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             }`}
           >
-            File Upload
+            File
           </button>
           <button
             onClick={() => handleTabChange("url")}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`shrink-0 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
               activeTab === "url"
                 ? "border-blue-500 text-blue-600"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -536,14 +537,13 @@ export function ImportWizard({ roles }: ImportWizardProps) {
           </button>
           <button
             onClick={() => handleTabChange("cv")}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px inline-flex items-center gap-1.5 ${
+            className={`shrink-0 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap inline-flex items-center gap-1.5 ${
               activeTab === "cv"
                 ? "border-blue-500 text-blue-600"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             }`}
           >
-            <FileText className="h-3.5 w-3.5" />
-            CV Upload
+            CV
           </button>
         </div>
       )}

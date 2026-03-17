@@ -18,6 +18,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Sync temporarily disabled — timeout issues on Hobby plan
+  const SYNC_DISABLED = true;
+  if (SYNC_DISABLED) {
+    return NextResponse.json({
+      syncedAt: new Date().toISOString(),
+      disabled: true,
+      reason: "Sync temporarily disabled",
+    });
+  }
+
   try {
     const results = await syncDueSheets();
 

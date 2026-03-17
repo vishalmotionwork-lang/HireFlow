@@ -442,16 +442,13 @@ function SheetRow({ sheet, roles }: { sheet: SheetWithRole; roles: Role[] }) {
             <ExternalLink className="h-4 w-4" />
           </a>
 
-          {/* Sync Now */}
+          {/* Sync Now — disabled until timeout issue is fixed */}
           <button
-            onClick={handleSync}
-            disabled={isSyncing || isPending}
-            className="p-2 rounded-md hover:bg-blue-50 text-gray-400 hover:text-blue-600 disabled:opacity-50"
-            title="Sync Now"
+            disabled
+            className="p-2 rounded-md text-gray-300 cursor-not-allowed"
+            title="Sync temporarily disabled"
           >
-            <RefreshCw
-              className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
-            />
+            <RefreshCw className="h-4 w-4" />
           </button>
 
           {/* Pause / Resume */}

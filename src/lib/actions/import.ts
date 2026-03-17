@@ -20,6 +20,10 @@ export interface ImportRow {
   location: string | null;
   experience: string | null;
   resumeUrl: string | null;
+  /** Flexible key-value data from "Save to Profile" columns */
+  customFields?: Record<string, string>;
+  /** Validation warnings from import (stored for manual review flags) */
+  reviewReasons?: string[];
   /** User's decision set in Step 3 of the import wizard. */
   decision: "import" | "merge" | "skip";
   /** Candidate ID to fill gaps on (only when decision='merge'). */
@@ -87,7 +91,7 @@ export async function detectDuplicates(
     })
     .from(candidates)
     .innerJoin(roles, eq(candidates.roleId, roles.id))
-    .where(or(...conditions));
+    .where(and(eq(candidates.isDeleted, false), or(...conditions)));
 
   // Build map keyed by "email:<value>" and "phone:<value>"
   const map: Record<string, DuplicateMatch> = {};
@@ -210,21 +214,29 @@ export async function importCandidates(
     await db.transaction(async (tx) => {
       // --- Insert new candidates ---
       if (toInsert.length > 0) {
-        const insertValues = toInsert.map((row) => ({
-          roleId: row.roleId ?? targetRoleId,
-          name: row.name,
-          email: row.email ?? null,
-          phone: row.phone ?? null,
-          instagram: row.instagram ?? null,
-          portfolioUrl: row.portfolioUrl ?? null,
-          linkedinUrl: row.linkedinUrl ?? null,
-          location: row.location ?? null,
-          experience: row.experience ?? null,
-          resumeUrl: row.resumeUrl ?? null,
-          isDuplicate: false,
-          importBatchId: batchId,
-          createdBy: user.name,
-        }));
+        const insertValues = toInsert.map((row) => {
+          const cf = { ...(row.customFields ?? {}) };
+          if (row.reviewReasons && row.reviewReasons.length > 0) {
+            cf._reviewReasons = JSON.stringify(row.reviewReasons);
+            cf._needsReview = "true";
+          }
+          return {
+            roleId: row.roleId ?? targetRoleId,
+            name: row.name,
+            email: row.email ?? null,
+            phone: row.phone ?? null,
+            instagram: row.instagram ?? null,
+            portfolioUrl: row.portfolioUrl ?? null,
+            linkedinUrl: row.linkedinUrl ?? null,
+            location: row.location ?? null,
+            experience: row.experience ?? null,
+            resumeUrl: row.resumeUrl ?? null,
+            customFields: cf,
+            isDuplicate: false,
+            importBatchId: batchId,
+            createdBy: user.name,
+          };
+        });
 
         const inserted = await tx
           .insert(candidates)

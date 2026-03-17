@@ -339,6 +339,40 @@ export async function checkDuplicatesAction(candidateId: string) {
 }
 
 /**
+ * Clear the "needs manual review" flag from a candidate.
+ * Removes _needsReview and _reviewReasons from customFields.
+ */
+export async function markReviewed(candidateId: string) {
+  try {
+    const user = await getAuthUser();
+    if (!user) return { error: "Not authenticated" };
+
+    const [candidate] = await db
+      .select({ customFields: candidates.customFields })
+      .from(candidates)
+      .where(eq(candidates.id, candidateId))
+      .limit(1);
+
+    if (!candidate) return { error: "Candidate not found" };
+
+    const cf = { ...(candidate.customFields as Record<string, unknown>) };
+    delete cf._needsReview;
+    delete cf._reviewReasons;
+
+    await db
+      .update(candidates)
+      .set({ customFields: cf, updatedAt: new Date() })
+      .where(eq(candidates.id, candidateId));
+
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch (err) {
+    console.error("[markReviewed] Error:", err);
+    return { error: "Failed to mark as reviewed" };
+  }
+}
+
+/**
  * Merge two candidates: combine contact info on target, move comments + events
  * from source to target, soft-delete the source.
  */

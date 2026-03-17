@@ -150,6 +150,14 @@
   --color-5: oklch(90.7% 0.231 133);
 }
 
+@keyframes reviewWobble {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  15% { transform: rotate(-8deg) translateY(-1px); }
+  30% { transform: rotate(6deg) translateY(0); }
+  45% { transform: rotate(-4deg) translateY(-0.5px); }
+  60% { transform: rotate(0deg) translateY(0); }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

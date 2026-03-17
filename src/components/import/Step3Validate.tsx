@@ -102,6 +102,8 @@ export function Step3Validate({
               location: r.validated.location,
               experience: r.validated.experience,
               resumeUrl: r.validated.resumeUrl,
+              customFields: r.validated.customFields,
+              reviewReasons: r.validated.errors.map((e) => e.message),
               decision: "merge",
               mergeTargetId: r.duplicate.candidateId,
               roleId: r.resolvedRoleId ?? undefined,
@@ -118,6 +120,8 @@ export function Step3Validate({
             location: r.validated.location,
             experience: r.validated.experience,
             resumeUrl: r.validated.resumeUrl,
+            customFields: r.validated.customFields,
+            reviewReasons: r.validated.errors.map((e) => e.message),
             decision: "import",
             roleId: r.resolvedRoleId ?? undefined,
           };

@@ -313,7 +313,7 @@ export function Step2Mapping({
         </p>
 
         {/* Mapped columns as cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {headers.map((header, colIndex) => {
             const currentField = getFieldForColumn(
               mapping,
@@ -390,8 +390,8 @@ export function Step2Mapping({
             </span>
           </h3>
 
-          <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="min-w-full text-sm">
+          <div className="overflow-x-auto rounded-lg border border-gray-200 max-w-full">
+            <table className="w-full text-sm" style={{ tableLayout: "fixed" }}>
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
                   {mappedColumns.map((col) => (
@@ -423,7 +423,7 @@ export function Step2Mapping({
                       return (
                         <td
                           key={col.index}
-                          className="px-3 py-2 text-xs text-gray-600 truncate max-w-[200px]"
+                          className="px-3 py-2 text-xs text-gray-600 truncate overflow-hidden"
                           title={displayValue}
                         >
                           {displayValue || (

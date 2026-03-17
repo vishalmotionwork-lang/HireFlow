@@ -241,6 +241,20 @@ export const CandidateRow = forwardRef<HTMLTableRowElement, CandidateRowProps>(
         {/* Name */}
         <td className="px-2 py-0.5">
           <span className="font-medium text-[13px] text-gray-900 flex items-center gap-1 min-w-0 max-w-44">
+            {/* Manual review flag — gentle wobble + slight tilt */}
+            {(candidate.customFields as Record<string, string> | null)
+              ?._needsReview === "true" && (
+              <span
+                className="shrink-0 inline-block"
+                style={{
+                  animation: "reviewWobble 4s ease-in-out infinite",
+                  fontSize: "11px",
+                }}
+                title="Needs manual review"
+              >
+                ⚠️
+              </span>
+            )}
             {candidate.isDuplicate && (
               <TriangleAlert
                 size={12}

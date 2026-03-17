@@ -27,6 +27,7 @@ import { FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import {
   fetchCandidateProfile,
   updateCandidateField,
+  markReviewed,
 } from "@/lib/actions/candidates";
 import type { Candidate, CandidateEvent } from "@/types";
 
@@ -397,7 +398,7 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
                     > | null;
                     if (!cf || typeof cf !== "object") return null;
                     return Object.entries(cf)
-                      .filter(([, v]) => !!v)
+                      .filter(([k, v]) => !!v && !k.startsWith("_"))
                       .map(([key, val]) => (
                         <PropertyItem
                           key={key}
@@ -411,6 +412,54 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
                       ));
                   })()}
                 </div>
+
+                {/* Manual review banner */}
+                {(() => {
+                  const cf = candidate.customFields as Record<
+                    string,
+                    string
+                  > | null;
+                  if (cf?._needsReview !== "true") return null;
+                  const reasons: string[] = (() => {
+                    try {
+                      return JSON.parse(cf._reviewReasons ?? "[]");
+                    } catch {
+                      return [];
+                    }
+                  })();
+                  if (reasons.length === 0) return null;
+                  return (
+                    <section className="px-4 py-3 border-t border-amber-200 bg-amber-50">
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <p className="text-xs font-semibold text-amber-700 flex items-center gap-1">
+                          <span>⚠️</span> Needs Manual Review
+                        </p>
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await markReviewed(candidate.id);
+                            if (candidateId) loadProfile(candidateId);
+                          }}
+                          className="shrink-0 rounded-md bg-amber-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-amber-700 transition-colors"
+                        >
+                          Mark Reviewed ✓
+                        </button>
+                      </div>
+                      <ul className="space-y-1">
+                        {reasons.map((reason: string, i: number) => (
+                          <li
+                            key={i}
+                            className="text-xs text-amber-600 flex items-start gap-1.5"
+                          >
+                            <span className="mt-1 h-1 w-1 rounded-full bg-amber-400 shrink-0" />
+                            {reason}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  );
+                })()}
 
                 {/* Rejection details */}
                 {candidate.status === "rejected" &&

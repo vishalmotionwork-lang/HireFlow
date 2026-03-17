@@ -3,7 +3,10 @@
 import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import type { ImportSuggestion } from "@/lib/ai/importValidator";
 import { AiSuggestionPanel } from "@/components/import/AiSuggestionPanel";
-import type { EnrichedRow, RowDecision } from "@/components/import/useValidateStep";
+import type {
+  EnrichedRow,
+  RowDecision,
+} from "@/components/import/useValidateStep";
 
 interface ValidateTableRowProps {
   row: EnrichedRow;
@@ -32,17 +35,12 @@ export function ValidateTableRow({
   onApplyFix,
   onDismissSuggestion,
 }: ValidateTableRowProps) {
-  const {
-    validated,
-    duplicate,
-    decision,
-    resolvedRoleId,
-    resolvedRoleName,
-  } = row;
+  const { validated, duplicate, decision, resolvedRoleId, resolvedRoleName } =
+    row;
   const isInvalid = !validated.isValid;
   const hasDuplicate = duplicate !== null;
-  const isRoleSkipped =
-    !resolvedRoleId && validated.isValid && hasRoleMapping;
+  const isRoleSkipped = !resolvedRoleId && validated.isValid && hasRoleMapping;
+  const hasWarnings = validated.isValid && validated.errors.length > 0;
   const firstError = validated.errors[0];
   const hasAiSuggestions = rowSuggestions.length > 0;
 
@@ -75,28 +73,22 @@ export function ValidateTableRow({
       </td>
 
       {/* Name */}
-      <td className="px-3 py-2 text-xs font-medium text-gray-900 max-w-[140px] truncate">
-        {validated.name ?? (
-          <span className="italic text-red-400">missing</span>
-        )}
+      <td className="px-3 py-2 text-xs font-medium text-gray-900 max-w-36 truncate">
+        {validated.name ?? <span className="italic text-red-400">missing</span>}
       </td>
 
       {/* Email */}
-      <td className="px-3 py-2 text-xs text-gray-600 max-w-[160px] truncate">
-        {validated.email ?? (
-          <span className="text-gray-300">&mdash;</span>
-        )}
+      <td className="px-3 py-2 text-xs text-gray-600 max-w-40 truncate">
+        {validated.email ?? <span className="text-gray-300">&mdash;</span>}
       </td>
 
       {/* Phone */}
       <td className="px-3 py-2 text-xs text-gray-600">
-        {validated.phone ?? (
-          <span className="text-gray-300">&mdash;</span>
-        )}
+        {validated.phone ?? <span className="text-gray-300">&mdash;</span>}
       </td>
 
       {/* Portfolio */}
-      <td className="px-3 py-2 text-xs text-gray-600 max-w-[140px] truncate">
+      <td className="px-3 py-2 text-xs text-gray-600 max-w-36 truncate">
         {validated.portfolioUrl ? (
           <a
             href={validated.portfolioUrl}
@@ -107,7 +99,10 @@ export function ValidateTableRow({
             {validated.portfolioUrl}
           </a>
         ) : (
-          <span className="text-gray-300">&mdash;</span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+            <AlertTriangle className="h-3 w-3" />
+            Needs review
+          </span>
         )}
       </td>
 
@@ -131,23 +126,15 @@ export function ValidateTableRow({
         <div className="space-y-1.5">
           {isInvalid ? (
             <div className="flex items-start gap-1.5">
-              <XCircle
-                size={13}
-                className="mt-0.5 shrink-0 text-red-500"
-              />
+              <XCircle size={13} className="mt-0.5 shrink-0 text-red-500" />
               <span className="text-xs text-red-600">
                 {firstError?.message ?? "Invalid"}
               </span>
             </div>
           ) : isRoleSkipped ? (
             <div className="flex items-start gap-1.5">
-              <XCircle
-                size={13}
-                className="mt-0.5 shrink-0 text-gray-400"
-              />
-              <span className="text-xs text-gray-500">
-                Role skipped
-              </span>
+              <XCircle size={13} className="mt-0.5 shrink-0 text-gray-400" />
+              <span className="text-xs text-gray-500">Role skipped</span>
             </div>
           ) : hasDuplicate ? (
             <div className="flex items-start gap-1.5">
@@ -157,10 +144,18 @@ export function ValidateTableRow({
               />
               <span className="text-xs text-amber-700">
                 May already exist as{" "}
-                <span className="font-semibold">
-                  {duplicate.candidateName}
-                </span>{" "}
+                <span className="font-semibold">{duplicate.candidateName}</span>{" "}
                 in {duplicate.roleName}
+              </span>
+            </div>
+          ) : hasWarnings ? (
+            <div className="flex items-start gap-1.5">
+              <AlertTriangle
+                size={13}
+                className="mt-0.5 shrink-0 text-amber-500"
+              />
+              <span className="text-xs text-amber-700">
+                {firstError?.message ?? "Needs review"}
               </span>
             </div>
           ) : (
@@ -194,9 +189,7 @@ export function ValidateTableRow({
             className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-100 disabled:opacity-50"
           >
             <option value="import">Import as new</option>
-            <option value="merge">
-              Merge with {duplicate.candidateName}
-            </option>
+            <option value="merge">Merge with {duplicate.candidateName}</option>
             <option value="skip">Skip</option>
           </select>
         ) : (

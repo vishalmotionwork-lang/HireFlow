@@ -84,6 +84,7 @@ function PropertyItem({
   isActive,
   onClick,
   children,
+  expandable = false,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -93,30 +94,43 @@ function PropertyItem({
   isActive?: boolean;
   onClick?: () => void;
   children?: React.ReactNode;
+  expandable?: boolean;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLongText = expandable && value && value.length > 40;
+
+  function handleClick() {
+    if (isLongText) {
+      setExpanded((prev) => !prev);
+    }
+    onClick?.();
+  }
+
   return (
     <div
-      className={`flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-left text-sm transition-colors cursor-pointer ${
+      className={`flex items-start gap-2.5 w-full rounded-lg px-3 py-2 text-left text-sm transition-colors cursor-pointer ${
         isActive ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50 text-gray-700"
       }`}
-      onClick={onClick}
+      onClick={handleClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === "Enter") onClick?.();
+        if (e.key === "Enter") handleClick();
       }}
     >
       {/* Status dot */}
       <span
-        className={`h-1.5 w-1.5 rounded-full shrink-0 ${hasData ? "bg-green-500" : "bg-gray-300"}`}
+        className={`mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 ${hasData ? "bg-green-500" : "bg-gray-300"}`}
       />
       {/* Icon */}
-      <span className="shrink-0 text-gray-400">{icon}</span>
+      <span className="mt-0.5 shrink-0 text-gray-400">{icon}</span>
       {/* Label + value */}
       <span className="flex-1 min-w-0">
         <span className="block text-xs text-gray-400">{label}</span>
         {children ?? (
-          <span className="block truncate text-sm">
+          <span
+            className={`block text-sm ${expanded ? "whitespace-pre-wrap" : "truncate"}`}
+          >
             {value || <span className="text-gray-300 italic">Not added</span>}
           </span>
         )}
@@ -129,7 +143,7 @@ function PropertyItem({
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
           title={`Open ${label}`}
-          className="shrink-0 rounded p-1 text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+          className="mt-0.5 shrink-0 rounded p-1 text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors"
         >
           <ExternalLink className="h-3.5 w-3.5" />
         </a>
@@ -408,6 +422,7 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
                           hasData={!!val}
                           isActive={activeProperty === `custom:${key}`}
                           onClick={() => setActiveProperty(`custom:${key}`)}
+                          expandable
                         />
                       ));
                   })()}

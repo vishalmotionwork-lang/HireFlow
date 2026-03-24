@@ -23,7 +23,9 @@ export interface DuplicateMatch {
   candidateId: string;
   candidateName: string;
   roleName: string;
-  matchedOn: "email" | "phone";
+  matchedOn: "email" | "phone" | "name";
+  filledFields: string[];
+  existingCustomFieldKeys: string[];
 }
 
 /** Per-row user decision */
@@ -44,13 +46,60 @@ export interface EnrichedRow {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Check if an import row has any NEW data that the existing candidate doesn't.
+ * Returns true if there's at least one field worth merging.
+ */
+function rowHasNewData(row: ValidatedRow, dup: DuplicateMatch): boolean {
+  // Check standard fields: does the row have a value for a field the candidate lacks?
+  const stdChecks: Array<[keyof ValidatedRow, string]> = [
+    ["email", "email"],
+    ["phone", "phone"],
+    ["instagram", "instagram"],
+    ["portfolioUrl", "portfolioUrl"],
+    ["linkedinUrl", "linkedinUrl"],
+    ["location", "location"],
+    ["experience", "experience"],
+    ["resumeUrl", "resumeUrl"],
+  ];
+  for (const [rowField, dupField] of stdChecks) {
+    const val = row[rowField];
+    if (
+      val &&
+      String(val).trim() !== "" &&
+      !dup.filledFields.includes(dupField)
+    ) {
+      return true;
+    }
+  }
+  // Check customFields: does the row bring any new keys?
+  if (row.customFields) {
+    for (const [key, val] of Object.entries(row.customFields)) {
+      if (key.startsWith("_")) continue;
+      if (
+        val &&
+        val.trim() !== "" &&
+        !dup.existingCustomFieldKeys.includes(key)
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 function defaultDecision(
   isValid: boolean,
   hasDuplicate: boolean,
   isRoleSkipped: boolean = false,
+  row?: ValidatedRow,
+  dup?: DuplicateMatch | null,
 ): RowDecision {
   if (!isValid || isRoleSkipped) return "skip";
-  if (hasDuplicate) return "import"; // user must choose
+  if (hasDuplicate && dup && row) {
+    // Only merge if the row brings something new; otherwise skip
+    return rowHasNewData(row, dup) ? "merge" : "skip";
+  }
   return "import";
 }
 
@@ -119,6 +168,7 @@ export function suggestionKey(s: ImportSuggestion): string {
 
 interface UseValidateStepParams {
   rows: RawRow[];
+  headers: string[];
   mapping: ColumnMapping;
   targetRoleId: string;
   roleMapping: RoleMapping | null;
@@ -127,6 +177,7 @@ interface UseValidateStepParams {
 
 export function useValidateStep({
   rows,
+  headers,
   mapping,
   targetRoleId,
   roleMapping,
@@ -162,7 +213,15 @@ export function useValidateStep({
       setLoadError(null);
 
       try {
-        const normalized = normalizeRows(rows, mapping);
+        // Derive saveToProfileIndices: any column not mapped to a standard field
+        const mappedIndices = new Set(
+          Object.values(mapping).filter((v): v is number => v !== undefined),
+        );
+        const saveToProfileIndices = headers
+          .map((header, index) => ({ index, header }))
+          .filter(({ index }) => !mappedIndices.has(index));
+
+        const normalized = normalizeRows(rows, mapping, saveToProfileIndices);
         const validated = validateRows(normalized);
 
         let roleLookup: Record<
@@ -181,6 +240,9 @@ export function useValidateStep({
         const phones = validated
           .map((r) => r.phone)
           .filter((p): p is string => p !== null && p.trim() !== "");
+        const names = validated
+          .map((r) => r.name)
+          .filter((n): n is string => n !== null && n.trim() !== "");
 
         const aiRows = validated.map((r) => ({
           rowIndex: r._rowIndex,
@@ -192,7 +254,7 @@ export function useValidateStep({
         }));
 
         const [dupMap, aiResults] = await Promise.all([
-          detectDuplicates(emails, phones),
+          detectDuplicates(emails, phones, names),
           validateImportWithAI(aiRows).catch(() => [] as ImportSuggestion[]),
         ]);
 
@@ -209,9 +271,26 @@ export function useValidateStep({
           }
 
           if (!duplicate && row.phone) {
-            const phoneKey = `phone:${row.phone}`;
+            // Normalize phone to match the key format from detectDuplicates
+            const normalizedPhone = row.phone.replace(/\D/g, "");
+            const stripped =
+              normalizedPhone.length === 12 && normalizedPhone.startsWith("91")
+                ? normalizedPhone.slice(2)
+                : normalizedPhone.length === 13 &&
+                    normalizedPhone.startsWith("091")
+                  ? normalizedPhone.slice(3)
+                  : normalizedPhone;
+            const phoneKey = `phone:${stripped}`;
             if (dupMap[phoneKey]) {
               duplicate = dupMap[phoneKey];
+            }
+          }
+
+          // Name match (case-insensitive, whitespace-normalized)
+          if (!duplicate && row.name) {
+            const nameKey = `name:${row.name.trim().toLowerCase().replace(/\s+/g, " ")}`;
+            if (dupMap[nameKey]) {
+              duplicate = dupMap[nameKey];
             }
           }
 
@@ -246,6 +325,8 @@ export function useValidateStep({
               row.isValid,
               duplicate !== null,
               isRoleSkipped,
+              row,
+              duplicate,
             ),
             resolvedRoleId,
             resolvedRoleName,
@@ -254,6 +335,31 @@ export function useValidateStep({
 
         setEnrichedRows(enriched);
         setAiSuggestions(aiResults);
+
+        const autoMergedDups = enriched.filter(
+          (r) => r.duplicate !== null && r.decision === "merge",
+        ).length;
+        const autoSkippedDups = enriched.filter(
+          (r) => r.duplicate !== null && r.decision === "skip",
+        ).length;
+        if (autoMergedDups > 0) {
+          toast.info(
+            `${autoMergedDups} existing candidate${autoMergedDups === 1 ? "" : "s"} will be updated`,
+            {
+              description:
+                "New fields (salary, CTA, etc.) will be merged into existing profiles.",
+            },
+          );
+        }
+        if (autoSkippedDups > 0) {
+          toast.info(
+            `${autoSkippedDups} duplicate${autoSkippedDups === 1 ? "" : "s"} auto-skipped`,
+            {
+              description:
+                "No new data to add. You can override in the Action column.",
+            },
+          );
+        }
 
         if (aiResults.length > 0) {
           toast.info(
@@ -278,7 +384,15 @@ export function useValidateStep({
     return () => {
       cancelled = true;
     };
-  }, [rows, mapping, targetRoleId, roleMapping, hasRoleMapping, roles]);
+  }, [
+    rows,
+    headers,
+    mapping,
+    targetRoleId,
+    roleMapping,
+    hasRoleMapping,
+    roles,
+  ]);
 
   // ---------------------------------------------------------------------------
   // Row decision handlers (immutable updates)
@@ -413,9 +527,7 @@ export function useValidateStep({
   const roleSkippedCount = enrichedRows.filter(
     (r) => !r.resolvedRoleId && r.validated.isValid && hasRoleMapping,
   ).length;
-  const skippedCount = enrichedRows.filter(
-    (r) => r.decision === "skip",
-  ).length;
+  const skippedCount = enrichedRows.filter((r) => r.decision === "skip").length;
   const toImportCount = enrichedRows.filter(
     (r) =>
       (r.decision === "import" || r.decision === "merge") && r.resolvedRoleId,

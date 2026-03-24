@@ -32,6 +32,7 @@ interface Step3ValidateProps {
 
 export function Step3Validate({
   rows,
+  headers,
   mapping,
   targetRoleId,
   roleMapping = null,
@@ -71,6 +72,7 @@ export function Step3Validate({
     activeSuggestionCount,
   } = useValidateStep({
     rows,
+    headers,
     mapping,
     targetRoleId,
     roleMapping,
@@ -124,6 +126,7 @@ export function Step3Validate({
             reviewReasons: r.validated.errors.map((e) => e.message),
             decision: "import",
             roleId: r.resolvedRoleId ?? undefined,
+            duplicateMatchId: r.duplicate?.candidateId,
           };
         });
 
@@ -310,8 +313,9 @@ export function Step3Validate({
         </span>
         {dupCount > 0 && (
           <span>
-            <span className="font-semibold text-amber-600">{dupCount}</span>{" "}
-            {dupCount === 1 ? "duplicate" : "duplicates"} found
+            <span className="font-semibold text-blue-600">{dupCount}</span>{" "}
+            {dupCount === 1 ? "existing candidate" : "existing candidates"} will
+            be updated
           </span>
         )}
         {invalidCount > 0 && (

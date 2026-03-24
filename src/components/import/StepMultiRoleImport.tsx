@@ -175,10 +175,16 @@ export function StepMultiRoleImport({
 
       try {
         // Auto-detect column mapping from headers
-        const { mapping: columnMapping } = detectMapping(sheet.headers);
+        const { mapping: columnMapping, saveToProfileIndices } = detectMapping(
+          sheet.headers,
+        );
 
-        // Normalize rows using detected mapping
-        const normalized = normalizeRows(sheet.rows, columnMapping);
+        // Normalize rows using detected mapping (includes custom fields)
+        const normalized = normalizeRows(
+          sheet.rows,
+          columnMapping,
+          saveToProfileIndices,
+        );
 
         // Validate
         const validated = validateRows(normalized);

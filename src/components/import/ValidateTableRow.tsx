@@ -140,10 +140,10 @@ export function ValidateTableRow({
             <div className="flex items-start gap-1.5">
               <AlertTriangle
                 size={13}
-                className="mt-0.5 shrink-0 text-amber-500"
+                className="mt-0.5 shrink-0 text-blue-500"
               />
-              <span className="text-xs text-amber-700">
-                May already exist as{" "}
+              <span className="text-xs text-blue-700">
+                Match ({duplicate.matchedOn}) — will update{" "}
                 <span className="font-semibold">{duplicate.candidateName}</span>{" "}
                 in {duplicate.roleName}
               </span>

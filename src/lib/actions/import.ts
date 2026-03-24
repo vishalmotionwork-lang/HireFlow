@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { candidates, candidateEvents, importBatches, roles } from "@/db/schema";
 import { requireAuth } from "@/lib/auth";
@@ -30,6 +30,8 @@ export interface ImportRow {
   mergeTargetId?: string;
   /** Per-row role ID override (used when importing with a role column). */
   roleId?: string;
+  /** Existing candidate ID this row is a duplicate of (set even for "import" decisions). */
+  duplicateMatchId?: string;
 }
 
 export interface ImportResult {
@@ -45,7 +47,11 @@ export interface DuplicateMatch {
   candidateId: string;
   candidateName: string;
   roleName: string;
-  matchedOn: "email" | "phone";
+  matchedOn: "email" | "phone" | "name";
+  /** Which standard fields already have values on the existing candidate */
+  filledFields: string[];
+  /** Keys already present in the existing candidate's customFields */
+  existingCustomFieldKeys: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -57,28 +63,66 @@ export interface DuplicateMatch {
  * Keys are "email:<value>" or "phone:<value>" (lowercased).
  * Joins with roles table to provide a user-readable "may already exist as X in Y" message.
  */
+/**
+ * Normalize a phone number for comparison.
+ * Strips all non-digit chars, removes +91/091 prefix for Indian numbers.
+ */
+function normalizePhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) return digits.slice(2);
+  if (digits.length === 13 && digits.startsWith("091")) return digits.slice(3);
+  return digits;
+}
+
+/**
+ * Normalize a name for duplicate comparison.
+ * Lowercases, trims, collapses whitespace.
+ */
+function normalizeName(raw: string): string {
+  return raw.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 export async function detectDuplicates(
   emails: string[],
   phones: string[],
+  names: string[] = [],
 ): Promise<Record<string, DuplicateMatch>> {
   await requireAuth("editor");
 
   // Normalise inputs -- filter out empty strings
   const cleanEmails = emails.map((e) => e.trim().toLowerCase()).filter(Boolean);
-  const cleanPhones = phones.map((p) => p.trim()).filter(Boolean);
+  const cleanPhones = phones
+    .map((p) => normalizePhone(p.trim()))
+    .filter((p) => p.length >= 7);
+  const cleanNames = names
+    .map((n) => normalizeName(n))
+    .filter((n) => n.length >= 2);
 
-  if (cleanEmails.length === 0 && cleanPhones.length === 0) {
+  if (
+    cleanEmails.length === 0 &&
+    cleanPhones.length === 0 &&
+    cleanNames.length === 0
+  ) {
     return {};
   }
 
-  // Build OR conditions -- only include non-empty arrays to avoid Drizzle inArray([]) error
-  const conditions = [];
-  if (cleanEmails.length > 0) {
-    conditions.push(inArray(candidates.email, cleanEmails));
+  // Build OR conditions — use ilike for case-insensitive email matching
+  const emailConditions = cleanEmails.map((e) => ilike(candidates.email, e));
+  // Name conditions — case-insensitive exact match after normalization
+  const nameConditions = cleanNames.map((n) => ilike(candidates.name, n));
+  // For phones: fetch ALL non-deleted candidates with a phone, then filter in JS
+  // (SQL can't normalize phone formats, so we match after normalizing both sides)
+  const hasPhone = cleanPhones.length > 0;
+
+  const orConditions = [...emailConditions, ...nameConditions];
+  if (hasPhone) {
+    // Broad fetch: any candidate with a phone value (we'll filter in JS)
+    orConditions.push(
+      sql`${candidates.phone} IS NOT NULL AND ${candidates.phone} != ''`,
+    );
   }
-  if (cleanPhones.length > 0) {
-    conditions.push(inArray(candidates.phone, cleanPhones));
-  }
+
+  if (orConditions.length === 0) return {};
 
   const matches = await db
     .select({
@@ -86,36 +130,90 @@ export async function detectDuplicates(
       name: candidates.name,
       email: candidates.email,
       phone: candidates.phone,
+      instagram: candidates.instagram,
+      portfolioUrl: candidates.portfolioUrl,
+      linkedinUrl: candidates.linkedinUrl,
+      location: candidates.location,
+      experience: candidates.experience,
+      resumeUrl: candidates.resumeUrl,
+      customFields: candidates.customFields,
       roleId: candidates.roleId,
       roleName: roles.name,
     })
     .from(candidates)
     .innerJoin(roles, eq(candidates.roleId, roles.id))
-    .where(and(eq(candidates.isDeleted, false), or(...conditions)));
+    .where(and(eq(candidates.isDeleted, false), or(...orConditions)));
 
-  // Build map keyed by "email:<value>" and "phone:<value>"
+  // Build normalized sets for fast lookup
+  const phoneSet = new Set(cleanPhones);
+  const nameSet = new Set(cleanNames);
+
+  /** Compute which standard fields + customField keys are already filled */
+  function buildMatchInfo(
+    match: (typeof matches)[number],
+    matchedOn: "email" | "phone" | "name",
+  ): DuplicateMatch {
+    const stdFields = [
+      "email",
+      "phone",
+      "instagram",
+      "portfolioUrl",
+      "linkedinUrl",
+      "location",
+      "experience",
+      "resumeUrl",
+    ] as const;
+    const filledFields = stdFields.filter(
+      (f) =>
+        match[f] !== null &&
+        match[f] !== undefined &&
+        String(match[f]).trim() !== "",
+    );
+    const cf = (match.customFields as Record<string, string> | null) ?? {};
+    const existingCustomFieldKeys = Object.entries(cf)
+      .filter(([k, v]) => !k.startsWith("_") && v && String(v).trim() !== "")
+      .map(([k]) => k);
+
+    return {
+      candidateId: match.id,
+      candidateName: match.name,
+      roleName: match.roleName,
+      matchedOn,
+      filledFields,
+      existingCustomFieldKeys,
+    };
+  }
+
+  // Build map keyed by "email:<value>", "phone:<value>", and "name:<value>"
   const map: Record<string, DuplicateMatch> = {};
 
   for (const match of matches) {
+    // Email match (case-insensitive) — highest priority
     if (match.email) {
-      const key = `email:${match.email.toLowerCase()}`;
-      map[key] = {
-        candidateId: match.id,
-        candidateName: match.name,
-        roleName: match.roleName,
-        matchedOn: "email",
-      };
+      const emailLower = match.email.toLowerCase();
+      if (cleanEmails.includes(emailLower)) {
+        const key = `email:${emailLower}`;
+        map[key] = buildMatchInfo(match, "email");
+      }
     }
+    // Phone match (normalized digits comparison)
     if (match.phone) {
-      const key = `phone:${match.phone}`;
-      // Only set if not already set by email (prefer email matches)
-      if (!map[key]) {
-        map[key] = {
-          candidateId: match.id,
-          candidateName: match.name,
-          roleName: match.roleName,
-          matchedOn: "phone",
-        };
+      const normalizedDbPhone = normalizePhone(match.phone);
+      if (normalizedDbPhone.length >= 7 && phoneSet.has(normalizedDbPhone)) {
+        const key = `phone:${normalizedDbPhone}`;
+        if (!map[key]) {
+          map[key] = buildMatchInfo(match, "phone");
+        }
+      }
+    }
+    // Name match (case-insensitive, whitespace-normalized)
+    if (match.name) {
+      const normalizedDbName = normalizeName(match.name);
+      if (nameSet.has(normalizedDbName)) {
+        const key = `name:${normalizedDbName}`;
+        if (!map[key]) {
+          map[key] = buildMatchInfo(match, "name");
+        }
       }
     }
   }
@@ -232,7 +330,8 @@ export async function importCandidates(
             experience: row.experience ?? null,
             resumeUrl: row.resumeUrl ?? null,
             customFields: cf,
-            isDuplicate: false,
+            isDuplicate: !!row.duplicateMatchId,
+            duplicateOfId: row.duplicateMatchId ?? null,
             importBatchId: batchId,
             createdBy: user.name,
           };
@@ -261,6 +360,22 @@ export async function importCandidates(
         }
       }
 
+      // --- Mark existing candidates as duplicates (for "import" decisions with known matches) ---
+      const dupMatchIds = toInsert
+        .map((r) => r.duplicateMatchId)
+        .filter((id): id is string => !!id);
+      if (dupMatchIds.length > 0) {
+        await tx
+          .update(candidates)
+          .set({ isDuplicate: true, updatedAt: new Date() })
+          .where(
+            and(
+              inArray(candidates.id, dupMatchIds),
+              eq(candidates.isDuplicate, false),
+            ),
+          );
+      }
+
       // --- Merge into existing candidates ---
       for (const row of toMerge) {
         const targetId = row.mergeTargetId!;
@@ -279,7 +394,6 @@ export async function importCandidates(
 
         // Build update object: only fill NULL fields, never overwrite non-null
         const updates: Partial<typeof candidates.$inferInsert> = {
-          isDuplicate: true,
           updatedAt: new Date(),
         };
 
@@ -296,6 +410,32 @@ export async function importCandidates(
           updates.experience = row.experience;
         if (!existing.resumeUrl && row.resumeUrl)
           updates.resumeUrl = row.resumeUrl;
+
+        // Merge customFields: add new keys, never overwrite existing ones
+        if (row.customFields && Object.keys(row.customFields).length > 0) {
+          const existingCf =
+            (existing.customFields as Record<string, string>) ?? {};
+          const merged = { ...existingCf };
+          let hasNewFields = false;
+          for (const [key, val] of Object.entries(row.customFields)) {
+            if (val && (!existingCf[key] || existingCf[key].trim() === "")) {
+              merged[key] = val;
+              hasNewFields = true;
+            }
+          }
+          if (hasNewFields) {
+            updates.customFields = merged;
+          }
+        }
+
+        // Only write to DB if there's actually something new to merge
+        const hasUpdates = Object.keys(updates).length > 1; // more than just updatedAt
+        if (!hasUpdates) {
+          // Nothing new to merge — skip silently
+          continue;
+        }
+
+        updates.isDuplicate = true;
 
         await tx
           .update(candidates)

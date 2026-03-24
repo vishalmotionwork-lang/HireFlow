@@ -37,13 +37,19 @@ function cleanPhoneNumber(phone: string): string {
   return stripped;
 }
 
+/** Convert "JOHN DOE" or "john doe" → "John Doe" */
+function toTitleCase(name: string): string {
+  return name.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function buildDefaultMessage(
   candidateName: string,
   roleName: string | null,
 ): string {
   const role = roleName ?? "open";
+  const displayName = toTitleCase(candidateName);
   return [
-    `Hi ${candidateName}!`,
+    `Hi ${displayName}!`,
     "",
     `This is ${DEFAULT_TEAM_NAME} from ${DEFAULT_COMPANY_NAME}. We noticed you applied for the ${role} position.`,
     "",

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useTransition, useCallback } from "react";
+import { useState, useEffect, useTransition, useCallback, useRef } from "react";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { EditField } from "@/components/candidates/edit-field";
 import { StatusBadge } from "@/components/candidates/status-badge";
@@ -159,6 +160,8 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
   const [rightPanel, setRightPanel] = useState<RightPanel>("comments");
   const [activeProperty, setActiveProperty] = useState<string | null>(null);
   const [whatsappOpen, setWhatsappOpen] = useState(false);
+  const [isQuickUploading, setIsQuickUploading] = useState(false);
+  const quickUploadRef = useRef<HTMLInputElement>(null);
 
   const loadProfile = useCallback((id: string) => {
     setIsLoading(true);
@@ -188,7 +191,43 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
   const handlePropertyClick = (prop: string) => {
     setActiveProperty(prop);
     if (prop === "resume") {
+      // No resume? Open file picker directly
+      if (!candidate?.resumeUrl) {
+        quickUploadRef.current?.click();
+        return;
+      }
       setRightPanel("resume");
+    }
+  };
+
+  const handleQuickUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !candidateId) return;
+    // Reset input
+    if (quickUploadRef.current) quickUploadRef.current.value = "";
+
+    setIsQuickUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("candidateId", candidateId);
+      formData.append("extractData", "true");
+      const res = await fetch("/api/resume/upload", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        toast.error(err?.error ?? "Upload failed");
+        return;
+      }
+      toast.success("Resume uploaded");
+      loadProfile(candidateId);
+      setRightPanel("resume");
+    } catch {
+      toast.error("Upload failed");
+    } finally {
+      setIsQuickUploading(false);
     }
   };
 
@@ -356,6 +395,16 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
                     Attachments
                   </p>
 
+                  {/* Hidden file input for direct upload */}
+                  <input
+                    ref={quickUploadRef}
+                    type="file"
+                    accept=".pdf,.docx"
+                    onChange={handleQuickUpload}
+                    className="hidden"
+                    aria-label="Upload resume file"
+                  />
+
                   <PropertyItem
                     icon={<FileText className="h-3.5 w-3.5" />}
                     label="Resume / CV"
@@ -370,14 +419,19 @@ export function CandidateModal({ candidateId, onClose }: CandidateModalProps) {
                     onClick={() => handlePropertyClick("resume")}
                   >
                     <span className="truncate text-sm">
-                      {candidate.resumeFileName ??
-                        (candidate.resumeUrl ? (
-                          "Attached"
-                        ) : (
-                          <span className="text-purple-500 font-medium">
-                            Upload CV
-                          </span>
-                        ))}
+                      {isQuickUploading ? (
+                        <span className="text-purple-500 font-medium animate-pulse">
+                          Uploading...
+                        </span>
+                      ) : candidate.resumeFileName ? (
+                        candidate.resumeFileName
+                      ) : candidate.resumeUrl ? (
+                        "Attached"
+                      ) : (
+                        <span className="text-purple-500 font-medium">
+                          Upload CV
+                        </span>
+                      )}
                     </span>
                   </PropertyItem>
 

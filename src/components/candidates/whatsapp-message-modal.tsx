@@ -47,9 +47,9 @@ function buildDefaultMessage(
   roleName: string | null,
 ): string {
   const role = roleName ?? "open";
-  const displayName = toTitleCase(candidateName);
+  const firstName = toTitleCase(candidateName.split(/\s+/)[0]);
   return [
-    `Hi ${displayName}!`,
+    `Hi ${firstName}!`,
     "",
     `This is ${DEFAULT_TEAM_NAME} from ${DEFAULT_COMPANY_NAME}. We noticed you applied for the ${role} position.`,
     "",
